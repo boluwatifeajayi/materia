@@ -256,3 +256,93 @@ class TestTheResultSet:
         record = json.loads((tmp_path / "results" / "provider.json").read_text())
         assert record["provider"] == "scripted"
         assert record["scored"] is False
+
+
+class TestARunCutShortKeepsWhatItEarned:
+    """Observed live: the Groq daily token quota ran out part way through a
+    seventeen candidate run and the exception discarded eight completed
+    verdicts along with it."""
+
+    @staticmethod
+    def _stops_after(count):
+        from materia.llm import RateLimited
+
+        class Limited:
+            provider, model = "scripted", "scripted-1"
+
+            def __init__(self):
+                self.seen = 0
+
+            def complete(self, *_, **__):
+                self.seen += 1
+                if self.seen > count:
+                    raise RateLimited("tokens per day limit reached")
+                return AgentResponse(
+                    text=None,
+                    tool_calls=(
+                        ToolCall(
+                            "v1",
+                            "submit_verdict",
+                            {
+                                "verdict": "INTENTIONAL",
+                                "confidence": "high",
+                                "evidence": ["the row label says Actual"],
+                                "reasoning": "Deliberate.",
+                            },
+                        ),
+                    ),
+                    stop_reason="tool_calls",
+                    usage=Usage(800, 40),
+                )
+
+        return Limited()
+
+    def test_the_verdicts_already_earned_survive(self, tmp_path):
+        result = audit(
+            CORPUS / "C03.xlsx",
+            client=self._stops_after(3),
+            trace_directory=tmp_path,
+            max_candidates=10,
+        )
+        assert len(result.verdicts) == 3
+        assert len(result.result.intentional) == 3
+
+    def test_the_report_says_it_stopped_and_why(self, tmp_path):
+        result = audit(
+            CORPUS / "C03.xlsx",
+            client=self._stops_after(3),
+            trace_directory=tmp_path,
+            max_candidates=10,
+        )
+        rendered = result.render()
+        assert "stopped early" in rendered
+        assert "tokens per day" in rendered
+
+    def test_the_funnel_does_not_imply_the_rest_were_cleared(self, tmp_path):
+        result = audit(
+            CORPUS / "C03.xlsx",
+            client=self._stops_after(3),
+            trace_directory=tmp_path,
+            max_candidates=10,
+        )
+        assert result.funnel.adjudicated == 3
+        assert "were not examined" in result.render()
+
+    def test_the_result_set_records_that_it_was_cut_short(self, tmp_path):
+        result = audit(
+            CORPUS / "C03.xlsx",
+            client=self._stops_after(2),
+            trace_directory=tmp_path,
+            max_candidates=10,
+        )
+        assert "tokens per day" in result.as_dict()["stopped"]
+
+    def test_a_complete_run_records_nothing(self, tmp_path):
+        result = audit(
+            CORPUS / "C03.xlsx",
+            client=AlwaysIntentional(),
+            trace_directory=tmp_path,
+            max_candidates=2,
+        )
+        assert result.stopped is None
+        assert "stopped early" not in result.render()

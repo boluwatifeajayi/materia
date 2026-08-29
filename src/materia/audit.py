@@ -16,7 +16,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from materia.adjudicate import Verdict, adjudicate
+from materia.adjudicate import AdjudicationStopped, Verdict, adjudicate
 from materia.detect import Candidate, detect, load
 from materia.graph import DependencyGraph
 from materia.llm import LLMClient, get_client, write_provenance
@@ -37,9 +37,13 @@ class Audit:
     funnel: Funnel
     provider: str
     model: str
+    stopped: str | None = None
 
     def render(self) -> str:
-        return render(self.workbook, self.result, self.funnel)
+        report = render(self.workbook, self.result, self.funnel)
+        if self.stopped:
+            report += f"\nThis run stopped early: {self.stopped}\n"
+        return report
 
     def as_dict(self) -> dict:
         """The result set the evaluator scores."""
@@ -50,6 +54,7 @@ class Audit:
             "formulas": self.preflight.formula_count,
             "candidates": len(self.candidates),
             "adjudicated": len(self.verdicts),
+            "stopped": self.stopped,
             "findings": [
                 {
                     "address": finding.address,
@@ -116,7 +121,16 @@ def audit(
         chosen = chosen[:max_candidates]
 
     client = client or get_client()
-    verdicts = adjudicate(chosen, client, tools, graph, name, trace_directory)
+    stopped: str | None = None
+    try:
+        verdicts = adjudicate(chosen, client, tools, graph, name, trace_directory)
+    except AdjudicationStopped as cut_short:
+        # Report what was established rather than nothing at all. The funnel
+        # says how many were tested, so a shortened run cannot read as a
+        # clean bill of health for the cells nobody looked at.
+        verdicts = list(cut_short.verdicts)
+        stopped = cut_short.reason
+
     result = cross_check(verdicts, tools.model, graph, candidates)
 
     return Audit(
@@ -140,6 +154,7 @@ def audit(
         ),
         provider=client.provider,
         model=client.model,
+        stopped=stopped,
     )
 
 

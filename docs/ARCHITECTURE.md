@@ -173,6 +173,10 @@ Each provider gets a thin adapter translating `recompute_with_patch` and `inspec
 
 This project was originally specified against `llama-3.3-70b-versatile`. Groq no longer serves it, so the dev-loop model is `openai/gpt-oss-120b`, chosen from what the provider reports it will actually serve rather than guessed. The distinction matters more for Anthropic, where a scored run against a model nobody chose would not be a result: `ModelNotAvailable` is a separate exception class for exactly that reason, and the adapter says so rather than falling back.
 
+**What the dev loop actually costs, measured.** Two limits bind, and the second is the one that matters. Tokens per minute is 8,000 on this account, which one adjudication exceeds on its own, so requests are paced. Tokens per day is 200,000, which is roughly sixty adjudications. A full twelve workbook run is not possible on the free tier in a single day, and this is a planning fact rather than a bug.
+
+**Tool call formatting failures are the reason this model is dev loop only.** Across two runs `openai/gpt-oss-120b` produced three malformed tool calls that the provider rejected outright: a call to a tool named `json` that did not exist, arguments containing `"P&L!AA15": -610,?` which is not JSON, and a tool named `inspect_range<|channel|>commentary` with a special token leaked into it. None is a reasoning failure and none says anything about the design. They are why the adjudicator loop treats a provider error on one candidate as one lost verdict rather than a lost run, and why the numbers that ship come from a different model.
+
 ---
 
 ## Data flow constraints

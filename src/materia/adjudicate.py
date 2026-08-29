@@ -90,6 +90,20 @@ class SchemaViolation(ValueError):
     """The model returned something that is not a verdict."""
 
 
+class AdjudicationStopped(Exception):
+    """The run was cut short, carrying the verdicts earned before it stopped.
+
+    A rate limit or an unavailable model is not survivable by retrying, so the
+    loop stops. Discarding the completed work as well would turn a partial
+    result into no result.
+    """
+
+    def __init__(self, reason: str, verdicts: tuple) -> None:
+        super().__init__(reason)
+        self.reason = reason
+        self.verdicts = verdicts
+
+
 @dataclass(frozen=True)
 class Verdict:
     """One adjudicated candidate."""
@@ -456,9 +470,19 @@ def adjudicate(
     for candidate in candidates:
         seen.setdefault(candidate.address, candidate)
 
-    return [
-        adjudicate_one(
-            candidate, client, tools, graph, workbook_name, trace_directory, run_prefix
-        )
-        for candidate in seen.values()
-    ]
+    verdicts: list[Verdict] = []
+    for candidate in seen.values():
+        try:
+            verdicts.append(
+                adjudicate_one(
+                    candidate, client, tools, graph, workbook_name, trace_directory,
+                    run_prefix,
+                )
+            )
+        except (RateLimited, ModelNotAvailable) as stop:
+            # Stop asking, but keep what was already earned. A run that dies
+            # part way through should not throw away the verdicts it paid for,
+            # and the report says how far it got rather than implying the rest
+            # were fine.
+            raise AdjudicationStopped(str(stop), tuple(verdicts)) from stop
+    return verdicts
