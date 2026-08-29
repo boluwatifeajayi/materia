@@ -157,7 +157,21 @@ class TestTheWholePipeline:
             max_candidates=1,
         )
         funnel = result.funnel
-        assert funnel.formulas > funnel.candidates > funnel.findings
+        assert funnel.formulas > funnel.candidates >= funnel.survived >= funnel.findings
+
+    def test_a_dismissed_candidate_did_not_survive_hypothesis_testing(self, tmp_path):
+        """INTENTIONAL was dismissed and INCONCLUSIVE established nothing.
+        Counting either as surviving would make the funnel narrow less than
+        the work actually did."""
+        result = audit(
+            CORPUS / "C03.xlsx",
+            client=AlwaysIntentional(),
+            trace_directory=tmp_path,
+            max_candidates=4,
+        )
+        assert result.funnel.candidates > 4
+        assert result.funnel.survived == 0
+        assert len(result.result.intentional) == 4
 
     def test_it_records_which_provider_produced_the_run(self, tmp_path):
         result = audit(

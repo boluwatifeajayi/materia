@@ -128,7 +128,13 @@ def audit(
         funnel=Funnel(
             formulas=report.formula_count,
             candidates=len(candidates),
-            survived=len(result.findings) + len(result.inconclusive),
+            # Survived hypothesis testing means the agent concluded the cell
+            # was wrong and the impact was verifiable. An INTENTIONAL verdict
+            # was dismissed and an INCONCLUSIVE one established nothing, so
+            # neither survived. Until the gate lands in T21 this equals the
+            # finding count, and that is the honest reading: with no
+            # materiality filter, everything that survives is reported.
+            survived=len(result.findings),
             findings=len(result.findings),
         ),
         provider=client.provider,
