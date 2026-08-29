@@ -267,13 +267,24 @@ def _share(value: float | None) -> str:
 
 @dataclass(frozen=True)
 class Funnel:
-    """The four numbers from README section 4."""
+    """The four numbers from README section 4.
+
+    `adjudicated` exists so a bounded run cannot read as a complete one. A
+    funnel that says twenty two anomalies were detected, without saying only
+    seventeen were tested, implies the other five were cleared. They were not
+    looked at.
+    """
 
     formulas: int
     candidates: int
     survived: int
     findings: int
     suppressed: int = 0
+    adjudicated: int | None = None
+
+    @property
+    def complete(self) -> bool:
+        return self.adjudicated is None or self.adjudicated >= self.candidates
 
     def render(self, workbook: str) -> str:
         lines = [
@@ -281,11 +292,19 @@ class Funnel:
             "",
             f"  {self.formulas:>6}  formulas parsed",
             f"  {self.candidates:>6}  structural anomalies detected",
-            f"  {self.survived:>6}  survived hypothesis testing",
-            f"  {self.findings:>6}  material findings",
         ]
+        if not self.complete:
+            lines.append(f"  {self.adjudicated:>6}  tested, this run was limited")
+        lines.append(f"  {self.survived:>6}  survived hypothesis testing")
+        lines.append(f"  {self.findings:>6}  material findings")
         if self.suppressed:
             lines.append(f"  {self.suppressed:>6}  suppressed as immaterial")
+        if not self.complete:
+            lines.append("")
+            lines.append(
+                f"  {self.candidates - self.adjudicated} candidates were not "
+                "examined. They are not cleared, they were not looked at."
+            )
         return "\n".join(lines)
 
 

@@ -136,6 +136,7 @@ def audit(
             # materiality filter, everything that survives is reported.
             survived=len(result.findings),
             findings=len(result.findings),
+            adjudicated=len(verdicts),
         ),
         provider=client.provider,
         model=client.model,

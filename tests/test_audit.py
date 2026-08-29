@@ -149,6 +149,23 @@ class TestTheWholePipeline:
         assert finding.deltas == client.measured
         assert result.result.violations == ()
 
+    def test_a_bounded_run_records_how_many_it_tested(self, tmp_path):
+        result = audit(
+            CORPUS / "C03.xlsx",
+            client=AlwaysIntentional(),
+            trace_directory=tmp_path,
+            max_candidates=3,
+        )
+        assert result.funnel.adjudicated == 3
+        assert result.funnel.complete is False
+        assert "were not examined" in result.render()
+
+    def test_an_unbounded_run_reads_as_complete(self, tmp_path):
+        result = audit(
+            CORPUS / "C03.xlsx", client=AlwaysIntentional(), trace_directory=tmp_path
+        )
+        assert result.funnel.complete is True
+
     def test_the_funnel_narrows(self, tmp_path):
         result = audit(
             CORPUS / "C03.xlsx",

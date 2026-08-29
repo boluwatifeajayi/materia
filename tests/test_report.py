@@ -371,3 +371,25 @@ class TestTheSuppressedCount:
         )
         card = render_card(result.findings[0], 1)
         assert "reported different figures" in card
+
+
+class TestABoundedRunSaysSo:
+    """A run that was cut short must not read as a clean bill of health."""
+
+    def test_the_funnel_names_how_many_were_tested(self):
+        rendered = Funnel(738, 22, 1, 1, adjudicated=17).render("C03.xlsx")
+        assert "22  structural anomalies detected" in rendered
+        assert "17  tested, this run was limited" in rendered
+
+    def test_it_says_the_rest_were_not_cleared(self):
+        rendered = Funnel(738, 22, 1, 1, adjudicated=17).render("C03.xlsx")
+        assert "5 candidates were not examined" in rendered
+        assert "not cleared" in rendered
+
+    def test_a_complete_run_says_nothing_extra(self):
+        rendered = Funnel(738, 22, 1, 1, adjudicated=22).render("C03.xlsx")
+        assert "were not examined" not in rendered
+        assert "this run was limited" not in rendered
+
+    def test_a_run_with_no_bound_recorded_reads_as_complete(self):
+        assert Funnel(738, 22, 1, 1).complete is True
