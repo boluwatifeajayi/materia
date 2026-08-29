@@ -769,7 +769,7 @@ class TestTheAccountIdNeverReachesATrace:
 
     MESSAGE = (
         "Error code: 429 - Rate limit reached for model `x` in organization "
-        "`org_01m16gh92wefbbd5r1rt6hzy8b` service tier `on_demand`"
+        "`org_01aaaaaaaaaaaaaaaaaaaaaaaa` service tier `on_demand`"
     )
 
     def test_groq_strips_it(self):
@@ -778,7 +778,7 @@ class TestTheAccountIdNeverReachesATrace:
         client = GroqClient.__new__(GroqClient)
         client.model = "m"
         translated = str(client._translate_error(Exception(self.MESSAGE)))
-        assert "org_01m16gh92wefbbd5r1rt6hzy8b" not in translated
+        assert "org_01aaaaaaaaaaaaaaaaaaaaaaaa" not in translated
         assert "org_[redacted]" in translated
         assert "Rate limit reached" in translated
 
@@ -788,7 +788,7 @@ class TestTheAccountIdNeverReachesATrace:
         client = OpenAIClient.__new__(OpenAIClient)
         client.model = "m"
         translated = str(client._translate_error(Exception(self.MESSAGE)))
-        assert "org_01m16gh92wefbbd5r1rt6hzy8b" not in translated
+        assert "org_01aaaaaaaaaaaaaaaaaaaaaaaa" not in translated
         assert "org_[redacted]" in translated
 
     def test_it_leaves_everything_else_alone(self):

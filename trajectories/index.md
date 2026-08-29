@@ -36,9 +36,9 @@ So the retry the table describes has not happened. It is a plausible path throug
 
 ### 4. The baseline reporting errors in a clean workbook
 
-The harness exists as of T18 and there is a proof run against `C03` in the index below. What does not exist is a baseline run against a clean control, which is what this entry needs: the failure is an agent reporting confident findings on a workbook with nothing wrong in it, and that only shows up on `C09` or `C10`.
+The harness exists as of T18 and there is a completed baseline run against `C03` in the index below. It is worth reading, but it is not this trajectory: on `C03` the baseline did well. It found both seeded mutations, proposed the right formula for each, and measured its impact figures rather than estimating them, by patching copies of the workbook and recalculating them through the headless LibreOffice it found on the machine. Its numbers agree with our recompute engine to the unit.
 
-The scored run is T19 and covers all twelve workbooks, so it will produce this. Until it does, the entry stays empty rather than borrowing the `C03` proof run, which is a seeded workbook and so cannot show a false positive.
+What this entry needs is a baseline run against a clean control, and that has not been run. The failure is an agent reporting confident findings on a workbook with nothing wrong in it, and a seeded workbook cannot show that however the run goes. It only shows up on `C09` or `C10`, which the scored run in T19 covers.
 
 The equivalent measurement does exist without an agent: the detectors alone report twenty one findings on `C09` and twenty five on `C10`, both of which contain no errors at all. That is in the changelog as Iteration 1. It is not this trajectory.
 
@@ -49,7 +49,7 @@ The same cell appears more than once where it was adjudicated in more than one r
 | Run | Agent | Cell | Steps | Tool calls | Verdict | Tokens | File |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `base-C03-d7d6` | baseline | - | 7 | 1 | 0 reported | 1,199 | `baseline/C03_baseline_groq.jsonl` |
-| `base-C03-67c2` | baseline | - | 27 | 8 | 0 reported | 42,704 | `baseline/C03_baseline_openai.jsonl` |
+| `base-C03-f2e3` | baseline | - | 46 | 14 | 2 reported | 151,079 | `baseline/C03_baseline_openai.jsonl` |
 | `sol-C03-e76d` | adjudicator | Costs!C5 | 11 | 3 | INTENTIONAL | 5,553 | `solution/C03_adjudicator_Costs_C5_D2.jsonl` |
 | `sol-C03-7297` | adjudicator | P&L!AA15 | 14 | 4 | ERROR | 9,035 | `solution/C03_adjudicator_P&L_AA15_D2.jsonl` |
 | `sol-C03-247d` | adjudicator | Revenue!C3 | 14 | 4 | INTENTIONAL | 6,809 | `solution/C03_adjudicator_Revenue_C3_D1.jsonl` |

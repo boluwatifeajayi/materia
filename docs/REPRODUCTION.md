@@ -110,7 +110,20 @@ Those are the solution's own measured spend: 3.0 model calls and 9,463 tokens pe
 
 Output: `results/baseline/C03.json` and a full trajectory in `trajectories/baseline/`.
 
-The harness was proved on one run. That run stopped at a deliberately low turn bound before the agent wrote its findings file, so it reported nothing, and nothing about the comparison should be read into that. The trajectory is in `trajectories/index.md`.
+Measured on `gpt-5.6-terra`, one completed run against `C03` with those caps:
+
+| | |
+| --- | --- |
+| Model calls | 15 |
+| Tokens | 151,079, at 147,390 in and 3,689 out |
+| Tool calls | 14 |
+| Findings | 2, both seeded mutations, both with the right proposed formula |
+
+It finished on its own rather than hitting a cap. The trajectory is in `trajectories/index.md`.
+
+**The baseline is stronger than expected, and one reason is machine dependent.** It did not estimate its impact figures. It found the headless LibreOffice installed on the machine, wrote patched copies of the workbook, had LibreOffice recalculate them, and read the results back. Those figures agree with our recompute engine to the unit, which is a useful independent check on the engine and is pinned as a test.
+
+It is also a hole in the comparison. The sandbox inherits the machine's `PATH`, so a reproducer with LibreOffice installed gets the baseline that measures, and a reproducer without it gets a baseline that has to reason instead. Those are different systems and they will not produce the same headline table. Section 1 lists no office suite as a requirement because nothing in *our* pipeline needs one, and that stays true. What is not yet decided is whether the baseline should be given a fixed toolset so the comparison reproduces, or left with whatever the machine has and the dependency documented. **This is open going into the scored run and is called out here rather than left to be discovered from a mismatched table.**
 
 ## 5. Run the solution
 

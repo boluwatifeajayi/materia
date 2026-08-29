@@ -257,16 +257,20 @@ FEATURED: list[Featured] = [
         shows="The failure the whole project is about: a capable general agent reporting confident findings on a workbook with nothing wrong in it.",
         path=None,
         preamble=(
-            "The harness exists as of T18 and there is a proof run against "
-            "`C03` in the index below. What does not exist is a baseline run "
-            "against a clean control, which is what this entry needs: the "
-            "failure is an agent reporting confident findings on a workbook "
-            "with nothing wrong in it, and that only shows up on `C09` or "
-            "`C10`.\n\n"
-            "The scored run is T19 and covers all twelve workbooks, so it will "
-            "produce this. Until it does, the entry stays empty rather than "
-            "borrowing the `C03` proof run, which is a seeded workbook and so "
-            "cannot show a false positive.\n\n"
+            "The harness exists as of T18 and there is a completed baseline "
+            "run against `C03` in the index below. It is worth reading, but it "
+            "is not this trajectory: on `C03` the baseline did well. It found "
+            "both seeded mutations, proposed the right formula for each, and "
+            "measured its impact figures rather than estimating them, by "
+            "patching copies of the workbook and recalculating them through "
+            "the headless LibreOffice it found on the machine. Its numbers "
+            "agree with our recompute engine to the unit.\n\n"
+            "What this entry needs is a baseline run against a clean control, "
+            "and that has not been run. The failure is an agent reporting "
+            "confident findings on a workbook with nothing wrong in it, and a "
+            "seeded workbook cannot show that however the run goes. It only "
+            "shows up on `C09` or `C10`, which the scored run in T19 "
+            "covers.\n\n"
             "The equivalent measurement does exist without an agent: the "
             "detectors alone report twenty one findings on `C09` and twenty "
             "five on `C10`, both of which contain no errors at all. That is "
@@ -335,10 +339,17 @@ def _baseline_verdict(heading: str, content: dict) -> str:
                       f"{'finding' if count == 1 else 'findings'}."]
     for finding in content.get("findings") or []:
         cell = f"{finding.get('sheet')}!{finding.get('cell')}"
-        parts.append(
-            f"- `{cell}`, confidence {finding.get('confidence', 'unstated')}, "
-            f"impact {finding.get('estimated_impact', 'unstated')}"
-        )
+        line = f"- `{cell}`, confidence {finding.get('confidence', 'unstated')}"
+        if finding.get("proposed_formula"):
+            line += f", proposes `{finding['proposed_formula']}`"
+        parts.append(line)
+        # The impact the baseline claims. It is the agent's own figure, by
+        # whatever method it chose, and is not verified by anything of ours.
+        impact = finding.get("impact")
+        if isinstance(impact, dict) and impact:
+            parts.append(_fence(json.dumps(impact, indent=2), "json"))
+        elif impact:
+            parts.append(f"  Impact it claims: {plain(str(impact))}")
     if content.get("malformed_findings_file"):
         parts.append("The file it wrote is not valid JSON. Kept as written.")
     return "\n\n".join(parts)

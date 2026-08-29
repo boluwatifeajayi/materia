@@ -326,14 +326,27 @@ class TestBaselineVerdictShape:
         assert "unknown" not in rendered
 
     def test_findings_are_listed_with_the_impact_the_agent_claimed(self, tmp_path):
+        """The field is `impact` and holds a mapping, because that is the
+        schema the baseline prompt asks for. Reading some other key printed
+        `impact unstated` under findings that stated one."""
         path = self._trace(tmp_path, {
             "count": 1, "malformed_findings_file": False,
             "findings": [{"sheet": "Revenue", "cell": "H5", "confidence": "high",
-                          "estimated_impact": "about 6 million"}],
+                          "proposed_formula": "=G9",
+                          "impact": {"P&L!AA15": 8704573.0}}],
         })
         rendered = render(path)
         assert "Revenue!H5" in rendered
-        assert "about 6 million" in rendered
+        assert "=G9" in rendered
+        assert "8704573" in rendered
+        assert "unstated" not in rendered
+
+    def test_a_finding_with_no_impact_does_not_invent_one(self, tmp_path):
+        path = self._trace(tmp_path, {
+            "count": 1, "malformed_findings_file": False,
+            "findings": [{"sheet": "Revenue", "cell": "H5", "confidence": "low"}],
+        })
+        assert "Revenue!H5" in render(path)
 
     def test_a_malformed_findings_file_is_said_out_loud(self, tmp_path):
         path = self._trace(tmp_path, {"count": 0, "findings": [],

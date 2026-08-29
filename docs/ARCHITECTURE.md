@@ -139,6 +139,22 @@ An output that becomes an error or text has a delta of `None` rather than 0. Rep
 
 The engine is the load bearing component of the whole submission. Every impact number and the ground truth materiality of every mutation both come from it, so it has the densest test coverage in the repo.
 
+### Checked against a real spreadsheet application, by accident
+
+The tests hold the engine to hand computed values, which proves it is self consistent and matches what we believe Excel does. An external oracle turned up on its own.
+
+The baseline agent, given a shell and left to pick its own method, found the headless LibreOffice on the machine, wrote patched copies of `C03`, had LibreOffice recalculate them, and read the values back. Its numbers are in its trajectory. On both patches and on the unpatched workbook, across both declared outputs, they agree with this engine exactly:
+
+| Workbook | `P&L!AA15` | `Valuation!B7` |
+| --- | --- | --- |
+| Unpatched | 14,816,742 | 143,535,444 |
+| `Revenue!H5` set to `=G9` | 23,521,315 | 236,288,274 |
+| `P&L!AA15` set to `=SUM(C15:Z15)` | 16,367,624 | 143,535,444 |
+
+Six figures, produced by software that was never written to agree with ours, matching to the unit. Those values are pinned in `tests/test_recompute.py`, along with a check that they are still present in the trajectory they came from, so they cannot quietly become numbers somebody typed in.
+
+This does not change the reasoning above. LibreOffice is still not a dependency of this project, and the engine still has to work on a machine without it.
+
 ## 7. Materiality gate
 
 A finding is shown only if its verified delta on at least one declared output exceeds the threshold (default 1% of that output's value).

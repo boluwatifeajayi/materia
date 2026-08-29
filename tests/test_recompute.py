@@ -10,9 +10,11 @@ test says so.
 
 import hashlib
 import shutil
+from pathlib import Path
 
 import pytest
 
+from materia.corpus.layout import DECLARED_OUTPUTS
 from materia.recompute import (
     CircularReference,
     EvaluationError,
@@ -535,3 +537,47 @@ class TestLoading:
         assert model.value("Model!B6") == 60.0  # ABS(100-160)
         assert model.value("Model!B7") == 300.0  # SUMIF > 120: 140 + 160
         assert model.value("Model!B8") == "up (good)"
+
+
+class TestAgreementWithLibreOffice:
+    """An external oracle for the engine every impact figure depends on.
+
+    The baseline agent, given a shell and left to its own methods, found the
+    headless LibreOffice on the machine, wrote patched copies of `C03` and had
+    LibreOffice recalculate them. Those numbers are in its committed
+    trajectory. They are the only figures in this project produced by a real
+    spreadsheet application rather than by our own code, so they are worth
+    pinning: if the engine ever drifts, this fails against something that was
+    never written to agree with it.
+
+    Source: trajectories/baseline/C03_baseline_openai.jsonl, step 37.
+    """
+
+    TRACE = Path("trajectories/baseline/C03_baseline_openai.jsonl")
+    LIBREOFFICE = {
+        "unpatched": {"P&L!AA15": 14816742, "Valuation!B7": 143535444},
+        ("Revenue!H5", "=G9"): {"P&L!AA15": 23521315, "Valuation!B7": 236288274},
+        ("P&L!AA15", "=SUM(C15:Z15)"): {"P&L!AA15": 16367624, "Valuation!B7": 143535444},
+    }
+
+    def test_the_unpatched_workbook_matches(self):
+        model = Model.load("corpus/C03.xlsx", outputs=list(DECLARED_OUTPUTS))
+        for cell, expected in self.LIBREOFFICE["unpatched"].items():
+            assert round(model.value(cell)) == expected
+
+    @pytest.mark.parametrize("cell,formula", [
+        ("Revenue!H5", "=G9"),
+        ("P&L!AA15", "=SUM(C15:Z15)"),
+    ])
+    def test_each_patch_matches(self, cell, formula):
+        model = Model.load("corpus/C03.xlsx", outputs=list(DECLARED_OUTPUTS))
+        outputs = model.patch(cell, formula).outputs
+        for output, expected in self.LIBREOFFICE[(cell, formula)].items():
+            assert round(outputs[output].after) == expected, f"{cell} -> {formula}, {output}"
+
+    def test_the_numbers_are_still_in_the_trajectory_they_came_from(self):
+        """So this cannot quietly become a set of figures somebody typed in."""
+        text = self.TRACE.read_text()
+        for group in self.LIBREOFFICE.values():
+            for expected in group.values():
+                assert str(expected) in text, expected
