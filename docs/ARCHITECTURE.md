@@ -63,6 +63,10 @@ Used for three things:
 - computing topological order for the recompute engine
 - producing the blast radius shown in the report
 
+Preflight uses it too, for cycle detection. It is the same graph in all four cases on purpose. If preflight resolved a range differently from the engine, a workbook could pass preflight and then have no evaluation order, and the run would fail late rather than being refused up front.
+
+A range expands to every cell in it that exists, so a total sitting inside the range it totals shows up as a cell reading itself. Ranges are resolved against cells that exist rather than expanded blindly, and a range above 65,536 cells is refused rather than walked.
+
 ## 4. Detectors
 
 Five detectors, one per in taxonomy mutation family (see `EVALUATION.md` section 3). Each emits candidates with a structural reason and the peer group evidence that triggered it.

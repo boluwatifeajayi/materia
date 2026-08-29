@@ -16,12 +16,12 @@ from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 
-import networkx as nx
 import openpyxl
 from openpyxl.worksheet.formula import ArrayFormula
 
-from materia.formula import UnsupportedFormula, parse_formula
-from materia.parse import REFERENCE, parse_reference, strip_string_literals
+from materia.formula import Node, UnsupportedFormula, parse_formula
+from materia.graph import DependencyGraph
+from materia.parse import strip_string_literals
 
 class Reason(str, Enum):
     """Named rejection reasons. The user always gets one of these."""
@@ -159,16 +159,19 @@ def _check_defined_names(workbook: openpyxl.Workbook) -> None:
 
 def _check_formulas(
     workbook: openpyxl.Workbook,
-) -> tuple[dict[str, str], int]:
+) -> tuple[dict[str, Node], list[str]]:
     """Scan every cell once.
 
-    Returns the formulas by qualified address, and a count of non formula
-    cells that hold a value. Raises on the first array formula, external
+    Returns the parsed formulas by qualified address, and the addresses of the
+    cells holding plain values. Raises on the first array formula, external
     reference or unsupported function, scanning in sheet, row, column order so
     the reported location is stable across runs.
+
+    The parsed trees are kept rather than thrown away, because cycle detection
+    needs them and parsing twice would be the same work done again.
     """
-    formulas: dict[str, str] = {}
-    value_cells = 0
+    formulas: dict[str, Node] = {}
+    value_cells: list[str] = []
 
     for sheet_name in workbook.sheetnames:
         worksheet = workbook[sheet_name]
@@ -189,7 +192,7 @@ def _check_formulas(
                     )
 
                 if not (isinstance(value, str) and value.startswith("=")):
-                    value_cells += 1
+                    value_cells.append(location)
                     continue
 
                 formula = value
@@ -204,7 +207,7 @@ def _check_formulas(
                     )
 
                 try:
-                    parse_formula(formula)
+                    parsed = parse_formula(formula)
                 except UnsupportedFormula as unsupported:
                     if unsupported.function is not None:
                         bare = unsupported.function.split(".")[-1].upper()
@@ -222,66 +225,28 @@ def _check_formulas(
                         location=location,
                     ) from unsupported
 
-                formulas[location] = formula
+                formulas[location] = parsed
 
     return formulas, value_cells
 
 
-def _check_circular(formulas: dict[str, str], sheet_names: list[str]) -> None:
-    """Detect reference cycles among formula cells.
+def _check_circular(formulas: dict[str, Node], constants: list[str]) -> None:
+    """Detect reference cycles.
 
-    Only formula cells can carry a cycle, because a constant has no outgoing
-    edges. So ranges are resolved against the set of formula cells rather than
-    expanded, which keeps this bounded by the number of formulas rather than
-    by how large a range someone wrote.
-
-    This is a deliberate small duplicate of the dependency graph in T06.
-    Preflight runs before the graph is built, so it cannot use it.
+    Delegates to the shared dependency graph, which resolves ranges the same
+    way the recompute engine does. That matters: if the two disagreed about
+    what a formula reads, preflight could pass a workbook the engine cannot
+    order, and the run would hang or fail late instead of being refused here.
     """
-    if not formulas:
+    cycle = DependencyGraph.build(formulas, constants).find_cycle()
+    if cycle is None:
         return
 
-    # Index formula cells by sheet so range containment is a cheap test.
-    by_sheet: dict[str, list[tuple[int, int, str]]] = {name: [] for name in sheet_names}
-    for address in formulas:
-        sheet, coordinate = address.split("!", 1)
-        cell = parse_reference(coordinate)
-        by_sheet.setdefault(sheet, []).append((cell.row, cell.column, address))
-
-    graph = nx.DiGraph()
-    graph.add_nodes_from(formulas)
-
-    for address, formula in formulas.items():
-        own_sheet = address.split("!", 1)[0]
-        scannable = strip_string_literals(formula)
-
-        for match in REFERENCE.finditer(scannable):
-            start_text, _, end_text = match.group(0).partition(":")
-            first = parse_reference(start_text)
-            last = parse_reference(end_text) if end_text else first
-
-            sheet = (first.sheet or own_sheet).strip("'")
-            if sheet not in by_sheet:
-                continue
-
-            min_row, max_row = sorted((first.row, last.row))
-            min_col, max_col = sorted((first.column, last.column))
-
-            for row, col, precedent in by_sheet[sheet]:
-                if min_row <= row <= max_row and min_col <= col <= max_col:
-                    graph.add_edge(precedent, address)
-
-    try:
-        cycle = nx.find_cycle(graph)
-    except nx.NetworkXNoCycle:
-        return
-
-    path = " -> ".join(edge[0] for edge in cycle)
     raise PreflightRejected(
         Reason.CIRCULAR_REFERENCE,
-        f"{path} -> {cycle[-1][1]} forms a loop. The recompute engine "
-        "evaluates in dependency order, which a loop has no answer for.",
-        location=cycle[0][0],
+        f"{cycle} forms a loop. The recompute engine evaluates in dependency "
+        "order, which a loop has no answer for.",
+        location=cycle.cells[0],
     )
 
 
@@ -309,11 +274,11 @@ def preflight(path: str | Path) -> PreflightReport:
     finally:
         workbook.close()
 
-    _check_circular(formulas, sheet_names)
+    _check_circular(formulas, value_cells)
 
     return PreflightReport(
         path=path,
         sheet_names=sheet_names,
         formula_count=len(formulas),
-        value_cell_count=value_cells,
+        value_cell_count=len(value_cells),
     )

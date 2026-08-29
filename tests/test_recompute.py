@@ -247,7 +247,11 @@ class TestErrors:
         assert model.value("Sheet1!B1") is ExcelError.DIV0
 
     def test_a_range_above_the_size_limit_is_refused(self):
-        with pytest.raises(EvaluationError, match="above the"):
+        """Refused by name rather than folded into a general failure, since
+        the fix is to narrow the range."""
+        from materia.parse import RangeTooLarge
+
+        with pytest.raises(RangeTooLarge, match="above the"):
             Model.from_cells({"Sheet1!A1": "=SUM(B1:B100000)"})
 
 

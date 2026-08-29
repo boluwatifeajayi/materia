@@ -29,10 +29,9 @@ from enum import Enum
 from pathlib import Path
 from typing import Iterator
 
-import networkx as nx
 import openpyxl
-from openpyxl.utils import get_column_letter
 
+from materia.graph import DependencyGraph
 from materia.formula import (
     BinaryOp,
     Boolean,
@@ -46,12 +45,12 @@ from materia.formula import (
     UnaryOp,
     parse_formula,
 )
-from materia.parse import Reference
-
-# A range wider than this is refused rather than enumerated. Real models do
-# not aggregate over a million cells, and silently taking minutes would be
-# worse than saying no.
-MAX_RANGE_CELLS = 65_536
+from materia.parse import (
+    RangeTooLarge,
+    cell_address,
+    normalise_address,
+    range_addresses,
+)
 
 
 class ExcelError(str, Enum):
@@ -216,7 +215,7 @@ class Model:
     ) -> None:
         self.constants = dict(constants)
         self.formulas = dict(formulas)
-        self.outputs = [_normalise_address(address) for address in (outputs or [])]
+        self.outputs = [normalise_address(address) for address in (outputs or [])]
         self.values = self._evaluate_all(self.formulas)
 
     # --- construction ---
@@ -254,7 +253,7 @@ class Model:
         constants: dict[str, Scalar] = {}
         formulas: dict[str, Node] = {}
         for address, content in cells.items():
-            key = _normalise_address(address)
+            key = normalise_address(address)
             if isinstance(content, str) and content.startswith("="):
                 formulas[key] = parse_formula(content)
             else:
@@ -274,25 +273,20 @@ class Model:
         return values
 
     def _topological_order(self, formulas: dict[str, Node]) -> list[str]:
-        known = formulas.keys() | self.constants.keys()
-        graph = nx.DiGraph()
-        graph.add_nodes_from(formulas)
-        for address, node in formulas.items():
-            sheet = address.split("!", 1)[0]
-            for precedent in _precedents(node, sheet, known):
-                if precedent in formulas:
-                    graph.add_edge(precedent, address)
-        try:
-            return list(nx.topological_sort(graph))
-        except nx.NetworkXUnfeasible as unfeasible:
-            cycle = nx.find_cycle(graph)
-            path = " -> ".join(edge[0] for edge in cycle)
-            raise CircularReference(f"{path} -> {cycle[-1][1]}") from unfeasible
+        graph = DependencyGraph.build(formulas, self.constants)
+        cycle = graph.find_cycle()
+        if cycle is not None:
+            raise CircularReference(str(cycle))
+        return [address for address in graph.topological_order() if address in formulas]
+
+    def graph(self) -> DependencyGraph:
+        """The dependency graph for this model, for callers that need paths."""
+        return DependencyGraph.build(self.formulas, self.constants)
 
     # --- reading ---
 
     def value(self, address: str) -> Scalar:
-        return self.values.get(_normalise_address(address))
+        return self.values.get(normalise_address(address))
 
     # --- patching ---
 
@@ -306,7 +300,7 @@ class Model:
         if not self.outputs:
             raise EvaluationError("no declared output cells, so there is nothing to measure")
 
-        address = _normalise_address(address)
+        address = normalise_address(address)
         formulas = dict(self.formulas)
         constants_backup = self.constants
 
@@ -358,55 +352,6 @@ def _relative(before: Scalar, after: Scalar) -> float | None:
     return delta / abs(float(before))
 
 
-# --- reference resolution --------------------------------------------------
-
-
-def _normalise_address(address: str) -> str:
-    sheet, _, coordinate = address.rpartition("!")
-    return f"{sheet.strip(chr(39))}!{coordinate.replace('$', '').upper()}"
-
-
-def _cell_address(reference: Reference, default_sheet: str) -> str:
-    sheet = (reference.sheet or default_sheet).strip("'")
-    return f"{sheet}!{get_column_letter(reference.column)}{reference.row}"
-
-
-def _range_addresses(node: RangeRef, default_sheet: str) -> Iterator[str]:
-    """Every address in the rectangle, row then column order.
-
-    Empty cells are included so SUMIF can line a criteria range up with a sum
-    range of the same shape.
-    """
-    sheet = (node.start.sheet or default_sheet).strip("'")
-    first_row, last_row = sorted((node.start.row, node.end.row))
-    first_column, last_column = sorted((node.start.column, node.end.column))
-
-    size = (last_row - first_row + 1) * (last_column - first_column + 1)
-    if size > MAX_RANGE_CELLS:
-        raise EvaluationError(
-            f"range covers {size} cells, above the {MAX_RANGE_CELLS} limit"
-        )
-
-    for row in range(first_row, last_row + 1):
-        for column in range(first_column, last_column + 1):
-            yield f"{sheet}!{get_column_letter(column)}{row}"
-
-
-def _precedents(node: Node, sheet: str, known: set[str]) -> Iterator[str]:
-    """Addresses this formula reads, restricted to cells that exist."""
-    from materia.formula import references
-
-    for reference in references(node):
-        if isinstance(reference, CellRef):
-            address = _cell_address(reference.reference, sheet)
-            if address in known:
-                yield address
-        else:
-            for address in _range_addresses(reference, sheet):
-                if address in known:
-                    yield address
-
-
 # --- evaluator -------------------------------------------------------------
 
 
@@ -427,11 +372,11 @@ class _Evaluator:
         if isinstance(node, Boolean):
             return node.value
         if isinstance(node, CellRef):
-            return self._values.get(_cell_address(node.reference, self._sheet))
+            return self._values.get(cell_address(node.reference, self._sheet))
         if isinstance(node, RangeRef):
             return RangeValue(
                 self._values.get(address)
-                for address in _range_addresses(node, self._sheet)
+                for address in range_addresses(node.start, node.end, self._sheet)
             )
         if isinstance(node, UnaryOp):
             return self._unary(node)

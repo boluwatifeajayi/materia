@@ -20,6 +20,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Iterator
 
 import openpyxl
 from openpyxl.utils import column_index_from_string, get_column_letter
@@ -164,6 +165,55 @@ def _normalise_gap(text: str) -> str:
     """Everything that is not a literal or a reference: operators, numbers,
     function names, punctuation."""
     return re.sub(r"\s+", "", text).upper()
+
+
+# A range wider than this is refused rather than enumerated. Real models do
+# not aggregate over a million cells, and silently taking minutes to walk one
+# would be worse than saying no.
+MAX_RANGE_CELLS = 65_536
+
+
+class RangeTooLarge(ValueError):
+    """A range covers more cells than Materia will enumerate."""
+
+
+def normalise_address(address: str) -> str:
+    """Put an address into the one form used as a key everywhere.
+
+    Sheet quotes and dollar signs are presentation, not identity, so
+    `\'My Sheet\'!$B$5` and `My Sheet!b5` are the same cell.
+    """
+    sheet, _, coordinate = address.rpartition("!")
+    return f"{sheet.strip(chr(39))}!{coordinate.replace('$', '').upper()}"
+
+
+def cell_address(reference: Reference, default_sheet: str) -> str:
+    """Resolve one reference to an absolute address."""
+    sheet = (reference.sheet or default_sheet).strip("'")
+    return f"{sheet}!{get_column_letter(reference.column)}{reference.row}"
+
+
+def range_addresses(
+    start: Reference, end: Reference, default_sheet: str
+) -> Iterator[str]:
+    """Every address in a rectangle, row then column order.
+
+    Empty cells are included, because SUMIF needs to line a criteria range up
+    with a sum range of the same shape.
+    """
+    sheet = (start.sheet or default_sheet).strip("'")
+    first_row, last_row = sorted((start.row, end.row))
+    first_column, last_column = sorted((start.column, end.column))
+
+    size = (last_row - first_row + 1) * (last_column - first_column + 1)
+    if size > MAX_RANGE_CELLS:
+        raise RangeTooLarge(
+            f"range covers {size} cells, above the {MAX_RANGE_CELLS} limit"
+        )
+
+    for row in range(first_row, last_row + 1):
+        for column in range(first_column, last_column + 1):
+            yield f"{sheet}!{get_column_letter(column)}{row}"
 
 
 @dataclass(frozen=True)
