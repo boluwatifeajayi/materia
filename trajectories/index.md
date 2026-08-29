@@ -12,6 +12,12 @@ A detector fires, the model forms a hypothesis, tests it, and reports what the e
 
 [Read it](featured/1-clean-win.md), raw trajectory `trajectories/solution/C03_adjudicator_P&L_AA15_D2.jsonl`
 
+### 4. The baseline reporting an error in a clean workbook
+
+A capable general agent flagging a deliberate override at high confidence, with a correct impact figure attached to a wrong judgement.
+
+[Read it](featured/4-baseline-false-positive.md), raw trajectory `trajectories/baseline/C10_baseline_openai.jsonl`
+
 ### 5. The cross check catching an invented figure
 
 The safety mechanism firing on a real failure rather than a constructed one.
@@ -34,27 +40,26 @@ No trajectory in any run so far calls `recompute_with_patch` more than once on a
 
 So the retry the table describes has not happened. It is a plausible path through the loop and the loop supports it, but supporting a path is not the same as having walked it, and a trajectory written to demonstrate a capability nobody exercised would be a fabrication.
 
-### 4. The baseline reporting errors in a clean workbook
-
-The harness exists as of T18 and there is a completed baseline run against `C03` in the index below. Half of what this entry describes is already in it.
-
-On `C03` the baseline found both seeded mutations and proposed the right formula for each. Having no way to make another program recalculate the workbook, it wrote its own evaluator in Python. Three of the four impact figures it then reported are right. The fourth says `Revenue!H5` moves total EBITDA by 20,785,882 where the measured figure is 8,704,573, and moves enterprise value by 134,475,619 where the measured figure is 92,752,830. Neither number corresponds to any quantity in the workbook. Both are reported at high confidence, wrapped in a paragraph of correct reasoning about why the cell is wrong.
-
-It had a check available. At step 33 it went looking for the values cached in the workbook, which would have caught the error at once, and wrote `load_workbook(path, True)`. The second positional argument of that function is `read_only`, not `data_only`, so it got formula strings back where numbers were expected. Nothing stopped.
-
-That is the estimated impact half of this entry, on the first workbook, unprompted. What is still missing is the other half, a baseline reporting findings on a workbook with nothing wrong in it, and that has not been run. A seeded workbook cannot show it however the run goes. It needs `C09` or `C10`, which the scored run in T19 covers.
-
-The equivalent measurement does exist without an agent: the detectors alone report twenty one findings on `C09` and twenty five on `C10`, both of which contain no errors at all. That is in the changelog as Iteration 1. It is not this trajectory.
-
 ## Every trajectory
 
 The same cell appears more than once where it was adjudicated in more than one run. The run column tells them apart, and the file column says which run each came from.
 
 | Run | Agent | Cell | Steps | Tool calls | Verdict | Tokens | File |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| `base-C01-5ca5` | baseline | - | 54 | 17 | 0 reported | 214,596 | `baseline/C01_baseline_openai.jsonl` |
+| `base-C02-1569` | baseline | - | 37 | 11 | 1 reported | 129,864 | `baseline/C02_baseline_openai.jsonl` |
 | `base-C03-d7d6` | baseline | - | 7 | 1 | 0 reported | 1,199 | `baseline/C03_baseline_groq.jsonl` |
-| `base-C03-a6d2` | baseline | - | 49 | 15 | 2 reported | 177,276 | `baseline/C03_baseline_openai.jsonl` |
+| `base-C03-365b` | baseline | - | 57 | 18 | 0 reported | 225,324 | `baseline/C03_baseline_openai.jsonl` |
 | `base-C03-f2e3` | baseline | - | 46 | 14 | 2 reported | 151,079 | `baseline/C03_baseline_openai_inherited_path.jsonl` |
+| `base-C04-c1d1` | baseline | - | 49 | 15 | 1 reported | 209,212 | `baseline/C04_baseline_openai.jsonl` |
+| `base-C05-fbfa` | baseline | - | 37 | 11 | 1 reported | 119,951 | `baseline/C05_baseline_openai.jsonl` |
+| `base-C06-6e61` | baseline | - | 49 | 15 | 3 reported | 200,747 | `baseline/C06_baseline_openai.jsonl` |
+| `base-C07-371d` | baseline | - | 51 | 16 | 1 reported | 214,089 | `baseline/C07_baseline_openai.jsonl` |
+| `base-C08-4bec` | baseline | - | 48 | 15 | 2 reported | 221,470 | `baseline/C08_baseline_openai.jsonl` |
+| `base-C09-3cde` | baseline | - | 48 | 15 | 0 reported | 229,994 | `baseline/C09_baseline_openai.jsonl` |
+| `base-C10-45de` | baseline | - | 43 | 13 | 1 reported | 164,666 | `baseline/C10_baseline_openai.jsonl` |
+| `base-C11-24ce` | baseline | - | 46 | 14 | 1 reported | 201,883 | `baseline/C11_baseline_openai.jsonl` |
+| `base-C12-e75f` | baseline | - | 28 | 8 | 1 reported | 75,765 | `baseline/C12_baseline_openai.jsonl` |
 | `sol-C03-e76d` | adjudicator | Costs!C5 | 11 | 3 | INTENTIONAL | 5,553 | `solution/C03_adjudicator_Costs_C5_D2.jsonl` |
 | `sol-C03-7297` | adjudicator | P&L!AA15 | 14 | 4 | ERROR | 9,035 | `solution/C03_adjudicator_P&L_AA15_D2.jsonl` |
 | `sol-C03-247d` | adjudicator | Revenue!C3 | 14 | 4 | INTENTIONAL | 6,809 | `solution/C03_adjudicator_Revenue_C3_D1.jsonl` |
@@ -72,4 +77,4 @@ The same cell appears more than once where it was adjudicated in more than one r
 | `sol-C03-c194` | adjudicator | P&L!AA3 | 8 | 2 | INTENTIONAL | 3,104 | `solution_full/C03_adjudicator_P&L_AA3_D1.jsonl` |
 | `sol-C03-38d5` | adjudicator | P&L!AA5 | 8 | 2 | - | 3,324 | `solution_full/C03_adjudicator_P&L_AA5_D2.jsonl` |
 
-19 trajectories.
+30 trajectories.

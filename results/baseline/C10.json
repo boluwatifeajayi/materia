@@ -1,0 +1,26 @@
+{
+  "failed": false,
+  "findings": [
+    {
+      "cell": "I12",
+      "confidence": "high",
+      "current_formula": "37594",
+      "evidence": "I12 is the sole hardcoded value in the monthly Overhead roll-forward. The surrounding formulas use prior-month overhead times (1 + Assumptions!$B$18): H12 is 26,709 and the proposed formula produces 26,853, rather than 37,594. The erroneous hardcode causes all subsequent monthly overhead formulas (J12:Z12) to roll forward from the inflated base. Recalculating I:Z reduces overhead by 202,461 in total and the O:Z exit-run-rate EBITDA by 137,142; at the 6.4x multiple this increases enterprise value by 877,709 after rounding.",
+      "impact": {
+        "P&L!AA15": 202461.0,
+        "Valuation!B7": 877709.0
+      },
+      "proposed_formula": "=ROUND(H12*(1+Assumptions!$B$18),0)",
+      "sheet": "Costs"
+    }
+  ],
+  "stopped": null,
+  "tokens": {
+    "in": 160901,
+    "out": 3765
+  },
+  "tool_calls": 13,
+  "trace_path": "trajectories/baseline/C10_baseline_openai.jsonl",
+  "turns": 14,
+  "workbook": "C10.xlsx"
+}

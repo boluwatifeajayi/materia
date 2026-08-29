@@ -253,39 +253,36 @@ FEATURED: list[Featured] = [
     Featured(
         number=4,
         slug="baseline-false-positive",
-        title="The baseline reporting errors in a clean workbook",
-        shows="The failure the whole project is about: a capable general agent reporting confident findings on a workbook with nothing wrong in it.",
-        path=None,
+        title="The baseline reporting an error in a clean workbook",
+        shows="A capable general agent flagging a deliberate override at high confidence, with a correct impact figure attached to a wrong judgement.",
+        path="trajectories/baseline/C10_baseline_openai.jsonl",
         preamble=(
-            "The harness exists as of T18 and there is a completed baseline "
-            "run against `C03` in the index below. Half of what this entry "
-            "describes is already in it.\n\n"
-            "On `C03` the baseline found both seeded mutations and proposed "
-            "the right formula for each. Having no way to make another "
-            "program recalculate the workbook, it wrote its own evaluator in "
-            "Python. Three of the four impact figures it then reported are "
-            "right. The fourth says `Revenue!H5` moves total EBITDA by "
-            "20,785,882 where the measured figure is 8,704,573, and moves "
-            "enterprise value by 134,475,619 where the measured figure is "
-            "92,752,830. Neither number corresponds to any quantity in the "
-            "workbook. Both are reported at high confidence, wrapped in a "
-            "paragraph of correct reasoning about why the cell is wrong.\n\n"
-            "It had a check available. At step 33 it went looking for the "
-            "values cached in the workbook, which would have caught the error "
-            "at once, and wrote `load_workbook(path, True)`. The second "
-            "positional argument of that function is `read_only`, not "
-            "`data_only`, so it got formula strings back where numbers were "
-            "expected. Nothing stopped.\n\n"
-            "That is the estimated impact half of this entry, on the first "
-            "workbook, unprompted. What is still missing is the other half, a "
-            "baseline reporting findings on a workbook with nothing wrong in "
-            "it, and that has not been run. A seeded workbook cannot show it "
-            "however the run goes. It needs `C09` or `C10`, which the scored "
-            "run in T19 covers.\n\n"
-            "The equivalent measurement does exist without an agent: the "
-            "detectors alone report twenty one findings on `C09` and twenty "
-            "five on `C10`, both of which contain no errors at all. That is "
-            "in the changelog as Iteration 1. It is not this trajectory."
+            "`C10` is a clean control. It contains no errors. It does contain "
+            "three deliberate pattern breaks, and one of them is a manual "
+            "override in `Costs!I12`, a one off office move held at a fixed "
+            "figure on purpose.\n\n"
+            "The baseline flags it. It reports `Costs!I12` as an error at "
+            "high confidence and proposes restoring the inflation formula. "
+            "The cell carries a comment, readable through the same library "
+            "the agent is using all run: \"One off office move approved by "
+            "the board in month 7. Held at this figure on purpose, do not "
+            "restore the inflation formula.\" The agent never reads a "
+            "comment. The string `.comment` does not appear anywhere in this "
+            "trajectory, and neither does the word `board`. It proposes "
+            "exactly the change the cell asks it not to make.\n\n"
+            "**The impact figure it attaches is correct.** 202,461 on total "
+            "EBITDA and 877,709 on enterprise value, both verified against "
+            "the recompute engine. This is the sharper version of the "
+            "problem, and it is worth being precise about it: the number is "
+            "not the failure here. A system can measure consequence "
+            "perfectly and still be wrong, because whether a cell is an error "
+            "is a question about intent, and the evidence for intent was "
+            "sitting on the cell.\n\n"
+            "This is one false positive across two clean workbooks, which is "
+            "a good result and better than the detectors manage by a factor "
+            "of forty six. It is still the finding a user opens, checks, and "
+            "finds was deliberate, and it is the reason declining is a "
+            "success state in our design rather than a missing answer."
         ),
     ),
     Featured(

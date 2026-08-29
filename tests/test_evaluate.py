@@ -16,12 +16,15 @@ import pytest
 
 from materia.evaluate import (
     Finding,
+    Scores,
     changelog_evidence,
     detector_results,
     headline_table,
     per_workbook_table,
+    run_cost,
     score,
     update_changelog,
+    update_results_table,
     write_results,
 )
 
@@ -310,3 +313,62 @@ class TestTheThesisCheckpoint:
             "If structural detection alone is this good, the premise of this "
             "project is wrong and the framing needs to change."
         )
+
+
+class TestTheResultsTableInTheDoc:
+    """Rule 7 of the working agreement: no number that belongs in results/ is
+    typed into a doc by hand."""
+
+    TABLE = (
+        "| Metric | Detectors only | Baseline | Materia |\n"
+        "| --- | --- | --- | --- |\n"
+        "| Material finding precision | 5% | `[TBD]` | `[TBD]` |\n"
+        "| Material recall | 93% | `[TBD]` | `[TBD]` |\n"
+        "| Cost per workbook | none | `[TBD]` | `[TBD]` |\n"
+    )
+
+    def _scores(self):
+        return Scores(
+            system="Baseline agent", material_precision=0.83, material_recall=0.71,
+            raw_anomaly_recall=0.73, false_positives_per_clean_workbook=0.5,
+            localisation_accuracy=1.0, repair_accuracy=0.92, reported=12,
+            per_workbook=(),
+        )
+
+    def test_it_fills_the_named_column_only(self, tmp_path):
+        document = tmp_path / "EVALUATION.md"
+        document.write_text(self.TABLE)
+        filled = update_results_table(document, "Baseline", self._scores(),
+                                      {"cost": "$0.41"})
+        text = document.read_text()
+        assert "| Material finding precision | 5% | 83% | `[TBD]` |" in text
+        assert "| Material recall | 93% | 71% | `[TBD]` |" in text
+        assert "| Cost per workbook | none | $0.41 | `[TBD]` |" in text
+        assert len(filled) == 3
+
+    def test_an_absent_column_changes_nothing(self, tmp_path):
+        document = tmp_path / "EVALUATION.md"
+        document.write_text(self.TABLE)
+        assert update_results_table(document, "Nonexistent", self._scores()) == []
+        assert document.read_text() == self.TABLE
+
+    def test_a_row_it_does_not_know_is_left_alone(self, tmp_path):
+        """So a row somebody added by hand is not overwritten with a guess."""
+        document = tmp_path / "EVALUATION.md"
+        document.write_text(self.TABLE + "| Something else | a | b | c |\n")
+        update_results_table(document, "Baseline", self._scores())
+        assert "| Something else | a | b | c |" in document.read_text()
+
+    def test_an_unpriced_model_reports_no_cost(self, tmp_path):
+        (tmp_path / "provider.json").write_text(json.dumps({"model": "not-a-real-model"}))
+        (tmp_path / "C01.json").write_text(json.dumps({"tokens": {"in": 1000, "out": 100}}))
+        assert run_cost(tmp_path) == {}
+
+    def test_the_cost_is_the_average_of_what_the_runs_spent(self, tmp_path):
+        (tmp_path / "provider.json").write_text(json.dumps({"model": "gpt-5.6-terra"}))
+        for name in ("C01", "C02"):
+            (tmp_path / f"{name}.json").write_text(
+                json.dumps({"tokens": {"in": 1_000_000, "out": 100_000}})
+            )
+        # $2.00 per million in, $12.00 per million out, same both runs.
+        assert run_cost(tmp_path) == {"cost": "$3.20 on `gpt-5.6-terra`"}

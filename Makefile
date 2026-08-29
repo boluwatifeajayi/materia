@@ -26,7 +26,7 @@ corpus-check:
 
 ## Baseline agent over the corpus. The scored sweep is T19.
 baseline:
-	$(PYTHON) -m materia baseline corpus/C03.xlsx \
+	$(PYTHON) -m materia baseline corpus \
 	  --traces trajectories/baseline --results results/baseline
 
 ## Materia over the corpus. Full corpus lands with T20.

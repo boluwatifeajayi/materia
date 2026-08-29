@@ -79,6 +79,8 @@ def _evaluate(arguments: argparse.Namespace) -> int:
         write_results,
     )
 
+    from materia.evaluate import baseline_results
+
     manifest = json.loads((arguments.corpus / "manifest.json").read_text())
     scores = [
         score(
@@ -88,17 +90,58 @@ def _evaluate(arguments: argparse.Namespace) -> int:
         )
     ]
 
+    # The baseline column appears once there is a run to fill it, and not
+    # before. docs/EVALUATION.md section 5 shows it as [TBD] until then rather
+    # than as a zero, because a system that has not run has no score.
+    baseline_directory = arguments.results / "baseline"
+    if baseline_directory.is_dir():
+        found = baseline_results(baseline_directory)
+        if found:
+            scores.append(score("Baseline agent", found, manifest))
+            expected = {entry["id"] for entry in manifest["workbooks"]}
+            missing = sorted(expected - set(found))
+            if missing:
+                print(
+                    "baseline: no result for " + ", ".join(missing)
+                    + ". Scored as reporting nothing on those.",
+                    file=sys.stderr,
+                )
+
     written = write_results(scores, arguments.results)
     for name, path in written.items():
         print(f"{name}: {path}")
 
-    if arguments.changelog:
+    # Rule 7: no number that belongs in results/ is typed into a doc by hand.
+    if arguments.document and Path(arguments.document).exists():
+        from materia.evaluate import run_cost, update_results_table
+
+        columns = {"Detectors only": "Detectors only", "Baseline agent": "Baseline"}
         for item in scores:
-            if update_changelog(arguments.changelog, "Iteration 1", item):
-                print(f"changelog: Iteration 1 filled in {arguments.changelog}")
+            column = columns.get(item.system)
+            if column is None:
+                continue
+            extras = (
+                run_cost(baseline_directory) if item.system == "Baseline agent"
+                else {"cost": "none, no model involved"}
+            )
+            filled = update_results_table(arguments.document, column, item, extras)
+            if filled:
+                print(f"{arguments.document}: filled the {column} column, "
+                      f"{len(filled)} rows")
+
+    if arguments.changelog:
+        # Each system fills its own row. Looping every score into one stage
+        # wrote the baseline's numbers over the detectors' in Iteration 1.
+        stages = {"Detectors only": "Iteration 1", "Baseline agent": "Baseline"}
+        for item in scores:
+            stage = stages.get(item.system)
+            if stage is None:
+                continue
+            if update_changelog(arguments.changelog, stage, item):
+                print(f"changelog: {stage} filled in {arguments.changelog}")
             else:
                 print(
-                    f"changelog: no Iteration 1 row in {arguments.changelog}",
+                    f"changelog: no {stage} row in {arguments.changelog}",
                     file=sys.stderr,
                 )
                 return 1
@@ -297,32 +340,26 @@ def _trace_index(arguments: argparse.Namespace) -> int:
     return 0
 
 
-def _baseline(arguments: argparse.Namespace) -> int:
+# Published rates for the scored provider, so a run can say what it cost
+# rather than leaving it to be worked out later. docs/EVALUATION.md section 4.
+RATES_USD_PER_MILLION = {"gpt-5.6-terra": (2.00, 12.00)}
+
+
+def _cost(model: str, tokens: dict[str, int]) -> float | None:
+    rate = RATES_USD_PER_MILLION.get(model)
+    if rate is None:
+        return None
+    return tokens["in"] * rate[0] / 1e6 + tokens["out"] * rate[1] / 1e6
+
+
+def _baseline_one(workbook, outputs, client, arguments):
+    """Run one workbook and write its result. Returns the result and an exit code."""
     import json
 
-    from materia.audit import outputs_for
     from materia.baseline import run_baseline
-    from materia.llm import ProviderError, get_client
-
-    try:
-        client = get_client(arguments.provider)
-    except ProviderError as error:
-        print(error, file=sys.stderr)
-        return 1
-
-    outputs = (
-        [item.strip() for item in arguments.outputs.split(",")]
-        if arguments.outputs
-        else None
-    )
-    try:
-        outputs = outputs or outputs_for(arguments.workbook)
-    except ValueError as error:
-        print(error, file=sys.stderr)
-        return 1
 
     result = run_baseline(
-        arguments.workbook, outputs, client,
+        workbook, outputs, client,
         trace_directory=arguments.traces,
         max_turns=arguments.max_turns,
         max_tokens=arguments.max_tokens,
@@ -342,8 +379,10 @@ def _baseline(arguments: argparse.Namespace) -> int:
     print(f"  trajectory: {result.trace_path}")
 
     if arguments.results:
+        # Written as each workbook finishes, so a sweep that dies halfway
+        # keeps what it paid for.
         arguments.results.mkdir(parents=True, exist_ok=True)
-        path = arguments.results / f"{Path(arguments.workbook).stem}.json"
+        path = arguments.results / f"{Path(workbook).stem}.json"
         path.write_text(json.dumps(result.as_dict(), indent=2, sort_keys=True) + "\n")
         from materia.llm import write_provenance
 
@@ -352,7 +391,68 @@ def _baseline(arguments: argparse.Namespace) -> int:
 
     # A run the provider cut short is not a baseline that found nothing, and
     # make must not treat it as one.
-    return 1 if result.failed else 0
+    return result, 1 if result.failed else 0
+
+
+def _baseline(arguments: argparse.Namespace) -> int:
+    import json
+
+    from materia.audit import outputs_for
+    from materia.llm import ProviderError, get_client
+
+    try:
+        client = get_client(arguments.provider)
+    except ProviderError as error:
+        print(error, file=sys.stderr)
+        return 1
+
+    declared = (
+        [item.strip() for item in arguments.outputs.split(",")]
+        if arguments.outputs
+        else None
+    )
+
+    if arguments.workbook.is_dir():
+        manifest = json.loads((arguments.workbook / "manifest.json").read_text())
+        workbooks = [arguments.workbook / entry["file"] for entry in manifest["workbooks"]]
+    else:
+        workbooks = [arguments.workbook]
+
+    totals = {"in": 0, "out": 0}
+    findings = failures = 0
+    for index, workbook in enumerate(workbooks, start=1):
+        try:
+            outputs = declared or outputs_for(workbook)
+        except ValueError as error:
+            print(error, file=sys.stderr)
+            return 1
+
+        if len(workbooks) > 1:
+            print(f"\n[{index}/{len(workbooks)}] {workbook.name}")
+        result, code = _baseline_one(workbook, outputs, client, arguments)
+        failures += code
+        findings += len(result.findings)
+        totals["in"] += result.tokens["in"]
+        totals["out"] += result.tokens["out"]
+
+        if len(workbooks) > 1:
+            spent = _cost(client.model, totals)
+            running = f"  running total: {totals['in'] + totals['out']:,} tokens"
+            if spent is not None:
+                running += (f", ${spent:.2f} spent, "
+                            f"${spent / index * len(workbooks):.2f} projected")
+            print(running)
+
+    if len(workbooks) > 1:
+        print(f"\n{len(workbooks)} workbooks, {findings} findings reported, "
+              f"{totals['in'] + totals['out']:,} tokens")
+        spent = _cost(client.model, totals)
+        if spent is not None:
+            print(f"cost at published {client.model} rates: ${spent:.2f}")
+        if failures:
+            print(f"{failures} of {len(workbooks)} were cut short by the provider",
+                  file=sys.stderr)
+    return 1 if failures else 0
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -379,6 +479,10 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=None,
         help="fill the matching changelog row in this file",
+    )
+    evaluate.add_argument(
+        "--document", type=Path, default=Path("docs/EVALUATION.md"),
+        help="results table to fill in place; pass an empty path to skip",
     )
     evaluate.set_defaults(handler=_evaluate)
 

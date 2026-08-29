@@ -1,0 +1,49 @@
+{
+  "failed": false,
+  "findings": [
+    {
+      "cell": "I9",
+      "confidence": "high",
+      "current_formula": "=H5+I6+I7",
+      "evidence": "Closing customers in every other monthly column use that same column's opening customers (for example, H9 = H5+H6+H7 and J9 = J5+J6+J7). I9 alone uses H5, the prior month's opening balance, instead of I5. This understates I9 and all subsequent customer/revenue periods through the roll-forward.",
+      "impact": {
+        "P&L!AA15": 269824.0,
+        "Valuation!B7": 1599468.0
+      },
+      "proposed_formula": "=I5+I6+I7",
+      "sheet": "Revenue"
+    },
+    {
+      "cell": "C5",
+      "confidence": "high",
+      "current_formula": "=Assumptions!$B$13",
+      "evidence": "C5 is the first-period Headcount balance but references 'New hires per month' (Assumptions B13, 1). The opening balance should reference 'Opening headcount' (Assumptions B12, 21); later periods then correctly add B13 to the preceding headcount. The current formula omits 20 staff from every forecast period.",
+      "impact": {
+        "P&L!AA15": -3747480.0,
+        "Valuation!B7": -15552042.0
+      },
+      "proposed_formula": "=Assumptions!$B$12",
+      "sheet": "Costs"
+    },
+    {
+      "cell": "K7",
+      "confidence": "high",
+      "current_formula": "=K5-K6",
+      "evidence": "Cost of sales is already presented as a negative amount in row 6. Gross profit is revenue plus cost of sales in every other month (for example J7 = J5+J6 and L7 = L5+L6); K7 uniquely subtracts the negative expense, incorrectly adding it to gross profit.",
+      "impact": {
+        "P&L!AA15": -355740.0
+      },
+      "proposed_formula": "=K5+K6",
+      "sheet": "P&L"
+    }
+  ],
+  "stopped": null,
+  "tokens": {
+    "in": 195216,
+    "out": 5531
+  },
+  "tool_calls": 15,
+  "trace_path": "trajectories/baseline/C06_baseline_openai.jsonl",
+  "turns": 16,
+  "workbook": "C06.xlsx"
+}

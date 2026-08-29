@@ -114,38 +114,26 @@ Those are the solution's own measured spend: 3.0 model calls and 9,463 tokens pe
 
 Output: `results/baseline/C03.json` and a full trajectory in `trajectories/baseline/`.
 
-Measured on `gpt-5.6-terra`, one completed run against `C03` with those caps and the fixed toolset:
+Measured on `gpt-5.6-terra`, the full twelve workbook run:
 
 | | |
 | --- | --- |
-| Model calls | 16 |
-| Tokens | 177,276, at 172,752 in and 4,524 out |
-| Tool calls | 15 |
-| Findings | 2 |
+| Runtime | about 20 minutes |
+| Tokens | 2,207,561 |
+| Cost | $4.95, at $2.00 per million input and $12.00 per million output |
+| Per workbook | $0.41 |
+| Findings | 12 |
+| Runs that used the whole token budget | 5 of 12 |
 
-At the published `gpt-5.6-terra` rate of $2.00 per million input tokens and $12.00 per million output, that is **$0.40 for one workbook**.
+Output: `results/baseline/C01.json` through `C12.json` with `provider.json` beside them recording the model, and one trajectory per workbook in `trajectories/baseline/`.
 
-It finished on its own rather than hitting a cap. The trajectory is in `trajectories/index.md`.
+`make eval` scores it. The baseline column of the headline table in `docs/EVALUATION.md` section 5 is filled from these files, and so is the Baseline row of the changelog in `README.md`. Nothing in either is typed by hand.
 
-**What it produced, and what that shows.** It found both seeded mutations and proposed the right formula for each. Its impact figures are its own: with no way to have another program recalculate the workbook, it wrote its own evaluator in Python, complete with Excel's half away from zero rounding.
+**What it found.** 83% material finding precision against the detectors' 5%, and one false positive across the two clean workbooks against the detectors' 46. It is a strong baseline, which is what `docs/AGENT_INSTRUCTIONS.md` section 3 set out to build.
 
-One of the four figures it reported is materially wrong.
+Every impact figure it reported, 21 of them, is exactly right when checked against the recompute engine. It got there by reading the values cached in each workbook and computing the change on the affected chain, rather than reimplementing the model. The discussion in `docs/EVALUATION.md` section 5 covers what that means for the project's framing, including where it cuts against it.
 
-| | Baseline claimed | Measured | Off by |
-| --- | --- | --- | --- |
-| `Revenue!H5`, effect on `P&L!AA15` | 20,785,882 | 8,704,573 | 139% |
-| `Revenue!H5`, effect on `Valuation!B7` | 134,475,619 | 92,752,830 | 45% |
-| `P&L!AA15`, effect on `P&L!AA15` | 1,550,882 | 1,550,882 | correct |
-
-Neither wrong figure corresponds to any quantity in the workbook under any reading. Both are reported at `high` confidence, each wrapped in a paragraph of specific and largely correct reasoning about why the cell is an error. The finding is right, the repair is right, and the number a person would act on is wrong by more than the number itself.
-
-The mechanism is visible in the trajectory. Its evaluator puts total EBITDA at 42,274,595 where the workbook's own value is 14,816,742, roughly three times out. It then reported the difference between two runs of that evaluator: 63,060,477 minus 42,274,595 is 20,785,882, and 384,831,049 minus 250,355,430 is 134,475,619. Both differences are exactly the figures it published. Taking a difference hides the error in the level, and nothing in its process compares either number against the workbook.
-
-**It had a check available and got it wrong.** At step 33 it tried to read the values cached in the workbook, which is exactly the right instinct: reconciling against those would have caught a threefold error at once. It wrote `load_workbook('model.xlsx', True)`. The second positional argument of that function is `read_only`, not `data_only`, so it read the workbook in read only mode and got formula strings back.
-
-Every formula cell in every corpus workbook carries its cached value, written at generation time by `src/materia/corpus/generate.py`. `load_workbook(path, data_only=True)` returns 14,816,742 for `P&L!AA15`. The check the agent reached for would have worked.
-
-The typo is not the interesting part. What matters is that its verification step came back with formula strings where numbers were expected, which is what a failed check looks like, and nothing stopped. It went on to publish a figure derived from an unvalidated reimplementation at `high` confidence, describing the reasoning behind the finding in detail and saying nothing about the state of the number. That is the problem the project is about, from a capable agent told that precision counts, on the first workbook, without being provoked. The same failure appears one layer down in our own system, where an adjudicator called the recompute tool and then reported different figures than it received. The difference is that ours is caught: the reported figure is read back out of the tool result, so the number a user sees is measured whatever the model says about it. See README section 8.
+The one false positive is worth opening: `Costs!I12` in `C10`, a deliberate override carrying a comment that says not to restore the formula, reported at high confidence with a proposal to restore the formula. Its impact figure is correct. It is featured trajectory 4 in `trajectories/index.md`.
 
 ## 5. Run the solution
 

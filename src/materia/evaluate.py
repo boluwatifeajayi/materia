@@ -305,6 +305,49 @@ def detector_results(corpus: str | Path, manifest: dict) -> ResultSet:
     return results
 
 
+def baseline_results(directory: str | Path) -> ResultSet:
+    """Read what the baseline agent reported, from the files its runs wrote.
+
+    The agent writes its own schema, so this is deliberately forgiving about
+    shape and strict about nothing being invented: a finding with no cell is
+    dropped rather than guessed at, and an impact that is not a mapping of
+    numbers is discarded rather than coerced. What it reported is what it is
+    scored on.
+    """
+    directory = Path(directory)
+    results: ResultSet = {}
+    for path in sorted(directory.glob("*.json")):
+        if path.name == "provider.json":
+            continue
+        data = json.loads(path.read_text())
+        identifier = Path(data.get("workbook", path.stem)).stem
+        findings = []
+        for item in data.get("findings") or []:
+            if not isinstance(item, dict):
+                continue
+            cell = item.get("cell")
+            if not cell:
+                continue
+            sheet = item.get("sheet")
+            impact = item.get("impact")
+            findings.append(
+                Finding(
+                    address=f"{sheet}!{cell}" if sheet else str(cell),
+                    proposed_formula=item.get("proposed_formula"),
+                    impact={
+                        str(k): float(v)
+                        for k, v in (impact or {}).items()
+                        if isinstance(v, (int, float)) and not isinstance(v, bool)
+                    }
+                    if isinstance(impact, dict)
+                    else {},
+                    confidence=item.get("confidence"),
+                )
+            )
+        results[identifier] = findings
+    return results
+
+
 # --- changelog -------------------------------------------------------------
 
 CHANGELOG_MARKER = "| **{stage}** |"
@@ -347,3 +390,87 @@ def update_changelog(readme: str | Path, stage: str, item: Scores) -> bool:
         readme.write_text("".join(lines))
         return True
     return False
+
+
+# --- the results table in docs/EVALUATION.md -------------------------------
+
+# Row label to the value that fills it. Keyed by label so the table can be
+# reordered or reworded without this silently filling the wrong row.
+_DOC_ROWS = {
+    "Material finding precision": lambda i, e: _percent(i.material_precision),
+    "Material recall": lambda i, e: _percent(i.material_recall),
+    "Raw anomaly recall": lambda i, e: _percent(i.raw_anomaly_recall),
+    "False positives per clean workbook": lambda i, e: _number(
+        i.false_positives_per_clean_workbook
+    ),
+    "Localisation accuracy": lambda i, e: _percent(i.localisation_accuracy),
+    "Repair accuracy": lambda i, e: _percent(i.repair_accuracy),
+    "Human time per workbook": lambda i, e: "not measured",
+    "Cost per workbook": lambda i, e: e.get("cost", "not measured"),
+}
+
+
+def run_cost(directory: str | Path) -> dict[str, str]:
+    """What one workbook cost, averaged over the runs in a result directory.
+
+    Read from the token counts each run wrote and the rate for the model that
+    produced them, so the figure in the doc is the figure that was spent.
+    Returns an empty mapping when the model has no published rate here, rather
+    than a number nobody can check.
+    """
+    from materia.__main__ import RATES_USD_PER_MILLION
+
+    directory = Path(directory)
+    provider = directory / "provider.json"
+    if not provider.exists():
+        return {}
+    model = json.loads(provider.read_text()).get("model")
+    rate = RATES_USD_PER_MILLION.get(model)
+    if rate is None:
+        return {}
+
+    runs = [p for p in sorted(directory.glob("*.json")) if p.name != "provider.json"]
+    if not runs:
+        return {}
+    spent = 0.0
+    for path in runs:
+        tokens = json.loads(path.read_text()).get("tokens") or {}
+        spent += tokens.get("in", 0) * rate[0] / 1e6 + tokens.get("out", 0) * rate[1] / 1e6
+    return {"cost": f"${spent / len(runs):.2f} on `{model}`"}
+
+
+def update_results_table(document: str | Path, column: str, item: Scores,
+                         extras: dict[str, str] | None = None) -> list[str]:
+    """Fill one column of the results table in docs/EVALUATION.md in place.
+
+    Rule 7 of the working agreement: no number that belongs in `results/` is
+    typed into a doc by hand. Returns the row labels it filled.
+    """
+    document = Path(document)
+    lines = document.read_text().splitlines(keepends=True)
+
+    header = next(
+        (i for i, line in enumerate(lines)
+         if line.startswith("| Metric |") and column in line),
+        None,
+    )
+    if header is None:
+        return []
+    index = [cell.strip() for cell in lines[header].split("|")[1:-1]].index(column)
+
+    filled = []
+    for position in range(header + 2, len(lines)):
+        line = lines[position]
+        if not line.startswith("|"):
+            break
+        cells = line.rstrip("\n").split("|")
+        label = cells[1].strip()
+        value = _DOC_ROWS.get(label)
+        if value is None:
+            continue
+        cells[index + 1] = f" {value(item, extras or {})} "
+        lines[position] = "|".join(cells) + "\n"
+        filled.append(label)
+
+    document.write_text("".join(lines))
+    return filled

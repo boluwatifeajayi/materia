@@ -1,0 +1,13 @@
+{
+  "failed": false,
+  "findings": [],
+  "stopped": "token budget of 211,000 reached",
+  "tokens": {
+    "in": 224510,
+    "out": 5484
+  },
+  "tool_calls": 15,
+  "trace_path": "trajectories/baseline/C09_baseline_openai.jsonl",
+  "turns": 15,
+  "workbook": "C09.xlsx"
+}

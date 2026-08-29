@@ -105,7 +105,13 @@ class TestTheCheckFiringIsReadable:
 class TestTheFeaturedList:
     def test_the_two_that_exist_are_marked_available(self):
         available = {f.slug for f in FEATURED if f.available}
-        assert available == {"clean-win", "the-check-firing"}
+        # Derived rather than pinned: this guard is that `available` tracks
+        # what is on disk, not that a particular set of runs has happened.
+        assert available == {
+            item.slug for item in FEATURED
+            if item.path is not None and Path(item.path).exists()
+        }
+        assert available, "no featured trajectory exists at all"
 
     def test_every_entry_carries_a_preamble(self):
         """Including the missing ones. A gap with no explanation is worse than
@@ -145,7 +151,9 @@ class TestTheIndex:
         same way unless one of them says so."""
         assert "## Not present, and why" in index
         assert "2. Declining to flag a deliberate break" in index
-        assert "4. The baseline reporting errors in a clean workbook" in index
+        for item in FEATURED:
+            if not item.available:
+                assert f"{item.number}. {item.title}" in index
 
     def test_every_trajectory_on_disk_has_a_row(self, index):
         """Counted from the table itself rather than by run id prefix. The
@@ -181,7 +189,9 @@ class TestWriting:
 
         shutil.copytree("trajectories/solution", tmp_path / "solution")
         written = write_featured(tmp_path)
-        assert {p.name for p in written} == {"1-clean-win.md", "5-the-check-firing.md"}
+        assert {p.name for p in written} == {
+            f"{item.number}-{item.slug}.md" for item in FEATURED if item.available
+        }
 
     def test_the_rendered_file_carries_its_preamble(self):
         text = Path("trajectories/featured/5-the-check-firing.md").read_text()

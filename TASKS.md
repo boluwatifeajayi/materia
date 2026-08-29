@@ -61,7 +61,7 @@ Status values: `TODO`, `IN PROGRESS`, `DONE`, `CUT`.
 | ID | Task | Status | Acceptance |
 | --- | --- | --- | --- |
 | T18 | Baseline agent harness | DONE (proof run on OpenAI: Groq daily quota exhausted) | Sandboxed working dir, workbook copied in, shell tool, prompt from `docs/AGENT_INSTRUCTIONS.md` section 3. Turn and token caps equal to the solution's. Traced. Tested on one workbook on Groq. |
-| T19 | Baseline scored run | TODO | **OpenAI. Full 12 workbook corpus.** `make baseline`. Results to `results/baseline/`, traces to `trajectories/baseline/`. Tell me the estimated cost before running. |
+| T19 | Baseline scored run | DONE | **OpenAI. Full 12 workbook corpus.** `make baseline`. Results to `results/baseline/`, traces to `trajectories/baseline/`. Tell me the estimated cost before running. |
 | T20 | Solution scored run, no gate | TODO | **OpenAI. Full corpus, materiality gate disabled.** Record as changelog Iteration 2. This isolates hypothesis testing from materiality filtering. |
 
 ## Phase 6: The thesis
@@ -107,6 +107,6 @@ If behind, cut in this order. Do not improvise cuts.
 | 2 Graph and corpus | T06 to T09 | 4/4 |
 | 3 Detection | T10 to T11 | 2/2 |
 | 4 Agent layer | T12 to T17 | 6/6 |
-| 5 Baseline | T18 to T20 | 1/3 |
+| 5 Baseline | T18 to T20 | 2/3 |
 | 6 Thesis | T21 to T22 | 1/2 |
 | 7 Deliverables | T23 to T29 | 2/7 |

@@ -1,0 +1,25 @@
+{
+  "failed": false,
+  "findings": [
+    {
+      "cell": "J7",
+      "confidence": "high",
+      "current_formula": "=J5-J6",
+      "evidence": "P&L row 7 is gross profit and the cost-of-sales row (row 6) is already negative. Every other monthly gross-profit formula, including I7 and K7, adds the negative cost of sales (for example, =I5+I6 and =K5+K6). J7 instead subtracts J6, turning the negative cost into an addition. J6 is -193,066, so correcting the sign reduces J7, J15, and total EBITDA AA15 by 2 x 193,066 = 386,132. Valuation!B7 is unaffected because its EBITDA input sums months O:Z, which excludes month J.",
+      "impact": {
+        "P&L!AA15": -386132.0
+      },
+      "proposed_formula": "=J5+J6",
+      "sheet": "P&L"
+    }
+  ],
+  "stopped": null,
+  "tokens": {
+    "in": 116153,
+    "out": 3798
+  },
+  "tool_calls": 11,
+  "trace_path": "trajectories/baseline/C05_baseline_openai.jsonl",
+  "turns": 12,
+  "workbook": "C05.xlsx"
+}

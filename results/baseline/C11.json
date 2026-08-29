@@ -1,0 +1,26 @@
+{
+  "failed": false,
+  "findings": [
+    {
+      "cell": "Z12",
+      "confidence": "high",
+      "current_formula": "21192.2",
+      "evidence": "Z12 is the only non-formula month in the 24-period Overhead row. The immediately preceding periods roll forward overhead as ROUND(prior-month overhead*(1+monthly overhead inflation),0); applying that established pattern to Y12 (25,176) and the 0.72% rate gives 25,357, rather than the hardcoded 21,192.2. The hardcode lowers the final-month overhead by 4,164.8, overstating total EBITDA (P&L!AA15) by that amount. It also increases the trailing-12-month EBITDA used in Valuation!B5; at the 6.8x multiple, Enterprise Value (Valuation!B7) is overstated by 28,321 after rounding.",
+      "impact": {
+        "P&L!AA15": -4164.8,
+        "Valuation!B7": -28321.0
+      },
+      "proposed_formula": "=ROUND(Y12*(1+Assumptions!$B$18),0)",
+      "sheet": "Costs"
+    }
+  ],
+  "stopped": null,
+  "tokens": {
+    "in": 198289,
+    "out": 3594
+  },
+  "tool_calls": 14,
+  "trace_path": "trajectories/baseline/C11_baseline_openai.jsonl",
+  "turns": 15,
+  "workbook": "C11.xlsx"
+}

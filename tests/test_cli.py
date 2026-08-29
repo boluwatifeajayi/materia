@@ -293,8 +293,11 @@ class TestBaselineCommand:
             def __init__(self):
                 self.turn = 0
 
-            def complete(self, *_, **__):
-                self.turn += 1
+            def complete(self, system, messages, tools=None):
+                # A fresh conversation means a new workbook, so a sweep gets
+                # the same scripted behaviour on each one rather than only the
+                # first.
+                self.turn = 1 if len(messages) == 1 else self.turn + 1
                 if self.turn == 1 and findings is not None:
                     return AgentResponse(
                         text=None,
@@ -351,3 +354,87 @@ class TestBaselineCommand:
                            "--provider", "openai", "--traces", str(tmp_path))
         assert code == 1
         assert "OPENAI_API_KEY" in err
+
+    def test_a_directory_sweeps_the_whole_corpus(self, capsys, monkeypatch, tmp_path):
+        self._scripted(monkeypatch, [{"sheet": "Revenue", "cell": "H5", "confidence": "high"}])
+        code, out, _ = run(
+            capsys, "baseline", "corpus", "--traces", str(tmp_path),
+            "--results", str(tmp_path / "r"), "--max-turns", "2",
+        )
+        assert code == 0
+        assert "[1/12]" in out and "[12/12]" in out
+        assert "12 workbooks, 12 findings reported" in out
+        assert len(list((tmp_path / "r").glob("C*.json"))) == 12
+
+    def test_a_sweep_reports_what_it_has_spent_as_it_goes(self, capsys, monkeypatch, tmp_path):
+        """So a run that diverges from its estimate is visible partway
+        through rather than at the end."""
+        self._scripted(monkeypatch, [])
+        monkeypatch.setattr("materia.__main__.RATES_USD_PER_MILLION",
+                            {"scripted-1": (2.00, 12.00)})
+        _, out, _ = run(capsys, "baseline", "corpus", "--traces", str(tmp_path),
+                        "--max-turns", "2")
+        assert "spent" in out and "projected" in out
+        assert "cost at published scripted-1 rates" in out
+
+    def test_an_unpriced_model_says_nothing_about_cost(self, capsys, monkeypatch, tmp_path):
+        """Better silent than a number nobody measured."""
+        self._scripted(monkeypatch, [])
+        _, out, _ = run(capsys, "baseline", "corpus", "--traces", str(tmp_path),
+                        "--max-turns", "2")
+        assert "$" not in out
+
+
+class TestBaselineScoring:
+    def test_the_headline_gains_a_baseline_column_once_a_run_exists(
+        self, capsys, tmp_path
+    ):
+        import json as _json
+
+        results = tmp_path / "results"
+        (results / "baseline").mkdir(parents=True)
+        (results / "baseline" / "C03.json").write_text(_json.dumps({
+            "workbook": "C03.xlsx",
+            "findings": [{"sheet": "Revenue", "cell": "H5", "confidence": "high",
+                          "proposed_formula": "=G9", "impact": {"P&L!AA15": 8704573.0}}],
+        }))
+        code, out, err = run(capsys, "eval", "--results", str(results))
+        assert code == 0
+        headline = (results / "headline.md").read_text()
+        assert "Baseline agent" in headline
+        assert "Detectors only" in headline
+        # Eleven workbooks had no run, and the table must not imply they did.
+        assert "no result for" in err
+
+    def test_without_a_baseline_directory_the_column_stays_off(self, capsys, tmp_path):
+        code, _, _ = run(capsys, "eval", "--results", str(tmp_path))
+        assert code == 0
+        assert "Baseline agent" not in (tmp_path / "headline.md").read_text()
+
+    def test_each_system_fills_its_own_changelog_row(self, capsys, tmp_path):
+        """Every score used to be written into Iteration 1, so the baseline's
+        numbers landed on top of the detectors'."""
+        import json as _json
+
+        readme = tmp_path / "README.md"
+        readme.write_text(
+            "| Stage | What | Evidence | Decision |\n| --- | --- | --- | --- |\n"
+            "| **Baseline** | b | `[TBD]` | x |\n"
+            "| **Iteration 1** | d | `[TBD]` | y |\n"
+        )
+        results = tmp_path / "results"
+        (results / "baseline").mkdir(parents=True)
+        (results / "baseline" / "C03.json").write_text(_json.dumps({
+            "workbook": "C03.xlsx",
+            "findings": [{"sheet": "Revenue", "cell": "H5", "confidence": "high"}],
+        }))
+        run(capsys, "eval", "--results", str(results), "--changelog", str(readme))
+
+        rows = {
+            line.split("|")[1].strip(): line.split("|")[3].strip()
+            for line in readme.read_text().splitlines()
+            if line.startswith("| **")
+        }
+        assert rows["**Baseline**"] != rows["**Iteration 1**"]
+        assert "`[TBD]`" not in rows["**Baseline**"]
+        assert "`[TBD]`" not in rows["**Iteration 1**"]
