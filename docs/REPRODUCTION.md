@@ -165,7 +165,7 @@ Runs both systems three times over the corpus and reports mean and range per met
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | `PreflightRejected` on your own workbook | Contains VBA, external links, array formulas, or an unsupported function | Expected. The reason is named in the error. See README section 6. |
-| `make corpus-check` mismatch | Different `openpyxl` version writing different XML | Pin with `uv pip install -e ".[dev]" --exact`. Content is still equivalent. |
+| `make corpus-check` mismatch | Different `openpyxl` version writing different XML | `openpyxl` is pinned exactly in `pyproject.toml` for this reason, so first check that your install actually honoured the pin: `python -c "import openpyxl; print(openpyxl.__version__)"` must print the pinned version. |
 | Baseline run exceeds budget | Agent looping on a large workbook | Per workbook cap is in `config.yaml` as `baseline.max_turns`. Caps are identical for both systems. |
 | Rate limit errors | Concurrency | `make baseline CONCURRENCY=1` |
 

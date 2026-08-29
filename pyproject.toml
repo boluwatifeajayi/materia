@@ -11,7 +11,10 @@ requires-python = ">=3.11,<3.13"
 license = { text = "MIT" }
 
 dependencies = [
-    "openpyxl>=3.1",
+    # Exact pin, not a floor. openpyxl decides the XML that lands in the
+    # generated workbooks, so a different version changes their bytes and
+    # breaks the corpus/checksums.txt committed in T08.
+    "openpyxl==3.1.5",
     "networkx>=3.2",
     "anthropic>=0.39",
     "openai>=1.50",
