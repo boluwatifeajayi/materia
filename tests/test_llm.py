@@ -134,15 +134,22 @@ class TestErrorTranslation:
         assert isinstance(error, ModelNotAvailable)
         assert "guess" in str(error)
 
-    def test_a_missing_key_is_reported_before_any_request(self, monkeypatch):
+    def test_a_missing_key_names_the_selected_provider(self, monkeypatch):
+        """Found in a clean clone run. Following the guide and exporting only
+        an Anthropic key produced "GROQ_API_KEY is not set", which is true and
+        unhelpful: nothing said the provider defaults to groq."""
         monkeypatch.delenv("GROQ_API_KEY", raising=False)
-        with pytest.raises(ProviderError, match="GROQ_API_KEY"):
+        monkeypatch.delenv("MATERIA_PROVIDER", raising=False)
+        with pytest.raises(ProviderError) as raised:
             GroqClient()
+        assert "MATERIA_PROVIDER" in str(raised.value)
+        assert "the default" in str(raised.value)
 
-    def test_a_missing_anthropic_key_is_reported_too(self, monkeypatch):
+    def test_a_missing_anthropic_key_says_how_to_switch_back(self, monkeypatch):
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-        with pytest.raises(ProviderError, match="ANTHROPIC_API_KEY"):
+        with pytest.raises(ProviderError) as raised:
             AnthropicClient()
+        assert "MATERIA_PROVIDER=groq" in str(raised.value)
 
 
 class TestArgumentParsing:

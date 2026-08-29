@@ -122,7 +122,12 @@ class GroqClient:
 
         key = api_key or os.environ.get("GROQ_API_KEY")
         if not key:
-            raise ProviderError("GROQ_API_KEY is not set")
+            raise ProviderError(
+                "GROQ_API_KEY is not set. MATERIA_PROVIDER is "
+                f"{os.environ.get('MATERIA_PROVIDER', 'groq (the default)')!r}, so "
+                "either set GROQ_API_KEY, or set MATERIA_PROVIDER=anthropic and "
+                "ANTHROPIC_API_KEY to use the scored provider instead."
+            )
         self.model = model
         self.pacer = TokenPacer() if pacer is None else pacer
         self._client = OpenAI(

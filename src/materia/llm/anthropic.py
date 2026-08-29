@@ -37,7 +37,11 @@ class AnthropicClient:
 
         key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         if not key:
-            raise ProviderError("ANTHROPIC_API_KEY is not set")
+            raise ProviderError(
+                "ANTHROPIC_API_KEY is not set, and MATERIA_PROVIDER selects "
+                "anthropic. Set the key, or set MATERIA_PROVIDER=groq to use the "
+                "dev loop provider instead."
+            )
         self.model = model
         self._client = anthropic.Anthropic(
             api_key=key,
