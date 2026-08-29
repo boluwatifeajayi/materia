@@ -200,10 +200,17 @@ class TestProvenance:
 
 
 @pytest.mark.skipif(
-    not os.environ.get("GROQ_API_KEY"), reason="needs GROQ_API_KEY"
+    not (os.environ.get("GROQ_API_KEY") and os.environ.get("MATERIA_LIVE_TESTS")),
+    reason="set MATERIA_LIVE_TESTS=1 with a GROQ_API_KEY to run the live check",
 )
 class TestGroqLive:
-    """One real call. The dev loop provider has to actually work."""
+    """One real call. The dev loop provider has to actually work.
+
+    Opt in rather than automatic. docs/REPRODUCTION.md promises make verify
+    needs no API key, and on the free tier this call also waits on the token
+    pacer, which would make every test run a minute longer for no gain.
+    `python -m materia llm check` is the same check on demand.
+    """
 
     def test_a_tool_call_round_trips(self):
         client = GroqClient()
@@ -386,15 +393,29 @@ class TestTokenPacing:
         assert TokenPacer(8000).budget < 8000
 
     def test_it_waits_when_the_window_is_full(self, monkeypatch):
+        """The clock is advanced by the fake sleep. Stubbing sleep alone would
+        leave the pacer spinning against a real clock for a real minute, which
+        is what a rate limiter is supposed to feel like and not what a test
+        should."""
         from materia.llm import groq as groq_module
 
+        clock = [1000.0]
         slept: list[float] = []
-        monkeypatch.setattr(groq_module.time, "sleep", slept.append)
+
+        def fake_sleep(seconds):
+            slept.append(seconds)
+            clock[0] += seconds
+
+        monkeypatch.setattr(groq_module.time, "monotonic", lambda: clock[0])
+        monkeypatch.setattr(groq_module.time, "sleep", fake_sleep)
 
         pacer = groq_module.TokenPacer(8000)
         pacer.record(6000)
-        pacer.wait_for(2000)
+        waited = pacer.wait_for(2000)
+
         assert slept, "it should have waited"
+        assert waited == sum(slept)
+        assert waited < 120, "one window, not an unbounded spin"
 
     def test_spending_older_than_a_minute_stops_counting(self, monkeypatch):
         from materia.llm import groq as groq_module

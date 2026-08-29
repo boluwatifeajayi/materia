@@ -97,7 +97,14 @@ It must return exactly one of three verdicts:
 
 **`INTENTIONAL` is a first class success state.** This is the single most important detail in the design. If the only way to complete the task is to produce a finding, the model produces findings, including for the hardcoded actuals row in `C10`. Giving "this is fine, and here is why" the same status as a finding is what makes declining possible.
 
-**The model cannot state an impact it has not measured.** Any number in a report comes from `recompute_with_patch`, not from the model's text. This constraint is enforced in the renderer, which drops any finding whose delta does not have a matching tool result in the trajectory.
+**The model cannot state an impact it has not measured.** Any number in a report comes from `recompute_with_patch`, not from the model's text. This constraint is enforced in the renderer, which reads the figure out of the trajectory rather than out of the verdict.
+
+Two outcomes are possible when a reported figure does not line up:
+
+- **No tool result for the proposed repair.** The impact is unverifiable, and the finding is dropped and counted as a schema violation. A tool result for the same cell but a different formula does not count: a model that measured one hypothesis and proposed another has not measured the one it proposed.
+- **A tool result exists and the model reported something else.** The finding survives with the measured figure substituted, and the discrepancy is logged. Dropping it would lose a real error to a reporting mistake, and the number the user sees is measured either way, which is the actual guarantee.
+
+The second case is not hypothetical. It happened on the first candidate of the first live run: the model called the tool, received 8704573.0, and reported -6102169. See README section 8.
 
 ## 6. Recompute engine
 
