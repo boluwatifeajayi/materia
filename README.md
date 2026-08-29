@@ -172,6 +172,8 @@ This is not a prompting problem that goes away with a better instruction. It is 
 
 **Observed, not predicted.** On the first candidate of the first live adjudication run, the model called the recompute tool, received `{"P&L!AA15": 8704573.0, "Valuation!B7": 92752830.0}`, and then reported `{"P&L!AA15": -6102169, "Valuation!B7": -50782614}` as its measured impact. The verdict was right and the proposed repair was right. The numbers were invented. Rule 1 of its own instructions says never state an impact figure you did not obtain from the tool, and it had the figure. The trajectory is `trajectories/solution/C03_adjudicator_Revenue_H5_D1.jsonl`, steps 4 and 7.
 
+**And again, one layer up.** The report writer agent is handed verified figures and told not to reinterpret them. It printed every figure correctly and then wrote that enterprise value was overstated when the measurement says understated, flipping the direction of every finding, and put the dependency path at 6 steps when it is 21. Guarding the figures does not guard what is said about them, which is why the renderer that ships is deterministic. See `docs/AGENT_INSTRUCTIONS.md` section 2.
+
 Three mitigations, in order of how much they helped: `[TBD, fill from evaluation]`
 
 1. The recompute gate. The model cannot report an impact it has not had verified.

@@ -116,6 +116,12 @@ There is no `IMMATERIAL` verdict here on purpose. The materiality gate assigns i
 
 Called once per workbook, after adjudication. Model: `claude-sonnet-5`. No tools.
 
+**Built, run, and not shipped.** The deterministic renderer produces the report a user sees. This agent exists because the trajectory deliverable requires a representative trace for every agent used, and because what it did is worth reporting: given only verified figures and told in its own instructions not to reinterpret them, it reinterpreted them.
+
+On C03 it wrote that enterprise value was **overstated** by 92,752,830. The measured delta is positive, so the output is understated: correcting the cell raises it. It flipped the direction of every finding. It also wrote that the error reaches enterprise value in **6 steps** where the dependency path is 21, and labelled the four `INTENTIONAL` verdicts as "suppressed", which is a different bucket meaning something else.
+
+None of those is an invented impact figure, and the figure check passed: every number it printed came from the brief. The errors are in what it said the numbers meant. That is the same failure as the adjudicator's, one layer up, and it is why cut list item 4 was taken: the renderer ships and this does not. The trajectory is `trajectories/solution/C03_reporter.jsonl`.
+
 ### System prompt
 
 ```

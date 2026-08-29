@@ -69,7 +69,7 @@ Status values: `TODO`, `IN PROGRESS`, `DONE`, `CUT`.
 | ID | Task | Status | Acceptance |
 | --- | --- | --- | --- |
 | T21 | Materiality gate | TODO | Threshold on declared outputs, default 1%. Suppressed candidates counted and shown, never silently dropped. Buckets sum to the detector count. **Rerun on Anthropic, record as changelog Iteration 3.** This is the single change the whole project claims. |
-| T22 | CLI report output and report writer agent | TODO | The funnel from `README.md` section 4, evidence cards, consequence first ordering, suppressed count. Readable in a terminal at demo font sizes. No emoji, no AI voice. **Plus the report writer agent from `docs/AGENT_INSTRUCTIONS.md` section 2**, prompt loaded from `src/materia/prompts/`, one call per workbook, no tools, rendering over the verified findings the T16 renderer produced. It never recomputes or adjusts a figure. Traced like the adjudicator, since the trajectory deliverable requires one per agent. |
+| T22 | CLI report output and report writer agent | DONE (writer built and run, not shipped, cut list item 4) | The funnel from `README.md` section 4, evidence cards, consequence first ordering, suppressed count. Readable in a terminal at demo font sizes. No emoji, no AI voice. **Plus the report writer agent from `docs/AGENT_INSTRUCTIONS.md` section 2**, prompt loaded from `src/materia/prompts/`, one call per workbook, no tools, rendering over the verified findings the T16 renderer produced. It never recomputes or adjusts a figure. Traced like the adjudicator, since the trajectory deliverable requires one per agent. |
 
 ## Phase 7: Deliverables
 > These are worth 35 rubric points and are the ones that usually get rushed.
@@ -108,5 +108,5 @@ If behind, cut in this order. Do not improvise cuts.
 | 3 Detection | T10 to T11 | 2/2 |
 | 4 Agent layer | T12 to T17 | 6/6 |
 | 5 Baseline | T18 to T20 | 0/3 |
-| 6 Thesis | T21 to T22 | 0/2 |
+| 6 Thesis | T21 to T22 | 1/2 |
 | 7 Deliverables | T23 to T29 | 0/7 |

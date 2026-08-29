@@ -169,3 +169,71 @@ def write_result(audit_result: Audit, directory: str | Path) -> Path:
         type("Client", (), {"provider": audit_result.provider, "model": audit_result.model})(),
     )
     return path
+
+
+def from_trajectories(
+    path: str | Path,
+    trace_directory: str | Path,
+    outputs: list[str] | None = None,
+    corpus: str | Path = "corpus",
+) -> Audit:
+    """Rebuild an audit from trajectories already on disk.
+
+    Rendering is deterministic, so a report can be produced again from the
+    record without paying for the run twice. It is also the honest way to
+    re-render: the figures come from the same `tool_result` records the
+    original report was checked against.
+    """
+    from materia.trace import read
+
+    path = Path(path)
+    report = preflight(path)
+    declared = outputs or outputs_for(path, Path(corpus))
+    tools = Toolbox(path, declared)
+    graph = DependencyGraph.of(tools.model)
+
+    candidates: dict[str, Candidate] = {}
+    for candidate in detect(load(path)):
+        candidates.setdefault(candidate.address, candidate)
+
+    verdicts: list[Verdict] = []
+    provider = model = ""
+    for trace in sorted(Path(trace_directory).glob("*.jsonl")):
+        records = read(trace)
+        entry = next((r for r in records if r.type == "verdict"), None)
+        if entry is None:
+            continue
+        start = records[0]
+        provider = provider or start.content.get("provider", "")
+        model = model or start.content.get("model", "")
+        verdicts.append(
+            Verdict(
+                address=start.content["cell"],
+                detector=start.content["detector"],
+                verdict=entry.content["verdict"],
+                confidence=entry.content["confidence"],
+                proposed_formula=entry.content.get("proposed_formula"),
+                evidence=tuple(entry.content.get("evidence") or ()),
+                reasoning=entry.content.get("reasoning", ""),
+                measured_deltas=entry.content.get("measured_deltas") or {},
+                trace_path=str(trace),
+            )
+        )
+
+    result = cross_check(verdicts, tools.model, graph, candidates)
+    return Audit(
+        workbook=path.name,
+        preflight=report,
+        candidates=candidates,
+        verdicts=tuple(verdicts),
+        result=result,
+        funnel=Funnel(
+            formulas=report.formula_count,
+            candidates=len(candidates),
+            survived=len(result.findings),
+            findings=len(result.findings),
+            adjudicated=len(verdicts),
+        ),
+        provider=provider,
+        model=model,
+    )

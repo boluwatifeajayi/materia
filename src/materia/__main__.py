@@ -202,6 +202,35 @@ def _explain(result) -> str:
     return "\n".join(lines)
 
 
+def _report(arguments: argparse.Namespace) -> int:
+    """Re-render a report from trajectories already on disk. No model calls."""
+    from materia.audit import from_trajectories
+    from materia.preflight import PreflightRejected
+
+    outputs = (
+        [item.strip() for item in arguments.outputs.split(",")]
+        if arguments.outputs
+        else None
+    )
+    try:
+        result = from_trajectories(arguments.workbook, arguments.traces, outputs)
+    except PreflightRejected as rejection:
+        print(rejection.message, file=sys.stderr)
+        return 2
+    except ValueError as error:
+        print(error, file=sys.stderr)
+        return 1
+
+    if not result.verdicts:
+        print(f"no verdicts in {arguments.traces}", file=sys.stderr)
+        return 1
+
+    print(result.render())
+    if arguments.explain:
+        print(_explain(result))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="materia", description=__doc__)
     parser.add_argument("-V", "--version", action="version", version=f"materia {__version__}")
@@ -251,6 +280,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="print where every figure came from, trajectory paths included",
     )
     audit_command.set_defaults(handler=_audit)
+
+    report_command = commands.add_parser(
+        "report", help="re-render a report from saved trajectories, no model calls"
+    )
+    report_command.add_argument("workbook", type=Path)
+    report_command.add_argument("--traces", type=Path, default=Path("trajectories/solution"))
+    report_command.add_argument("--outputs", default=None)
+    report_command.add_argument("--explain", action="store_true")
+    report_command.set_defaults(handler=_report)
 
     llm = commands.add_parser("llm", help="check the configured model provider")
     llm_actions = llm.add_subparsers(dest="llm_action", required=True)

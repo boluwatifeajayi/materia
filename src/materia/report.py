@@ -241,19 +241,27 @@ def _relative(measured: dict, model) -> dict[str, float | None]:
 # The model writes non ASCII dashes. CLAUDE.md section 5 bans them from
 # anything a person reads, and a quoted sentence is still something a person
 # reads, so they are normalised on the way out rather than left in.
-_HYPHENS = "\u2010\u2011\u2012\u2013"
 _EM_DASH = re.compile(r"\s*[\u2014\u2015]\s*")
+_SUBSTITUTIONS = {
+    "\u2010": "-", "\u2011": "-", "\u2012": "-", "\u2013": "-",
+    "\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"',
+    "\u2026": "...", "\u2192": "->", "\u2190": "<-", "\u00a0": " ",
+    "\u2022": "-", "\u00d7": "x",
+}
 
 
 def plain(text: str) -> str:
-    """Replace non ASCII dashes.
+    """Make model prose safe to print in a terminal.
 
     An em dash becomes a comma and one space, however it was spaced, since
-    that is what it was standing in for. The narrower dashes become hyphens.
+    that is what it was standing in for. Everything else in the table maps to
+    the ASCII it stands for. Model output arrives full of these: arrows,
+    ellipses, curly quotes and non breaking spaces all render inconsistently
+    at a demo font size, and CLAUDE.md section 5 bans the dashes outright.
     """
     text = _EM_DASH.sub(", ", text)
-    for character in _HYPHENS:
-        text = text.replace(character, "-")
+    for character, replacement in _SUBSTITUTIONS.items():
+        text = text.replace(character, replacement)
     return text
 
 
@@ -263,6 +271,11 @@ def _money(value: float) -> str:
 
 def _share(value: float | None) -> str:
     return "not measurable" if value is None else f"{value:.2%}"
+
+
+# Wide enough for the cards, narrow enough to read at a demo font size on a
+# projector. Anything wider wraps in the terminal and the wrap lands mid number.
+WIDTH = 74
 
 
 @dataclass(frozen=True)
@@ -287,81 +300,136 @@ class Funnel:
         return self.adjudicated is None or self.adjudicated >= self.candidates
 
     def render(self, workbook: str) -> str:
-        lines = [
-            f"MODEL HEALTH{'':>22}{workbook}",
-            "",
-            f"  {self.formulas:>6}  formulas parsed",
-            f"  {self.candidates:>6}  structural anomalies detected",
+        title = "MODEL HEALTH"
+        header = title + workbook.rjust(WIDTH - len(title))
+        lines = [header, "=" * WIDTH, ""]
+
+        rows = [
+            (self.formulas, "formulas parsed"),
+            (self.candidates, "structural anomalies detected"),
         ]
         if not self.complete:
-            lines.append(f"  {self.adjudicated:>6}  tested, this run was limited")
-        lines.append(f"  {self.survived:>6}  survived hypothesis testing")
-        lines.append(f"  {self.findings:>6}  material findings")
+            rows.append((self.adjudicated, "tested, this run was limited"))
+        rows.append((self.survived, "survived hypothesis testing"))
+        rows.append((self.findings, "material findings"))
         if self.suppressed:
-            lines.append(f"  {self.suppressed:>6}  suppressed as immaterial")
+            rows.append((self.suppressed, "suppressed as immaterial"))
+
+        width = max(len(f"{value:,}") for value, _ in rows)
+        for value, label in rows:
+            marker = "   <-- what you read" if label == "material findings" else ""
+            lines.append(f"  {value:>{width + 4},}  {label}{marker}")
+
         if not self.complete:
             lines.append("")
-            lines.append(
-                f"  {self.candidates - self.adjudicated} candidates were not "
-                "examined. They are not cleared, they were not looked at."
+            lines.extend(
+                _wrap(
+                    f"{self.candidates - self.adjudicated} candidates were not "
+                    "examined. They are not cleared, they were not looked at.",
+                    indent="  ",
+                )
             )
         return "\n".join(lines)
 
 
+def _wrap(text: str, indent: str = "", width: int = WIDTH) -> list[str]:
+    """Wrap to the report width, so nothing breaks mid number in a terminal."""
+    import textwrap
+
+    return textwrap.wrap(
+        text, width=width, initial_indent=indent, subsequent_indent=indent
+    ) or [indent.rstrip()]
+
+
+def _rule(character: str = "-") -> str:
+    return character * WIDTH
+
+
 def render_card(finding: Finding, index: int) -> str:
-    """One evidence card. Consequence first, cell reference second."""
+    """One evidence card.
+
+    Consequence first. The reader cares that enterprise value is wrong; the
+    cell reference is how they go and check it, not why they opened the
+    report.
+    """
     output, delta = max(
         finding.deltas.items(), key=lambda item: abs(item[1]), default=("", 0.0)
     )
     direction = "overstated by" if delta < 0 else "understated by"
     share = finding.relative.get(output)
 
-    lines = [
-        f"[{index}] {output} is {direction} {_money(abs(delta))}"
-        + (f", {_share(share)} of its value" if share is not None else ""),
-        f"    because {finding.address} does not match the rest of its row.",
-        "",
-        f"    Cell            {finding.address}",
-        f"    Currently       {finding.current_formula or '(a value, not a formula)'}",
-    ]
+    lines = [f"  {index}  {output} is {direction} {_money(abs(delta))}"]
+    if share is not None:
+        lines.append(f"     {_share(share)} of its current value")
+    lines.append("")
+
+    current = finding.current_formula or "a pasted value, not a formula"
+    lines.append(f"     Cell         {finding.address}")
+    lines.append(f"     Currently    {current}")
     if finding.proposed_formula:
-        lines.append(f"    Should be       {finding.proposed_formula}")
-    lines.append(f"    Confidence      {finding.confidence}")
-    lines.append(f"    Detector        {finding.detector}")
+        lines.append(f"     Should be    {finding.proposed_formula}")
+    lines.append(
+        f"     Confidence   {finding.confidence}"
+        f"{'':>{max(1, 12 - len(finding.confidence))}}Detector  {finding.detector}"
+    )
 
     if finding.peers:
         lines.append("")
-        lines.append("    Its neighbours")
+        lines.append("     Its neighbours")
         for peer in finding.peers[:3]:
-            lines.append(f"      {peer.address:16} {peer.formula}")
-
-    if finding.evidence:
-        lines.append("")
-        lines.append("    Evidence")
-        for item in finding.evidence[:4]:
-            lines.append(f"      {plain(item)}")
+            lines.append(f"       {peer.address:<15} {peer.formula}")
 
     path = finding.paths.get(output)
     if path and len(path) > 1:
         lines.append("")
-        lines.append(f"    Reaches {output} in {len(path) - 1} steps")
-        lines.append(f"      {' -> '.join(path[:4])}" + (" -> ..." if len(path) > 4 else ""))
-    elif path:
+        lines.append(f"     How it reaches {output}, {len(path) - 1} steps")
+        shown = path[:3] + (["..."] if len(path) > 4 else []) + path[-1:]
+        lines.append(f"       {' -> '.join(shown)}")
+
+    # Evidence that only restates the neighbour list is not evidence, it is
+    # the same three lines again.
+    extra = _beyond_the_neighbours(finding)
+    if extra:
         lines.append("")
-        lines.append(f"    This cell is {output}.")
+        lines.append("     Evidence")
+        for item in extra[:3]:
+            lines.extend(_wrap(plain(item), indent="       "))
 
     lines.append("")
-    lines.append("    Measured impact")
+    lines.append("     Measured impact")
     for name, value in sorted(finding.deltas.items(), key=lambda i: -abs(i[1])):
-        lines.append(f"      {name:20} {_money(value):>18}   {_share(finding.relative.get(name))}")
+        if value == 0:
+            lines.append(f"       {name:<16} {'no change':>16}")
+            continue
+        lines.append(
+            f"       {name:<16} {_money(value):>16}   "
+            f"{_share(finding.relative.get(name))}"
+        )
 
     if finding.corrected:
         lines.append("")
-        lines.append(
-            "    Note: the model reported different figures from the ones the "
-            "engine returned. The measured figures are shown."
+        lines.extend(
+            _wrap(
+                "Note: the model reported different figures from the ones the "
+                "engine returned. The figures above are the engine's.",
+                indent="     ",
+            )
         )
     return "\n".join(lines)
+
+
+def _beyond_the_neighbours(finding: Finding) -> list[str]:
+    """Evidence lines that say something the neighbour list does not."""
+    already = {peer.address for peer in finding.peers}
+    kept = []
+    for item in finding.evidence:
+        mentioned = {address for address in already if address in item}
+        # A line whose only content is a neighbour address and its formula is
+        # already on the card.
+        if mentioned and len(item) < 40:
+            continue
+        kept.append(item)
+    return kept
 
 
 def render(
@@ -373,39 +441,52 @@ def render(
     """The whole report.
 
     Suppression the user cannot see is indistinguishable from a bug, so what
-    was set aside is stated rather than silently omitted.
+    was set aside is stated rather than quietly omitted.
     """
     blocks = [funnel.render(workbook), ""]
 
-    if not result.findings:
-        blocks.append("No material findings.")
-    for index, finding in enumerate(result.findings, start=1):
-        blocks.append(render_card(finding, index))
+    if result.findings:
+        blocks.append("FINDINGS")
+        blocks.append(_rule())
+        blocks.append("")
+        for index, finding in enumerate(result.findings, start=1):
+            blocks.append(render_card(finding, index))
+            blocks.append("")
+    else:
+        blocks.append("FINDINGS")
+        blocks.append(_rule())
+        blocks.append("")
+        blocks.append("  No material findings.")
         blocks.append("")
 
     blocks.append("WHAT WAS SET ASIDE")
+    blocks.append(_rule())
     blocks.append("")
-    blocks.append(
-        f"  {len(result.intentional):>6}  deliberate, and the evidence says so"
-    )
-    blocks.append(f"  {len(result.inconclusive):>6}  not enough evidence to say")
+
+    aside = [
+        (len(result.intentional), "deliberate, and the evidence says so"),
+        (len(result.inconclusive), "not enough evidence to say"),
+    ]
     if funnel.suppressed:
-        blocks.append(f"  {funnel.suppressed:>6}  real but below the materiality threshold")
+        aside.append((funnel.suppressed, "real but below the materiality threshold"))
     if result.dropped:
-        blocks.append(
-            f"  {result.dropped:>6}  dropped: impact could not be traced to a measurement"
-        )
+        aside.append((result.dropped, "dropped: impact could not be traced to a measurement"))
+
+    width = max(len(str(count)) for count, _ in aside)
+    for count, label in aside:
+        blocks.append(f"  {count:>{width + 4}}  {label}")
 
     if show_suppressed and result.intentional:
         blocks.append("")
         blocks.append("  Judged deliberate")
-        for verdict in result.intentional[:8]:
-            blocks.append(f"    {verdict.address:18} {plain(verdict.reasoning)[:90]}")
+        for verdict in result.intentional:
+            blocks.append(f"    {verdict.address}")
+            blocks.extend(_wrap(plain(verdict.reasoning), indent="      "))
 
     if result.violations:
         blocks.append("")
         blocks.append("  Schema violations")
         for violation in result.violations:
-            blocks.append(f"    {violation}")
+            blocks.extend(_wrap(str(violation), indent="    "))
 
     return plain("\n".join(blocks)) + "\n"

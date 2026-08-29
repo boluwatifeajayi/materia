@@ -346,3 +346,41 @@ class TestARunCutShortKeepsWhatItEarned:
         )
         assert result.stopped is None
         assert "stopped early" not in result.render()
+
+
+class TestRenderingFromTrajectories:
+    """Rendering is deterministic, so a report can be produced again from the
+    record without paying for the run twice."""
+
+    def test_it_rebuilds_the_report_from_disk(self):
+        from materia.audit import from_trajectories
+
+        result = from_trajectories("corpus/C03.xlsx", "trajectories/solution")
+        assert len(result.verdicts) == 6
+        assert len(result.result.findings) == 2
+        assert result.provider == "groq"
+
+    def test_a_trajectory_with_no_verdict_is_skipped(self, tmp_path):
+        """A run that died mid candidate leaves one. It is not a verdict and
+        must not be counted as one."""
+        import shutil
+
+        from materia.audit import from_trajectories
+        from materia.trace import Trace
+
+        traces = tmp_path / "traces"
+        for source in Path("trajectories/solution").glob("*.jsonl"):
+            traces.mkdir(exist_ok=True)
+            shutil.copy(source, traces / source.name)
+
+        with Trace(traces / "C03_adjudicator_Costs_Z12_D1.jsonl", "r", "adjudicator") as trace:
+            trace.run_start(workbook="C03", cell="Costs!Z12", detector="D1")
+
+        result = from_trajectories("corpus/C03.xlsx", traces)
+        assert len(result.verdicts) == 6
+        assert "Costs!Z12" not in {v.address for v in result.verdicts}
+
+    def test_an_empty_directory_produces_no_verdicts(self, tmp_path):
+        from materia.audit import from_trajectories
+
+        assert from_trajectories("corpus/C03.xlsx", tmp_path).verdicts == ()

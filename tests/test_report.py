@@ -240,8 +240,11 @@ class TestRendering:
 
     def test_it_leads_with_the_consequence_not_the_cell(self, rendered):
         """The reader cares that enterprise value is wrong. The cell address
-        is how they check it."""
-        headline = [line for line in rendered.splitlines() if line.startswith("[1]")][0]
+        is how they check it, not why they opened the report."""
+        after_findings = rendered.split("FINDINGS", 1)[1]
+        headline = next(
+            line for line in after_findings.splitlines() if line.strip().startswith("1  ")
+        )
         assert ENTERPRISE_VALUE in headline
         assert "Revenue!H5" not in headline
 
@@ -255,6 +258,15 @@ class TestRendering:
 
     def test_there_are_no_em_dashes(self, rendered):
         assert "—" not in rendered
+
+    def test_it_handles_what_model_prose_actually_contains(self):
+        """Taken from a real report writer reply: arrows, ellipses and curly
+        quotes, none of which render predictably in a terminal."""
+        assert plain("Revenue!H5 \u2192 \u2026 \u2192 Valuation!B7") == (
+            "Revenue!H5 -> ... -> Valuation!B7"
+        )
+        assert plain("the \u201cactuals\u201d row") == 'the "actuals" row'
+        assert plain("O\u2011Z") == "O-Z"
 
     def test_no_non_ascii_survives_from_model_text(self):
         """The model writes unicode dashes. CLAUDE.md section 5 bans them from
@@ -275,9 +287,8 @@ class TestRendering:
         assert "could not be traced to a measurement" in rendered
         assert "Schema violations" in rendered
 
-    def test_a_finding_that_is_itself_an_output_does_not_print_a_zero_hop_path(
-        self, tmp_path, setup
-    ):
+    def test_a_finding_that_is_itself_an_output_prints_no_path(self, tmp_path, setup):
+        """A path from a cell to itself is not information."""
         tools, graph, candidates = setup
         path = a_trace(tmp_path, EBITDA, "=SUM(C15:Z15)", {EBITDA: 1_550_882.0})
         result = cross_check(
@@ -287,8 +298,8 @@ class TestRendering:
             candidates,
         )
         rendered = render_card(result.findings[0], 1)
-        assert "in 0 steps" not in rendered
-        assert f"This cell is {EBITDA}." in rendered
+        assert "0 steps" not in rendered
+        assert "How it reaches" not in rendered
 
 
 class TestMatchingIsExact:
@@ -393,3 +404,90 @@ class TestABoundedRunSaysSo:
 
     def test_a_run_with_no_bound_recorded_reads_as_complete(self):
         assert Funnel(738, 22, 1, 1).complete is True
+
+
+class TestPresentation:
+    """The style rules in CLAUDE.md section 5 are judged, so they are checked.
+
+    The submission is scored partly on whether the output reads as clearly AI
+    generated. That is not something to hope about.
+    """
+
+    @pytest.fixture
+    def real_report(self):
+        """The C03 report, rebuilt from the trajectories on disk."""
+        from materia.audit import from_trajectories
+
+        return from_trajectories("corpus/C03.xlsx", "trajectories/solution").render()
+
+    def test_no_em_dashes(self, real_report):
+        assert "—" not in real_report
+        assert "―" not in real_report
+
+    def test_no_characters_outside_ascii(self, real_report):
+        """Model prose arrives with unicode dashes and quotes. A terminal at a
+        demo font size renders them inconsistently."""
+        offenders = sorted({c for c in real_report if ord(c) > 127})
+        assert not offenders, offenders
+
+    def test_no_emoji(self, real_report):
+        assert not any(0x1F300 <= ord(c) <= 0x1FAFF for c in real_report)
+
+    def test_every_line_fits_a_terminal(self, real_report):
+        """Anything wider wraps, and the wrap lands in the middle of a number."""
+        from materia.report import WIDTH
+
+        too_wide = [line for line in real_report.splitlines() if len(line) > WIDTH]
+        assert not too_wide, too_wide[:3]
+
+    def test_no_preamble_and_no_sign_off(self, real_report):
+        lines = [line for line in real_report.splitlines() if line.strip()]
+        assert lines[0].startswith("MODEL HEALTH")
+        for phrase in ("I have", "I've", "Let me", "Here is", "Hope this", "feel free"):
+            assert phrase not in real_report
+
+    def test_it_reads_as_a_tool_not_a_chatbot(self, real_report):
+        for phrase in ("Great", "Certainly", "Sure,", "As an AI", "I'd be happy"):
+            assert phrase not in real_report
+
+
+class TestTheRealC03Report:
+    """Rendered from the committed trajectories, so this checks the artefact a
+    reader actually gets rather than a constructed one."""
+
+    @pytest.fixture
+    def audit_result(self):
+        from materia.audit import from_trajectories
+
+        return from_trajectories("corpus/C03.xlsx", "trajectories/solution")
+
+    def test_it_finds_both_seeded_mutations(self, audit_result):
+        import json
+
+        manifest = json.loads(Path("corpus/manifest.json").read_text())
+        entry = next(e for e in manifest["workbooks"] if e["id"] == "C03")
+        seeded = {m["address"] for m in entry["mutations"]}
+        reported = {f.address for f in audit_result.result.findings}
+        assert seeded == reported
+
+    def test_it_reports_nothing_that_was_not_seeded(self, audit_result):
+        """Six candidates went in, four of them legitimate. None of the four
+        became a finding."""
+        assert len(audit_result.result.findings) == 2
+        assert len(audit_result.result.intentional) == 4
+
+    def test_the_fabricated_figures_never_appear(self, audit_result):
+        """The model reported -6102169. The engine returned 8704573. Only one
+        of those may reach a reader."""
+        rendered = audit_result.render()
+        assert "6,102,169" not in rendered
+        assert "8,704,573" in rendered
+
+    def test_the_funnel_narrows_to_the_findings(self, audit_result):
+        funnel = audit_result.funnel
+        assert funnel.formulas == 738
+        assert funnel.candidates == 22
+        assert funnel.findings == 2
+
+    def test_the_report_says_how_many_were_not_examined(self, audit_result):
+        assert "16 candidates were not examined" in audit_result.render()
