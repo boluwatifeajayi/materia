@@ -331,6 +331,23 @@ def adjudicate_one(
                 for call in response.tool_calls:
                     tool_call_count += 1
                     messages.append(_run_tool(call, tools, trace))
+
+                # One turn left. Say so, rather than letting the cap cut the
+                # model off mid gather and record an INCONCLUSIVE that only
+                # means it ran out of room. A verdict on the evidence it has
+                # is a better answer than no verdict at all.
+                if turns == max_turns - 1:
+                    messages.append(
+                        Message(
+                            role="user",
+                            content=(
+                                "This is your last turn. Call submit_verdict now "
+                                "with the evidence you have. If it is not enough "
+                                "to be confident, return INCONCLUSIVE and say what "
+                                "would settle it."
+                            ),
+                        )
+                    )
                 continue
 
             try:

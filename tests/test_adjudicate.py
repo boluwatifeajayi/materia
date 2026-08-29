@@ -190,6 +190,25 @@ class TestTheLoop:
         assert result.verdict == "INCONCLUSIVE"
         assert result.error
 
+    def test_the_model_is_warned_before_the_cap_cuts_it_off(self, setup, tmp_path):
+        """A model that runs out of turns mid gather records an INCONCLUSIVE
+        that only means it ran out of room. Telling it the turn is the last one
+        gets a verdict on the evidence it actually has."""
+        tools, graph, candidates = setup
+        looping = [
+            tool_response("inspect_range", {"sheet": "Revenue", "range": "C5:F5"})
+            for _ in range(MAX_TURNS - 1)
+        ]
+        client = ScriptedClient(*looping, verdict_response("INTENTIONAL"))
+        result = adjudicate_one(
+            candidates["Revenue!H5"], client, tools, graph, "C03", tmp_path
+        )
+
+        last_request = client.requests[-1][1]
+        assert "last turn" in last_request[-1].content
+        assert result.verdict == "INTENTIONAL"
+        assert result.error is None
+
     def test_a_bad_verdict_gets_one_correction(self, setup, tmp_path):
         result = run_one(
             setup,

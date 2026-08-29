@@ -427,6 +427,58 @@ class TestTokenPacing:
         clock[0] += 61
         assert pacer.wait_for(2000) == 0.0
 
+    def test_it_waits_for_the_entry_that_frees_enough_not_the_oldest(self, monkeypatch):
+        """An old entry that frees enough on its own should not make the
+        caller wait behind a newer one. Over a long run that is minutes."""
+        from materia.llm import groq as groq_module
+
+        clock = [1000.0]
+        monkeypatch.setattr(groq_module.time, "monotonic", lambda: clock[0])
+
+        pacer = groq_module.TokenPacer(8000)
+        pacer.record(5000)  # 50 seconds ago by the time we ask
+        clock[0] += 50
+        pacer.record(1000)  # just now
+
+        # 500 tokens of room needed, and the first entry alone frees 5000.
+        pause = pacer._pause_until_room(clock[0], 500)
+        assert 10 < pause < 12, pause  # the old entry ages out in about 11s
+
+    def test_it_waits_for_the_whole_window_when_one_entry_is_not_enough(self, monkeypatch):
+        from materia.llm import groq as groq_module
+
+        clock = [1000.0]
+        monkeypatch.setattr(groq_module.time, "monotonic", lambda: clock[0])
+
+        pacer = groq_module.TokenPacer(8000)
+        pacer.record(1000)
+        clock[0] += 50
+        pacer.record(5000)
+
+        pause = pacer._pause_until_room(clock[0], 5500)
+        assert 60 < pause < 62, pause  # it has to wait for the newer entry too
+
+    def test_a_request_larger_than_the_whole_budget_still_goes_through(self, monkeypatch):
+        """Otherwise a single oversized request would hang the run forever."""
+        from materia.llm import groq as groq_module
+
+        clock = [1000.0]
+        slept = []
+        monkeypatch.setattr(groq_module.time, "monotonic", lambda: clock[0])
+        monkeypatch.setattr(
+            groq_module.time, "sleep", lambda s: (slept.append(s), clock.__setitem__(0, clock[0] + s))
+        )
+
+        pacer = groq_module.TokenPacer(1000)
+        pacer.record(500)
+        pacer.wait_for(10_000)
+        assert slept, "it should have waited once"
+
+    def test_an_empty_window_needs_no_wait_at_all(self):
+        from materia.llm.groq import TokenPacer
+
+        assert TokenPacer(8000)._pause_until_room(1000.0, 500) == 0.5
+
     def test_a_rate_limit_reply_gets_its_own_error_class(self):
         """So a caller can stop rather than hammer."""
         from materia.llm import RateLimited

@@ -54,21 +54,45 @@ class TokenPacer:
         return sum(tokens for _, tokens in self._spent)
 
     def wait_for(self, estimated_tokens: int) -> float:
-        """Hold until the coming request fits in the window."""
+        """Hold until the coming request fits in the window.
+
+        Waits only long enough for as much spending as the request needs to
+        fall out of the window, rather than for the oldest entry regardless.
+        On a limit this tight the difference is minutes over a long run.
+        """
         waited = 0.0
         while True:
             now = time.monotonic()
-            if self._used(now) + estimated_tokens <= self.budget:
+            used = self._used(now)
+            if used + estimated_tokens <= self.budget:
                 return waited
-            oldest = self._spent[0][0]
-            pause = max(0.5, 61 - (now - oldest))
+
+            # A request bigger than the whole budget can never fit, so waiting
+            # for room is a loop with no exit. Clear the window once and let
+            # the provider decide: refusing it here would be this class making
+            # a call that belongs to the API.
+            if estimated_tokens > self.budget and not self._spent:
+                return waited
+
+            pause = self._pause_until_room(now, used + estimated_tokens - self.budget)
             print(
-                f"groq: {self._used(now)} tokens used in the last minute, "
+                f"groq: {used} tokens used in the last minute, "
                 f"waiting {pause:.0f}s before a {estimated_tokens} token request",
                 file=sys.stderr,
             )
             time.sleep(pause)
             waited += pause
+
+    def _pause_until_room(self, now: float, needed: int) -> float:
+        """How long until `needed` tokens have aged out of the window."""
+        freed = 0
+        for timestamp, tokens in self._spent:
+            freed += tokens
+            if freed >= needed:
+                return max(0.5, 61 - (now - timestamp))
+        # Nothing in the window covers it, so the request is larger than the
+        # budget itself. Wait the window out and let it through.
+        return max(0.5, 61 - (now - self._spent[-1][0])) if self._spent else 0.5
 
     def record(self, tokens: int) -> None:
         self._spent.append((time.monotonic(), tokens))
