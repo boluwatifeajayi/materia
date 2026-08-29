@@ -30,6 +30,12 @@ BASE_URL = "https://api.groq.com/openai/v1"
 # reports "tokens per minute (TPM): Limit 8000" when it refuses.
 TOKENS_PER_MINUTE = 8_000
 
+# Without this the client waits forever on a connection that never answers.
+# Observed: one call sat for 26 minutes with no traffic and no way out, which
+# stalls a run silently rather than failing it.
+REQUEST_TIMEOUT_SECONDS = 120
+MAX_RETRIES = 2
+
 # Leave room, because the limit counts the request as well as the reply and
 # the request size is only known after it is built.
 HEADROOM = 0.80
@@ -119,7 +125,12 @@ class GroqClient:
             raise ProviderError("GROQ_API_KEY is not set")
         self.model = model
         self.pacer = TokenPacer() if pacer is None else pacer
-        self._client = OpenAI(api_key=key, base_url=BASE_URL)
+        self._client = OpenAI(
+            api_key=key,
+            base_url=BASE_URL,
+            timeout=REQUEST_TIMEOUT_SECONDS,
+            max_retries=MAX_RETRIES,
+        )
 
     # --- translation ---
 

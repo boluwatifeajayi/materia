@@ -601,3 +601,34 @@ class TestGroqResponses:
         its second call."""
         monkeypatch.setenv("GROQ_API_KEY", "test-key")
         assert GroqClient().pacer is not None
+
+
+class TestRequestTimeouts:
+    """A hung connection has to fail the run, not stall it.
+
+    Observed live: one call sat for 26 minutes with no traffic and no way out,
+    which is worse than an error because nothing says anything is wrong.
+    """
+
+    def test_the_groq_client_sets_one(self, monkeypatch):
+        from materia.llm.groq import REQUEST_TIMEOUT_SECONDS
+
+        monkeypatch.setenv("GROQ_API_KEY", "test-key")
+        client = GroqClient()
+        assert client._client.timeout == REQUEST_TIMEOUT_SECONDS
+        assert client._client.max_retries > 0
+
+    def test_the_anthropic_client_sets_one(self, monkeypatch):
+        from materia.llm.anthropic import REQUEST_TIMEOUT_SECONDS
+
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+        client = AnthropicClient()
+        assert client._client.timeout == REQUEST_TIMEOUT_SECONDS
+        assert client._client.max_retries > 0
+
+    def test_a_timeout_is_reported_as_a_provider_error(self):
+        """Normalised like any other failure, so the loop above it does not
+        have to know which SDK raised."""
+        from materia.llm.groq import _translate_error
+
+        assert isinstance(_translate_error(Exception("Request timed out."), "m"), ProviderError)

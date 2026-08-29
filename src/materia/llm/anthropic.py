@@ -22,6 +22,12 @@ from materia.llm.types import (
 DEFAULT_MODEL = "claude-sonnet-5"
 MAX_TOKENS = 4096
 
+# Same reason as the Groq adapter: a hung connection stalls a run instead of
+# failing it, and a scored run that stalls part way through is worse than one
+# that stops and says so.
+REQUEST_TIMEOUT_SECONDS = 120
+MAX_RETRIES = 2
+
 
 class AnthropicClient:
     provider = "anthropic"
@@ -33,7 +39,11 @@ class AnthropicClient:
         if not key:
             raise ProviderError("ANTHROPIC_API_KEY is not set")
         self.model = model
-        self._client = anthropic.Anthropic(api_key=key)
+        self._client = anthropic.Anthropic(
+            api_key=key,
+            timeout=REQUEST_TIMEOUT_SECONDS,
+            max_retries=MAX_RETRIES,
+        )
 
     # --- translation ---
 
