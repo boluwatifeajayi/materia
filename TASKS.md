@@ -53,7 +53,7 @@ Status values: `TODO`, `IN PROGRESS`, `DONE`, `CUT`.
 | T14 | Agent tools | DONE | `recompute_with_patch` and `inspect_range` wired as callable tools with the right schemas. Tested directly, outside the agent loop, before any model sees them. |
 | T15 | Adjudicator agent | DONE | Prompt from `docs/AGENT_INSTRUCTIONS.md` section 1, loaded from `src/materia/prompts/`. Three verdict schema (`ERROR`, `INTENTIONAL`, `INCONCLUSIVE`; the gate owns `IMMATERIAL`). **Run on Groq against one workbook only.** Tested: produces valid verdicts, calls the recompute tool, trace is readable. |
 | T16 | Report renderer and cross check | DONE | Deterministic renderer, no model call. Renders findings into evidence cards. **Drops any finding whose delta has no matching tool result in the trace**, and logs the violation. Tested with a deliberately fabricated delta that must get dropped. The report writer agent is T22, not here. |
-| T17 | Solution end to end, one workbook | TODO | `python -m materia audit corpus/C03.xlsx --explain` runs the full pipeline on Groq and prints a report. Rough output is fine. |
+| T17 | Solution end to end, one workbook | DONE (full sweep blocked: Groq daily token quota) | `python -m materia audit corpus/C03.xlsx --explain` runs the full pipeline on Groq and prints a report. Rough output is fine. |
 
 ## Phase 5: Baseline and measurement
 > Baseline runs **before** the solution is finished, so nobody can say it was tuned down.
@@ -106,7 +106,7 @@ If behind, cut in this order. Do not improvise cuts.
 | 1 Engine | T04 to T05 | 2/2 |
 | 2 Graph and corpus | T06 to T09 | 4/4 |
 | 3 Detection | T10 to T11 | 2/2 |
-| 4 Agent layer | T12 to T17 | 5/6 |
+| 4 Agent layer | T12 to T17 | 6/6 |
 | 5 Baseline | T18 to T20 | 0/3 |
 | 6 Thesis | T21 to T22 | 0/2 |
 | 7 Deliverables | T23 to T29 | 0/7 |
