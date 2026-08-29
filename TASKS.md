@@ -23,7 +23,7 @@ Status values: `TODO`, `IN PROGRESS`, `DONE`, `CUT`.
 | ID | Task | Status | Acceptance |
 | --- | --- | --- | --- |
 | T04 | Formula tokeniser and AST | DONE | Parses the supported grammar (`README.md` section 6) into an AST. Rejects anything outside it. Tested per operator and per function. |
-| T05 | Recompute engine | TODO | Evaluates the AST, applies a single cell patch, recomputes in topological order, returns deltas on declared outputs. **Densest test coverage in the repo.** Tested against hand computed expected values for every supported function. |
+| T05 | Recompute engine | DONE | Evaluates the AST, applies a single cell patch, recomputes in topological order, returns deltas on declared outputs. **Densest test coverage in the repo.** Tested against hand computed expected values for every supported function. |
 
 ## Phase 2: Graph and corpus
 
@@ -103,7 +103,7 @@ If behind, cut in this order. Do not improvise cuts.
 | Phase | Tasks | Done |
 | --- | --- | --- |
 | 0 Foundation | T01 to T03 | 3/3 |
-| 1 Engine | T04 to T05 | 1/2 |
+| 1 Engine | T04 to T05 | 2/2 |
 | 2 Graph and corpus | T06 to T09 | 0/4 |
 | 3 Detection | T10 to T11 | 0/2 |
 | 4 Agent layer | T12 to T17 | 0/6 |

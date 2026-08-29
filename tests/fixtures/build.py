@@ -214,6 +214,52 @@ def print_area_only(path: Path) -> Path:
     return path
 
 
+def three_statement_mini(path: Path) -> Path:
+    """A small model with a real dependency chain, for the recompute engine.
+
+    Assumptions feed a revenue build, which feeds costs, which feed EBITDA,
+    which feeds a valuation. Patching an assumption is four hops from
+    enterprise value, which is what makes it a propagation test rather than
+    an arithmetic one.
+
+    Declared outputs are Model!B6 (EBITDA) and Valuation!B3 (enterprise
+    value), matching the two outputs in docs/EVALUATION.md section 2.
+    """
+    workbook = openpyxl.Workbook()
+
+    assumptions = workbook.active
+    assumptions.title = "Assumptions"
+    assumptions["A1"] = "Units"
+    assumptions["B1"] = 100
+    assumptions["A2"] = "Price"
+    assumptions["B2"] = 10
+    assumptions["A3"] = "Cost ratio"
+    assumptions["B3"] = 0.3
+    assumptions["A4"] = "Bonus threshold"
+    assumptions["B4"] = 500
+    assumptions["A5"] = "EBITDA multiple"
+    assumptions["B5"] = 8
+
+    model = workbook.create_sheet("Model")
+    model["A2"] = "Revenue"
+    model["B2"] = "=Assumptions!B1*Assumptions!B2"
+    model["A3"] = "Direct cost"
+    model["B3"] = "=B2*Assumptions!B3"
+    model["A4"] = "Gross profit"
+    model["B4"] = "=B2-B3"
+    model["A5"] = "Bonus"
+    model["B5"] = "=IF(B4>Assumptions!B4,B4*0.1,0)"
+    model["A6"] = "EBITDA"
+    model["B6"] = "=B4-B5"
+
+    valuation = workbook.create_sheet("Valuation")
+    valuation["A3"] = "Enterprise value"
+    valuation["B3"] = "=Model!B6*Assumptions!B5"
+
+    workbook.save(path)
+    return path
+
+
 def unparseable_formula(path: Path) -> Path:
     """A formula that is inside no grammar at all.
 
@@ -330,6 +376,7 @@ BUILDERS = {
     "defined_name": defined_name,
     "print_area_only": print_area_only,
     "unparseable_formula": unparseable_formula,
+    "three_statement_mini": three_statement_mini,
     "unsupported_function": unsupported_function,
     "unsupported_function_lookalike": unsupported_function_lookalike,
     "unsupported_function_nested": unsupported_function_nested,

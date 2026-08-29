@@ -98,6 +98,16 @@ A small deterministic evaluator over the supported grammar. Applies a patch to o
 
 It evaluates the AST produced by `src/materia/formula/`, which follows Excel's operator precedence rather than the more familiar one from programming languages. Unary minus binds tighter than exponentiation, so `-2^2` is 4, and `^` is left associative, so `2^3^2` is 64. Both differ from Python, and either one implemented the usual way would put a silently wrong number into an impact figure.
 
+Faithfulness means following Excel where it differs from Python, and it differs in places that are easy to miss. Each of these is implemented deliberately and has its own test:
+
+- `ROUND` rounds half away from zero. Python rounds half to even, so `round(2.5)` is 2 where Excel gives 3. Using the Python default would bias every rounded figure in the corpus in one direction.
+- `SUM`, `AVERAGE`, `MIN` and `MAX` skip text and booleans found inside a range, but coerce them when passed directly as arguments. `SUM(A1:A3)` with `TRUE` in `A2` is not the same as `SUM(TRUE)`.
+- Empty cells are 0 in arithmetic and skipped by the aggregates. `MIN` of an empty range is 0, not an error.
+- Text that looks like a number is coerced, so `="5"+1` is 6.
+- Errors are values, not exceptions. `#DIV/0!` propagates through a chain the way it does in a spreadsheet, so a bad patch produces an error in an output rather than ending a run.
+
+An output that becomes an error or text has a delta of `None` rather than 0. Reporting an output that broke as unchanged would be exactly the kind of confident wrong number the design exists to prevent.
+
 **Why not use a real Excel calculation engine.** Three reasons, in order of weight:
 1. Reproducibility. A judge on a clean Linux box with no office suite must be able to run this. That is 15 points of the rubric.
 2. Setup risk. Headless office automation is the classic weekend killer.
