@@ -34,10 +34,9 @@ solution:
 	@echo "make solution: not implemented (T17, T20, T21)" >&2
 	@exit 1
 
-## Score both result sets into results/. T11.
+## Score result sets into results/.
 eval:
-	@echo "make eval: not implemented (T11)" >&2
-	@exit 1
+	$(PYTHON) -m materia eval --changelog README.md
 
 ## Repeat runs for the variance table, N=3 by default. T26.
 eval-repeat:

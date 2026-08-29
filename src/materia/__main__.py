@@ -54,6 +54,45 @@ def _check_corpus(arguments: argparse.Namespace) -> int:
     return 1
 
 
+def _evaluate(arguments: argparse.Namespace) -> int:
+    import json
+
+    from materia.evaluate import (
+        detector_results,
+        score,
+        update_changelog,
+        write_results,
+    )
+
+    manifest = json.loads((arguments.corpus / "manifest.json").read_text())
+    scores = [
+        score(
+            "Detectors only",
+            detector_results(arguments.corpus, manifest),
+            manifest,
+        )
+    ]
+
+    written = write_results(scores, arguments.results)
+    for name, path in written.items():
+        print(f"{name}: {path}")
+
+    if arguments.changelog:
+        for item in scores:
+            if update_changelog(arguments.changelog, "Iteration 1", item):
+                print(f"changelog: Iteration 1 filled in {arguments.changelog}")
+            else:
+                print(
+                    f"changelog: no Iteration 1 row in {arguments.changelog}",
+                    file=sys.stderr,
+                )
+                return 1
+
+    print()
+    print((arguments.results / "headline.md").read_text())
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="materia", description=__doc__)
     parser.add_argument("-V", "--version", action="version", version=f"materia {__version__}")
@@ -69,6 +108,17 @@ def build_parser() -> argparse.ArgumentParser:
     check = actions.add_parser("check", help="compare workbooks against the checksums")
     check.add_argument("--directory", type=Path, default=DEFAULT_CORPUS)
     check.set_defaults(handler=_check_corpus)
+
+    evaluate = commands.add_parser("eval", help="score result sets against the manifest")
+    evaluate.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
+    evaluate.add_argument("--results", type=Path, default=Path("results"))
+    evaluate.add_argument(
+        "--changelog",
+        type=Path,
+        default=None,
+        help="fill the matching changelog row in this file",
+    )
+    evaluate.set_defaults(handler=_evaluate)
 
     return parser
 
