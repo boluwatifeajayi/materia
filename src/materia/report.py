@@ -83,7 +83,7 @@ class CrossCheck:
                     if violation.kind == "unverifiable impact"})
 
 
-def _measured_deltas(records: list[Record], cell: str, formula: str | None) -> dict | None:
+def _measured_deltas(records: list[Record], cell: str, formula: str) -> dict | None:
     """The tool result for this exact hypothesis, if the model ran it.
 
     Matched on the call that produced it, not on the numbers, so a model
@@ -106,7 +106,7 @@ def _measured_deltas(records: list[Record], cell: str, formula: str | None) -> d
         # a different hypothesis and then proposed this one has not measured
         # this one, and reporting the other result against it would attach a
         # real number to a claim it does not belong to.
-        if formula is not None and str(arguments.get("proposed_formula", "")).strip() != formula.strip():
+        if str(arguments.get("proposed_formula", "")).strip() != formula.strip():
             continue
         return result
     return None
@@ -157,6 +157,23 @@ def cross_check(
             continue
         if verdict.verdict != "ERROR":
             inconclusive.append(verdict)
+            continue
+
+        if not verdict.proposed_formula:
+            # An impact figure is the impact of a specific repair. With no
+            # repair proposed there is no hypothesis for a measurement to
+            # belong to, and matching on the cell alone would hand this claim
+            # whichever hypothesis the model happened to try first. Rule 1 of
+            # the adjudicator's instructions says ERROR requires a proposed
+            # formula for exactly this reason.
+            violations.append(
+                Violation(
+                    verdict.address,
+                    "unverifiable impact",
+                    "the verdict is ERROR with no proposed formula, so there is "
+                    "nothing for a measurement to be the impact of.",
+                )
+            )
             continue
 
         records = read(verdict.trace_path) if verdict.trace_path else []

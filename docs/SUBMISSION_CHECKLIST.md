@@ -13,6 +13,7 @@ Two purposes: make sure nothing required is missing, and make sure every rubric 
 - [ ] README introduces the intended user and their bottleneck (sections 1 and 2)
 - [ ] README explains why solving it is valuable (section 3)
 - [ ] Improvement Changelog, clearly labelled, one entry per meaningful iteration, each connected to evidence (section 7)
+- [ ] The cross check demonstrated on a real trajectory, not only a constructed one. Both branches: a dropped finding and a corrected figure
 - [ ] At least one removed experiment with what it taught you
 - [ ] Main failure mode (section 8)
 - [ ] Hot take (section 9)
@@ -52,7 +53,7 @@ Two purposes: make sure nothing required is missing, and make sure every rubric 
 | Criterion | Points | Where it is earned | Check |
 | --- | --- | --- | --- |
 | Problem & User Value | 15 | README 1 to 3. Named user, specific bottleneck, asymmetric cost of the miss. | [ ] |
-| Agent Solution & Engineering | 30 | Two tools, three verdict schema with four report buckets, `INTENTIONAL` as first class, recompute gate enforced in code, materiality gate. `docs/ARCHITECTURE.md` explains why each choice exists. **Largest block, weight the write up accordingly.** | [ ] |
+| Agent Solution & Engineering | 30 | Two evidence tools plus `submit_verdict`, three verdict schema with four report buckets, `INTENTIONAL` as first class, materiality gate. The recompute cross check enforced in code with both branches: a finding is dropped when no `recompute_with_patch` result matches the proposed formula, and corrected to the measured figure when one exists and disagrees. `docs/ARCHITECTURE.md` explains why each choice exists. **Largest block, weight the write up accordingly.** | [ ] |
 | End to End Quality | 20 | A real report a person would sign their name to. Consequence first ordering, evidence cards, suppressed count shown, repairs on a copy behind approval. Nothing reads as an AI draft. | [ ] |
 | Measured Improvement | 15 | `EVALUATION.md` 5 with generated numbers. Changelog isolates each contribution against the same corpus and metric. | [ ] |
 | Reproducibility | 15 | `REPRODUCTION.md`, no Excel dependency, seeded corpus, committed checksums, `make all`. | [ ] |

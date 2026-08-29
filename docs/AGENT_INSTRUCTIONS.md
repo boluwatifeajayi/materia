@@ -108,7 +108,12 @@ The argument schema of `submit_verdict`.
 
 There is no `IMMATERIAL` verdict here on purpose. The materiality gate assigns it, by reclassifying an `ERROR` whose verified delta falls below the threshold. See `docs/ARCHITECTURE.md` sections 5 and 7.
 
-`measured_deltas` is cross checked against the trajectory by the renderer. Any figure without a matching `recompute_with_patch` result causes the finding to be dropped and logged as a schema violation. This is the enforcement mechanism for rule 1, and it is a code check rather than a request.
+`measured_deltas` is cross checked against the trajectory by the renderer. This is the enforcement mechanism for rule 1, and it is a code check rather than a request. It has two outcomes, and the difference matters:
+
+- **Dropped.** The trajectory holds no `recompute_with_patch` result for the proposed formula, or the verdict is `ERROR` with no proposed formula at all. Either way there is no measurement the claimed impact could be the impact of, so the finding never reaches the user and the drop is counted as a schema violation. A result for the same cell but a different formula does not count: a model that measured one hypothesis and proposed another has not measured the one it proposed.
+- **Corrected.** A matching result exists and the reported figures disagree with it. The finding survives with the measured figures substituted, and the discrepancy is logged and shown on the card. Dropping here would lose a real error to a reporting mistake, and the guarantee that matters is that every figure a reader sees came from the engine, which substitution satisfies.
+
+The second case is why the check exists in this form. On the first candidate of the first live run the model called the tool, received 8704573.0, and reported -6102169. See README section 8.
 
 ---
 

@@ -491,3 +491,55 @@ class TestTheRealC03Report:
 
     def test_the_report_says_how_many_were_not_examined(self, audit_result):
         assert "16 candidates were not examined" in audit_result.render()
+
+
+class TestAnErrorWithNoProposedFormula:
+    """The hole next to the exact formula match.
+
+    Matching is on cell plus the exact formula the verdict proposes. But an
+    ERROR verdict is allowed to arrive with no proposed formula, and then
+    there is no formula to match on. Falling back to cell alone would attach
+    whichever hypothesis the model happened to try first to a claim that is
+    not about it.
+    """
+
+    def test_a_delta_from_an_earlier_hypothesis_is_not_borrowed(self, tmp_path):
+        from materia.trace import Trace
+
+        path = tmp_path / "two_tries.jsonl"
+        with Trace(path, "r1", "adjudicator") as trace:
+            trace.run_start(workbook="C03", cell="Revenue!H5", detector="D1")
+            for identifier, formula, delta in (
+                ("c1", "=G8", 111.0),
+                ("c2", "=G9", 222.0),
+            ):
+                call = type("Call", (), {
+                    "id": identifier, "name": "recompute_with_patch",
+                    "arguments": {"cell": "Revenue!H5", "proposed_formula": formula},
+                })()
+                trace.tool_call(call)
+                trace.tool_result(identifier, "recompute_with_patch", {EBITDA: delta})
+
+        verdict = Verdict(
+            address="Revenue!H5", detector="D1", verdict="ERROR", confidence="high",
+            proposed_formula=None, evidence=("its peers use =E9",),
+            reasoning="It breaks the row.", measured_deltas={}, trace_path=str(path),
+        )
+        result = cross_check([verdict])
+
+        assert result.findings == (), "a verdict with no hypothesis cannot be verified"
+        assert "unverifiable impact" in str(result.violations[0])
+
+    def test_the_reason_says_no_formula_was_proposed(self, tmp_path):
+        from materia.trace import Trace
+
+        path = tmp_path / "none.jsonl"
+        with Trace(path, "r1", "adjudicator") as trace:
+            trace.run_start(workbook="C03", cell="Revenue!H5", detector="D1")
+
+        verdict = Verdict(
+            address="Revenue!H5", detector="D1", verdict="ERROR", confidence="high",
+            proposed_formula=None, evidence=(), reasoning="", measured_deltas={},
+            trace_path=str(path),
+        )
+        assert "no proposed formula" in str(cross_check([verdict]).violations[0])
