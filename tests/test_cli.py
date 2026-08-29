@@ -209,3 +209,66 @@ class TestAudit:
         )
         assert code == 1
         assert "ANTHROPIC_API_KEY" in err
+
+
+class TestRepairFlag:
+    def test_it_asks_before_writing_anything(self, capsys, monkeypatch, tmp_path):
+        """The ground rule: consequential actions are gated behind a person."""
+        import shutil
+
+        subject = tmp_path / "C03.xlsx"
+        shutil.copy("corpus/C03.xlsx", subject)
+        asked = []
+        monkeypatch.setattr("builtins.input", lambda prompt: asked.append(prompt) or "n")
+
+        code, out, _ = run(
+            capsys, "report", str(subject),
+            "--traces", "trajectories/solution", "--repair",
+        )
+        assert code == 0
+        assert len(asked) == 2
+        assert "no file was written" in out
+
+    def test_declining_leaves_the_input_untouched(self, capsys, monkeypatch, tmp_path):
+        import hashlib
+        import shutil
+
+        subject = tmp_path / "C03.xlsx"
+        shutil.copy("corpus/C03.xlsx", subject)
+        before = hashlib.sha256(subject.read_bytes()).hexdigest()
+        monkeypatch.setattr("builtins.input", lambda _p: "n")
+
+        run(capsys, "report", str(subject), "--traces", "trajectories/solution", "--repair")
+        assert hashlib.sha256(subject.read_bytes()).hexdigest() == before
+
+    def test_approving_writes_a_copy_and_says_where(self, capsys, monkeypatch, tmp_path):
+        import shutil
+
+        subject = tmp_path / "C03.xlsx"
+        shutil.copy("corpus/C03.xlsx", subject)
+        target = tmp_path / "fixed.xlsx"
+        monkeypatch.setattr("builtins.input", lambda _p: "y")
+
+        _, out, _ = run(
+            capsys, "report", str(subject), "--traces", "trajectories/solution",
+            "--repair", "--repair-to", str(target),
+        )
+        assert target.exists()
+        assert str(target) in out
+        assert "was not modified" in out
+
+    def test_without_the_flag_nothing_is_asked_and_nothing_written(
+        self, capsys, monkeypatch, tmp_path
+    ):
+        """Repair is opt in. A plain report must never touch a file."""
+        import shutil
+
+        subject = tmp_path / "C03.xlsx"
+        shutil.copy("corpus/C03.xlsx", subject)
+
+        def refuse(_prompt):
+            raise AssertionError("a plain report must not prompt")
+
+        monkeypatch.setattr("builtins.input", refuse)
+        run(capsys, "report", str(subject), "--traces", "trajectories/solution")
+        assert not (tmp_path / "C03.repaired.xlsx").exists()

@@ -147,6 +147,14 @@ Evidence card per finding: cell, current formula, expected formula, peer evidenc
 
 Repair is opt in, writes to a new file, and asks per finding. The input workbook is opened read only and never written. This satisfies the brief's requirement that consequential actions be gated behind human approval.
 
+Three things hold whatever the user answers:
+
+- The corrected copy goes to a new path, and naming the input as the target is refused rather than obeyed. That one mistake would make every other guarantee here pointless.
+- Every answer is collected before anything is written. A run interrupted half way leaves the source untouched and no partly repaired file behind.
+- Every answer is recorded as a `human_checkpoint`, declines included. A decline is a decision about the model and is worth as much in the record as an approval.
+
+The prompt defaults to no. An unattended run, or somebody pressing return to get through a list, must not end up writing changes nobody agreed to.
+
 ## 9. LLM provider abstraction
 
 The adjudicator and reporter agents (section 5, `docs/AGENT_INSTRUCTIONS.md`) talk to a single interface, never to a provider SDK directly.

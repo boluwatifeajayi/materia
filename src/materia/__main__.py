@@ -180,6 +180,18 @@ def _audit(arguments: argparse.Namespace) -> int:
 
     print(result.render())
 
+    if arguments.repair:
+        from materia.repair import repair
+
+        outcome = repair(
+            arguments.workbook,
+            result.result.findings,
+            target=arguments.repair_to,
+            trace_directory=arguments.traces,
+        )
+        print()
+        print(outcome.render())
+
     if arguments.results:
         written = write_result(result, arguments.results)
         print(f"result written to {written}")
@@ -226,6 +238,19 @@ def _report(arguments: argparse.Namespace) -> int:
         return 1
 
     print(result.render())
+
+    if arguments.repair:
+        from materia.repair import repair
+
+        outcome = repair(
+            arguments.workbook,
+            result.result.findings,
+            target=arguments.repair_to,
+            trace_directory=arguments.traces,
+        )
+        print()
+        print(outcome.render())
+
     if arguments.explain:
         print(_explain(result))
     return 0
@@ -279,6 +304,17 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="print where every figure came from, trajectory paths included",
     )
+    audit_command.add_argument(
+        "--repair",
+        action="store_true",
+        help="ask about each finding and write approved changes to a copy",
+    )
+    audit_command.add_argument(
+        "--repair-to",
+        type=Path,
+        default=None,
+        help="where the corrected copy goes. Never the input workbook.",
+    )
     audit_command.set_defaults(handler=_audit)
 
     report_command = commands.add_parser(
@@ -288,6 +324,12 @@ def build_parser() -> argparse.ArgumentParser:
     report_command.add_argument("--traces", type=Path, default=Path("trajectories/solution"))
     report_command.add_argument("--outputs", default=None)
     report_command.add_argument("--explain", action="store_true")
+    report_command.add_argument(
+        "--repair",
+        action="store_true",
+        help="ask about each finding and write approved changes to a copy",
+    )
+    report_command.add_argument("--repair-to", type=Path, default=None)
     report_command.set_defaults(handler=_report)
 
     llm = commands.add_parser("llm", help="check the configured model provider")
