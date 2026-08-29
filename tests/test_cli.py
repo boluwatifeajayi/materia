@@ -438,3 +438,35 @@ class TestBaselineScoring:
         assert rows["**Baseline**"] != rows["**Iteration 1**"]
         assert "`[TBD]`" not in rows["**Baseline**"]
         assert "`[TBD]`" not in rows["**Iteration 1**"]
+
+    def test_the_materia_column_appears_once_a_solution_run_exists(self, capsys, tmp_path):
+        import json as _json
+
+        results = tmp_path / "results"
+        (results / "solution").mkdir(parents=True)
+        (results / "solution" / "C03.json").write_text(_json.dumps({
+            "workbook": "C03.xlsx",
+            "findings": [{"address": "Revenue!H5", "detector": "D1", "confidence": "high",
+                          "proposed_formula": "=G9", "impact": {"P&L!AA15": 8704573.0}}],
+            "intentional": ["Revenue!C5"], "inconclusive": [], "violations": [],
+        }))
+        code, _, _ = run(capsys, "eval", "--results", str(results))
+        assert code == 0
+        assert "Materia" in (results / "headline.md").read_text()
+
+    def test_verdicts_the_user_never_sees_are_not_scored(self, capsys, tmp_path):
+        """INTENTIONAL and INCONCLUSIVE are decisions, not reports. Counting
+        them would score the system on what it considered."""
+        import json as _json
+
+        from materia.evaluate import solution_results
+
+        directory = tmp_path / "solution"
+        directory.mkdir()
+        (directory / "C03.json").write_text(_json.dumps({
+            "workbook": "C03.xlsx",
+            "findings": [{"address": "Revenue!H5"}],
+            "intentional": ["Revenue!C5", "Costs!C5"],
+            "inconclusive": ["P&L!AA3"],
+        }))
+        assert [f.address for f in solution_results(directory)["C03"]] == ["Revenue!H5"]

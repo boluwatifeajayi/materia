@@ -93,19 +93,27 @@ def _evaluate(arguments: argparse.Namespace) -> int:
     # The baseline column appears once there is a run to fill it, and not
     # before. docs/EVALUATION.md section 5 shows it as [TBD] until then rather
     # than as a zero, because a system that has not run has no score.
+    from materia.evaluate import solution_results
+
+    expected = {entry["id"] for entry in manifest["workbooks"]}
     baseline_directory = arguments.results / "baseline"
-    if baseline_directory.is_dir():
-        found = baseline_results(baseline_directory)
-        if found:
-            scores.append(score("Baseline agent", found, manifest))
-            expected = {entry["id"] for entry in manifest["workbooks"]}
-            missing = sorted(expected - set(found))
-            if missing:
-                print(
-                    "baseline: no result for " + ", ".join(missing)
-                    + ". Scored as reporting nothing on those.",
-                    file=sys.stderr,
-                )
+    for directory, system, load in (
+        (baseline_directory, "Baseline agent", baseline_results),
+        (arguments.results / "solution", "Materia", solution_results),
+    ):
+        if not directory.is_dir():
+            continue
+        found = load(directory)
+        if not found:
+            continue
+        scores.append(score(system, found, manifest))
+        missing = sorted(expected - set(found))
+        if missing:
+            print(
+                f"{system}: no result for " + ", ".join(missing)
+                + ". Scored as reporting nothing on those.",
+                file=sys.stderr,
+            )
 
     written = write_results(scores, arguments.results)
     for name, path in written.items():
@@ -115,13 +123,21 @@ def _evaluate(arguments: argparse.Namespace) -> int:
     if arguments.document and Path(arguments.document).exists():
         from materia.evaluate import run_cost, update_results_table
 
-        columns = {"Detectors only": "Detectors only", "Baseline agent": "Baseline"}
+        columns = {
+            "Detectors only": "Detectors only",
+            "Baseline agent": "Baseline",
+            "Materia": "Materia",
+        }
         for item in scores:
             column = columns.get(item.system)
             if column is None:
                 continue
+            sources = {
+                "Baseline agent": baseline_directory,
+                "Materia": arguments.results / "solution",
+            }
             extras = (
-                run_cost(baseline_directory) if item.system == "Baseline agent"
+                run_cost(sources[item.system]) if item.system in sources
                 else {"cost": "none, no model involved"}
             )
             filled = update_results_table(arguments.document, column, item, extras)
@@ -132,7 +148,11 @@ def _evaluate(arguments: argparse.Namespace) -> int:
     if arguments.changelog:
         # Each system fills its own row. Looping every score into one stage
         # wrote the baseline's numbers over the detectors' in Iteration 1.
-        stages = {"Detectors only": "Iteration 1", "Baseline agent": "Baseline"}
+        stages = {
+            "Detectors only": "Iteration 1",
+            "Baseline agent": "Baseline",
+            "Materia": "Iteration 2",
+        }
         for item in scores:
             stage = stages.get(item.system)
             if stage is None:
@@ -203,38 +223,23 @@ def _llm_check(arguments: argparse.Namespace) -> int:
     return 0
 
 
-def _audit(arguments: argparse.Namespace) -> int:
+def _audit_one(workbook, outputs, client, arguments):
+    """Audit one workbook and write its result. Returns the result, or None."""
     from materia.audit import audit, write_result
-    from materia.llm import ProviderError, get_client
     from materia.preflight import PreflightRejected
 
     try:
-        client = get_client(arguments.provider)
-    except ProviderError as error:
-        print(error, file=sys.stderr)
-        return 1
-
-    outputs = (
-        [item.strip() for item in arguments.outputs.split(",")]
-        if arguments.outputs
-        else None
-    )
-
-    try:
         result = audit(
-            arguments.workbook,
+            workbook,
             outputs=outputs,
             client=client,
             trace_directory=arguments.traces,
             max_candidates=arguments.max_candidates,
         )
     except PreflightRejected as rejection:
-        print(f"{arguments.workbook} was not audited.", file=sys.stderr)
+        print(f"{workbook} was not audited.", file=sys.stderr)
         print(f"  {rejection.message}", file=sys.stderr)
-        return 2
-    except ValueError as error:
-        print(error, file=sys.stderr)
-        return 1
+        return None
 
     print(result.render())
 
@@ -242,7 +247,7 @@ def _audit(arguments: argparse.Namespace) -> int:
         from materia.repair import repair
 
         outcome = repair(
-            arguments.workbook,
+            workbook,
             result.result.findings,
             target=arguments.repair_to,
             trace_directory=arguments.traces,
@@ -251,11 +256,79 @@ def _audit(arguments: argparse.Namespace) -> int:
         print(outcome.render())
 
     if arguments.results:
+        # Written per workbook as it finishes, so a sweep that dies halfway
+        # keeps the verdicts it paid for.
         written = write_result(result, arguments.results)
         print(f"result written to {written}")
     if arguments.explain:
         print(_explain(result))
-    return 0
+    return result
+
+
+def _audit(arguments: argparse.Namespace) -> int:
+    import json
+
+    from materia.audit import outputs_for
+    from materia.llm import ProviderError, get_client
+
+    try:
+        client = get_client(arguments.provider)
+    except ProviderError as error:
+        print(error, file=sys.stderr)
+        return 1
+
+    declared = (
+        [item.strip() for item in arguments.outputs.split(",")]
+        if arguments.outputs
+        else None
+    )
+
+    if arguments.workbook.is_dir():
+        manifest = json.loads((arguments.workbook / "manifest.json").read_text())
+        workbooks = [arguments.workbook / entry["file"] for entry in manifest["workbooks"]]
+    else:
+        workbooks = [arguments.workbook]
+
+    totals = {"in": 0, "out": 0}
+    findings = rejected = 0
+    for index, workbook in enumerate(workbooks, start=1):
+        outputs = declared
+        if outputs is None and workbook.is_file():
+            try:
+                outputs = outputs_for(workbook)
+            except ValueError as error:
+                print(error, file=sys.stderr)
+                return 1
+
+        if len(workbooks) > 1:
+            print(f"\n{'=' * 74}\n[{index}/{len(workbooks)}] {workbook.name}\n{'=' * 74}")
+        result = _audit_one(workbook, outputs, client, arguments)
+        if result is None:
+            rejected += 1
+            continue
+
+        findings += len(result.result.findings)
+        for verdict in result.verdicts:
+            totals["in"] += verdict.tokens.get("in", 0)
+            totals["out"] += verdict.tokens.get("out", 0)
+
+        if len(workbooks) > 1:
+            spent = _cost(client.model, totals)
+            running = f"  running total: {totals['in'] + totals['out']:,} tokens"
+            if spent is not None:
+                running += (f", ${spent:.2f} spent, "
+                            f"${spent / index * len(workbooks):.2f} projected")
+            print(running)
+
+    if len(workbooks) > 1:
+        print(f"\n{len(workbooks)} workbooks, {findings} findings, "
+              f"{totals['in'] + totals['out']:,} tokens")
+        spent = _cost(client.model, totals)
+        if spent is not None:
+            print(f"cost at published {client.model} rates: ${spent:.2f}")
+        if rejected:
+            print(f"{rejected} were rejected at preflight", file=sys.stderr)
+    return 2 if rejected else 0
 
 
 def _explain(result) -> str:

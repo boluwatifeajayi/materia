@@ -31,7 +31,7 @@ baseline:
 
 ## Materia over the corpus. Full corpus lands with T20.
 solution:
-	$(PYTHON) -m materia audit corpus/C03.xlsx --explain \
+	$(PYTHON) -m materia audit corpus \
 	  --traces trajectories/solution --results results/solution
 
 ## Score result sets into results/.

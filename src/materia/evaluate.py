@@ -348,6 +348,37 @@ def baseline_results(directory: str | Path) -> ResultSet:
     return results
 
 
+def solution_results(directory: str | Path) -> ResultSet:
+    """Read what Materia reported, from the result sets an audit wrote.
+
+    Only `findings` are scored. `intentional` and `inconclusive` are verdicts
+    the user never sees, and counting them would score the system on what it
+    considered rather than on what it said.
+    """
+    directory = Path(directory)
+    results: ResultSet = {}
+    for path in sorted(directory.glob("*.json")):
+        if path.name == "provider.json":
+            continue
+        data = json.loads(path.read_text())
+        identifier = Path(data.get("workbook", path.stem)).stem
+        results[identifier] = [
+            Finding(
+                address=item["address"],
+                proposed_formula=item.get("proposed_formula"),
+                impact={
+                    str(k): float(v)
+                    for k, v in (item.get("impact") or {}).items()
+                    if isinstance(v, (int, float)) and not isinstance(v, bool)
+                },
+                confidence=item.get("confidence"),
+            )
+            for item in data.get("findings") or []
+            if item.get("address")
+        ]
+    return results
+
+
 # --- changelog -------------------------------------------------------------
 
 CHANGELOG_MARKER = "| **{stage}** |"
