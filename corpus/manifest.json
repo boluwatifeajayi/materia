@@ -13,18 +13,36 @@
         "Valuation!B7"
       ],
       "file": "C01.xlsx",
-      "formula_count": 739,
+      "formula_count": 738,
       "id": "C01",
       "legitimate_breaks": [],
-      "mutations": [],
+      "mutations": [
+        {
+          "address": "Revenue!K5",
+          "deltas": {
+            "P&L!AA15": -12401007.0,
+            "Valuation!B7": -99880777.0
+          },
+          "description": "Opening customers pasted as a value from month 1 and never restored.",
+          "family": "M1",
+          "in_taxonomy": true,
+          "material": true,
+          "mutated": 9800.0,
+          "original": "=J9",
+          "relative": {
+            "P&L!AA15": -0.4446467303263026,
+            "Valuation!B7": -0.5121009807288128
+          }
+        }
+      ],
       "note": "One to three seeded mutations",
       "output_values": {
-        "P&L!AA15": 27889572.0,
-        "Valuation!B7": 195041175.0
+        "P&L!AA15": 15488565.0,
+        "Valuation!B7": 95160398.0
       },
       "role": "seeded",
       "seed": 20260829,
-      "sha256": "f60ba66da6aa6fec3d28b6ed633b97e11f32cdfa105a2c25f48d1008685afda7"
+      "sha256": "ab990b60a6072549303d8d56ec4adc8f258301640799abf70750e8f8c61654e4"
     },
     {
       "declared_outputs": [
@@ -35,15 +53,33 @@
       "formula_count": 739,
       "id": "C02",
       "legitimate_breaks": [],
-      "mutations": [],
+      "mutations": [
+        {
+          "address": "Revenue!H9",
+          "deltas": {
+            "P&L!AA15": -593032.0,
+            "Valuation!B7": -5931449.0
+          },
+          "description": "Fill handle dragged from the column to the left.",
+          "family": "M2",
+          "in_taxonomy": true,
+          "material": true,
+          "mutated": "=G5+H6+H7",
+          "original": "=H5+H6+H7",
+          "relative": {
+            "P&L!AA15": -0.04273271409069439,
+            "Valuation!B7": -0.05010115976967712
+          }
+        }
+      ],
       "note": "One to three seeded mutations",
       "output_values": {
-        "P&L!AA15": 13877705.0,
-        "Valuation!B7": 118389455.0
+        "P&L!AA15": 13284673.0,
+        "Valuation!B7": 112458006.0
       },
       "role": "seeded",
       "seed": 20260830,
-      "sha256": "129c63d982835662cfaa7ea408a78b978a539e3cfd7a45e96ab528df291812ad"
+      "sha256": "def32bc7e2add304f422e9dbd242198176329ddc4f58b0dce2e719587787b397"
     },
     {
       "declared_outputs": [
@@ -51,18 +87,53 @@
         "Valuation!B7"
       ],
       "file": "C03.xlsx",
-      "formula_count": 739,
+      "formula_count": 738,
       "id": "C03",
       "legitimate_breaks": [],
-      "mutations": [],
+      "mutations": [
+        {
+          "address": "Revenue!H5",
+          "deltas": {
+            "P&L!AA15": -9608307.0,
+            "Valuation!B7": -92752830.0
+          },
+          "description": "Opening customers pasted as a value from month 1 and never restored.",
+          "family": "M1",
+          "in_taxonomy": true,
+          "material": true,
+          "mutated": 7200.0,
+          "original": "=G9",
+          "relative": {
+            "P&L!AA15": -0.3698926902754708,
+            "Valuation!B7": -0.3925409772979255
+          }
+        },
+        {
+          "address": "P&L!AA15",
+          "deltas": {
+            "P&L!AA15": -2454616.0,
+            "Valuation!B7": 0.0
+          },
+          "description": "Total range stops one month short of the block.",
+          "family": "M3",
+          "in_taxonomy": true,
+          "material": true,
+          "mutated": "=SUM(C15:Y15)",
+          "original": "=SUM(C15:Z15)",
+          "relative": {
+            "P&L!AA15": -0.0944957853483673,
+            "Valuation!B7": 0.0
+          }
+        }
+      ],
       "note": "One to three seeded mutations",
       "output_values": {
-        "P&L!AA15": 25975931.0,
-        "Valuation!B7": 236288274.0
+        "P&L!AA15": 14816742.0,
+        "Valuation!B7": 143535444.0
       },
       "role": "seeded",
       "seed": 20260831,
-      "sha256": "99a56b85079eddef163b939ce910bcbd97d3bc93ce51747a668d3b24242120d4"
+      "sha256": "df5ac64258baaa3accdd90bf9e730001d8790d4d41bb8fb29404314bdc1c3221"
     },
     {
       "declared_outputs": [
@@ -73,15 +144,33 @@
       "formula_count": 739,
       "id": "C04",
       "legitimate_breaks": [],
-      "mutations": [],
+      "mutations": [
+        {
+          "address": "Revenue!I5",
+          "deltas": {
+            "P&L!AA15": -383211.0,
+            "Valuation!B7": -3560100.0
+          },
+          "description": "Opening balance reads two months back, not the month before.",
+          "family": "M4",
+          "in_taxonomy": true,
+          "material": true,
+          "mutated": "=G9",
+          "original": "=H9",
+          "relative": {
+            "P&L!AA15": -0.053101130639165724,
+            "Valuation!B7": -0.06597741356344472
+          }
+        }
+      ],
       "note": "One to three seeded mutations",
       "output_values": {
-        "P&L!AA15": 7216626.0,
-        "Valuation!B7": 53959375.0
+        "P&L!AA15": 6833415.0,
+        "Valuation!B7": 50399275.0
       },
       "role": "seeded",
       "seed": 20260832,
-      "sha256": "e9e52d134f232b246213767f55bd34979b17da753287fe740568247aecc172f3"
+      "sha256": "d658788e51041d9a9d60b510a645c1d69962fce4aa5dbcd7e8e7f41290dc1fb5"
     },
     {
       "declared_outputs": [
@@ -92,15 +181,33 @@
       "formula_count": 739,
       "id": "C05",
       "legitimate_breaks": [],
-      "mutations": [],
+      "mutations": [
+        {
+          "address": "P&L!J7",
+          "deltas": {
+            "P&L!AA15": 386132.0,
+            "Valuation!B7": 0.0
+          },
+          "description": "Cost of sales added back instead of deducted.",
+          "family": "M5",
+          "in_taxonomy": true,
+          "material": true,
+          "mutated": "=J5-J6",
+          "original": "=J5+J6",
+          "relative": {
+            "P&L!AA15": 0.027224596078572937,
+            "Valuation!B7": 0.0
+          }
+        }
+      ],
       "note": "One to three seeded mutations",
       "output_values": {
-        "P&L!AA15": 14183204.0,
+        "P&L!AA15": 14569336.0,
         "Valuation!B7": 80998609.0
       },
       "role": "seeded",
       "seed": 20260833,
-      "sha256": "80aa71f328f25bf6aaf91e8ccd375fd9ee4ebb097b0c3a2c2f023893eb902eb0"
+      "sha256": "baeb64cd6b461844c6e6069b60d0d2821bbee1e2d6f9fdd298cec937a4e9d517"
     },
     {
       "declared_outputs": [
@@ -111,15 +218,67 @@
       "formula_count": 739,
       "id": "C06",
       "legitimate_breaks": [],
-      "mutations": [],
+      "mutations": [
+        {
+          "address": "Revenue!I9",
+          "deltas": {
+            "P&L!AA15": -261110.0,
+            "Valuation!B7": -1599468.0
+          },
+          "description": "Fill handle dragged from the column to the left.",
+          "family": "M2",
+          "in_taxonomy": true,
+          "material": true,
+          "mutated": "=H5+I6+I7",
+          "original": "=I5+I6+I7",
+          "relative": {
+            "P&L!AA15": -0.03792457815061508,
+            "Valuation!B7": -0.047286600938306736
+          }
+        },
+        {
+          "address": "P&L!K7",
+          "deltas": {
+            "P&L!AA15": 364454.0,
+            "Valuation!B7": 0.0
+          },
+          "description": "Cost of sales added back instead of deducted.",
+          "family": "M5",
+          "in_taxonomy": true,
+          "material": true,
+          "mutated": "=K5-K6",
+          "original": "=K5+K6",
+          "relative": {
+            "P&L!AA15": 0.05293464135921363,
+            "Valuation!B7": 0.0
+          }
+        },
+        {
+          "address": "Costs!C5",
+          "deltas": {
+            "P&L!AA15": 3747480.0,
+            "Valuation!B7": 15552042.0
+          },
+          "description": "Opening headcount reads the hires per month row, one row below.",
+          "family": "M7",
+          "in_taxonomy": false,
+          "material": true,
+          "mutated": "=Assumptions!$B$13",
+          "original": "=Assumptions!$B$12",
+          "relative": {
+            "P&L!AA15": 0.5442977983526752,
+            "Valuation!B7": 0.45977987920345126
+          }
+        }
+      ],
       "note": "One to three seeded mutations",
       "output_values": {
-        "P&L!AA15": 6884981.0,
-        "Valuation!B7": 33824973.0
+        "P&L!AA15": 10727091.0,
+        "Valuation!B7": 47777547.0
       },
       "role": "seeded",
       "seed": 20260834,
-      "sha256": "3139189cb50dbf84bb35628bc1af0e3997cc045f4956de50be77a3d360768cbe"
+      "sha256": "6f17eb12169ef57a9ca390c18a3eaffa4c999ab3b096d55fdfec4027e8dccd92"
     },
     {
       "declared_outputs": [
@@ -130,15 +289,33 @@
       "formula_count": 739,
       "id": "C07",
       "legitimate_breaks": [],
-      "mutations": [],
+      "mutations": [
+        {
+          "address": "P&L!AA15",
+          "deltas": {
+            "P&L!AA15": -826276.0,
+            "Valuation!B7": 0.0
+          },
+          "description": "Total range stops one month short of the block.",
+          "family": "M3",
+          "in_taxonomy": true,
+          "material": true,
+          "mutated": "=SUM(C15:Y15)",
+          "original": "=SUM(C15:Z15)",
+          "relative": {
+            "P&L!AA15": -0.060851321682258354,
+            "Valuation!B7": 0.0
+          }
+        }
+      ],
       "note": "One to three seeded mutations",
       "output_values": {
-        "P&L!AA15": 13578604.0,
+        "P&L!AA15": 12752328.0,
         "Valuation!B7": 113433337.0
       },
       "role": "seeded",
       "seed": 20260835,
-      "sha256": "65f3a80f393a7e3f0e514c0637a26dd349aa84b187b92889ba68727777374799"
+      "sha256": "28c44b534c140a753fbf745e90339a32c09a224e2bf67daaf502efdc4cd59361"
     },
     {
       "declared_outputs": [
@@ -146,18 +323,53 @@
         "Valuation!B7"
       ],
       "file": "C08.xlsx",
-      "formula_count": 739,
+      "formula_count": 738,
       "id": "C08",
       "legitimate_breaks": [],
-      "mutations": [],
+      "mutations": [
+        {
+          "address": "Revenue!I5",
+          "deltas": {
+            "P&L!AA15": -2664682.0,
+            "Valuation!B7": -25819937.0
+          },
+          "description": "Opening customers pasted as a value from month 1 and never restored.",
+          "family": "M1",
+          "in_taxonomy": true,
+          "material": true,
+          "mutated": 7900.0,
+          "original": "=H9",
+          "relative": {
+            "P&L!AA15": -0.3609185192529328,
+            "Valuation!B7": -0.46935424678193893
+          }
+        },
+        {
+          "address": "Revenue!J5",
+          "deltas": {
+            "P&L!AA15": -464379.0,
+            "Valuation!B7": -4678245.0
+          },
+          "description": "Opening balance reads two months back, not the month before.",
+          "family": "M4",
+          "in_taxonomy": true,
+          "material": true,
+          "mutated": "=H9",
+          "original": "=I9",
+          "relative": {
+            "P&L!AA15": -0.06289792967872251,
+            "Valuation!B7": -0.08504103469487055
+          }
+        }
+      ],
       "note": "One to three seeded mutations",
       "output_values": {
-        "P&L!AA15": 7383057.0,
-        "Valuation!B7": 55011619.0
+        "P&L!AA15": 6816961.0,
+        "Valuation!B7": 50333374.0
       },
       "role": "seeded",
       "seed": 20260836,
-      "sha256": "9fb3d1d374d656e69ac4c19238bfc84fbd329907999784a7c9272ca0c3fa5ffa"
+      "sha256": "8ad7a99a3babe361e1e68882c8e0b75c973d038a8a4b57e559fc4f68e47ab706"
     },
     {
       "declared_outputs": [
@@ -229,18 +441,36 @@
         "Valuation!B7"
       ],
       "file": "C11.xlsx",
-      "formula_count": 739,
+      "formula_count": 738,
       "id": "C11",
       "legitimate_breaks": [],
-      "mutations": [],
+      "mutations": [
+        {
+          "address": "Costs!Z12",
+          "deltas": {
+            "P&L!AA15": 4164.800000000745,
+            "Valuation!B7": 28321.0
+          },
+          "description": "Final month overhead pasted as a value, slightly off.",
+          "family": "M1",
+          "in_taxonomy": true,
+          "material": false,
+          "mutated": 21192.2,
+          "original": "=ROUND(Y12*(1+Assumptions!$B$18),0)",
+          "relative": {
+            "P&L!AA15": 0.0002165987741221228,
+            "Valuation!B7": 0.000300003893980842
+          }
+        }
+      ],
       "note": "A real mutation that is immaterial",
       "output_values": {
-        "P&L!AA15": 19228179.0,
-        "Valuation!B7": 94402108.0
+        "P&L!AA15": 19232343.8,
+        "Valuation!B7": 94430429.0
       },
       "role": "hard_case",
       "seed": 20260839,
-      "sha256": "eb7ff288ba78a135f2bf160c45a702858c1886e2ff7aa150978f60e3b85d1386"
+      "sha256": "398cd4d45da55832ef323473fade86b8d70c42baaae1a1665f40635f60f23417"
     },
     {
       "declared_outputs": [
@@ -251,15 +481,50 @@
       "formula_count": 739,
       "id": "C12",
       "legitimate_breaks": [],
-      "mutations": [],
+      "mutations": [
+        {
+          "address": "Revenue!M9",
+          "deltas": {
+            "P&L!AA15": -553510.0,
+            "Valuation!B7": -6521971.0
+          },
+          "description": "Fill handle dragged from the column to the left.",
+          "family": "M2",
+          "in_taxonomy": true,
+          "material": true,
+          "mutated": "=L5+M6+M7",
+          "original": "=M5+M6+M7",
+          "relative": {
+            "P&L!AA15": -0.05622357298566563,
+            "Valuation!B7": -0.07704111611220402
+          }
+        },
+        {
+          "address": "Assumptions!B11",
+          "deltas": {
+            "P&L!AA15": 6320144.0,
+            "Valuation!B7": 52866164.0
+          },
+          "description": "Cost ratio entered a decimal place out.",
+          "family": "M6",
+          "in_taxonomy": false,
+          "material": true,
+          "mutated": 0.02597,
+          "original": 0.2597,
+          "relative": {
+            "P&L!AA15": 0.6419777013313522,
+            "Valuation!B7": 0.6244842669694208
+          }
+        }
+      ],
       "note": "One in taxonomy and one out of taxonomy mutation",
       "output_values": {
-        "P&L!AA15": 9844803.0,
-        "Valuation!B7": 84655718.0
+        "P&L!AA15": 15415480.0,
+        "Valuation!B7": 128690970.0
       },
       "role": "hard_case",
       "seed": 20260840,
-      "sha256": "563b76672c6109d9df639597c393c64c5e73e7902f0fcad34b536303ef7510c7"
+      "sha256": "f3b38275cb001dda0ba974a26ccb9550d464c9d088849f53b10f624e9e22be07"
     }
   ]
 }

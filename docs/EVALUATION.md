@@ -87,6 +87,10 @@ Grounded in the published spreadsheet error classifications (Panko's taxonomy, E
 
 Mutations are injected programmatically by `src/materia/corpus/mutate.py`. The agent never sees the manifest. Each mutation records: cell, original formula, mutated formula, family, and the true delta on each declared output cell (computed by the recompute engine, so materiality is known ground truth).
 
+Deltas are measured one mutation at a time against the clean workbook, even where a workbook carries three. What each error costs on its own is the question the adjudicator is asked about each cell, so that is what the manifest records. `material` is derived from the measurement rather than asserted alongside it, and the manifest validator rejects a mutation whose flag disagrees with its own numbers.
+
+Every mutation is aimed at a cell that reaches a declared output. One that nothing depends on would be correctly ignored by every system, and would measure nothing.
+
 ### In taxonomy: the detectors target these
 
 | ID | Family | Example | Real world origin |

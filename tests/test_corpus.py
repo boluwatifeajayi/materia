@@ -252,14 +252,52 @@ class TestTheTwelveWorkbookCorpus:
 
     def test_every_workbook_is_a_viable_business(self, corpus):
         """A negative enterprise value makes a percentage change in it close
-        to meaningless, so the materiality gate could not be tested on one."""
+        to meaningless, so the materiality gate could not be tested on one.
+
+        Checked after mutation, since that is the workbook a system sees.
+        """
         _, manifest = corpus
         for entry in manifest["workbooks"]:
             for output, value in entry["output_values"].items():
                 assert value > 0, f"{entry['id']} {output} is {value}"
 
-    def test_the_engine_agrees_with_every_workbook(self, corpus):
-        """The T07 cross check, across the whole corpus rather than one file."""
+    def test_the_engine_agrees_with_every_workbook_seed(self, corpus, tmp_path):
+        """The T07 cross check, across every seed in the corpus.
+
+        Run against freshly generated unmutated workbooks rather than the
+        shipped ones. A shipped workbook has been recalculated by the engine
+        after its mutations were injected, so checking the engine against it
+        would be checking the engine against itself. The independent Python
+        calculation only exists for the unmutated model.
+        """
+        from materia.corpus.build import CORPUS
+        from materia.corpus.generate import generate as generate_one
+
+        for spec in CORPUS:
+            path, _ = generate_one(
+                tmp_path / spec.file_name, spec.seed, spec.legitimate_breaks
+            )
+            book = openpyxl.load_workbook(path, data_only=True)
+            cached = {
+                f"{name}!{cell.coordinate}": float(cell.value)
+                for name in book.sheetnames
+                for row in book[name].iter_rows()
+                for cell in row
+                if isinstance(cell.value, (int, float))
+            }
+            book.close()
+
+            model = Model.load(path)
+            assert len(cached) > 700
+            for address, expected in cached.items():
+                actual = model.value(address)
+                if isinstance(actual, (int, float)):
+                    assert abs(float(actual) - expected) < 1e-6, f"{spec.identifier} {address}"
+
+    def test_the_shipped_workbooks_are_self_consistent(self, corpus):
+        """The values in the files match the formulas in them, mutations
+        included. A spreadsheet recalculates after an edit, so these have to
+        as well."""
         directory, manifest = corpus
         for entry in manifest["workbooks"]:
             path = directory / entry["file"]
@@ -272,7 +310,6 @@ class TestTheTwelveWorkbookCorpus:
                 if isinstance(cell.value, (int, float))
             }
             book.close()
-
             model = Model.load(path)
             for address, expected in cached.items():
                 actual = model.value(address)
@@ -281,14 +318,16 @@ class TestTheTwelveWorkbookCorpus:
 
 
 class TestChecksums:
-    def test_checksums_are_stable_across_two_runs(self, tmp_path):
-        from materia.corpus.build import CHECKSUMS_NAME, build_corpus
+    def test_checksums_are_stable_across_two_runs(self, corpus, tmp_path):
+        """Rebuilt from scratch in a different directory, the corpus has to
+        come out identical. This is what `make corpus-check` promises."""
+        from materia.corpus.build import CHECKSUMS_NAME, MANIFEST_NAME, build_corpus
 
-        first = tmp_path / "first"
+        first, _ = corpus
         second = tmp_path / "second"
-        build_corpus(first)
         build_corpus(second)
         assert (first / CHECKSUMS_NAME).read_text() == (second / CHECKSUMS_NAME).read_text()
+        assert (first / MANIFEST_NAME).read_text() == (second / MANIFEST_NAME).read_text()
 
     def test_check_passes_on_a_fresh_build(self, corpus):
         from materia.corpus.build import check_corpus

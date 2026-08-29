@@ -41,7 +41,7 @@ Set your key. It is read from the environment only and never written to disk.
 export ANTHROPIC_API_KEY="sk-ant-..."
 ```
 
-Verify the install. This runs the unit tests for the recompute engine and the graph builder, needs no API key, and takes about 20 seconds.
+Verify the install. This runs the unit tests, needs no API key, and takes about 40 seconds. Most of that is building corpus workbooks, which the tests do from scratch rather than reading committed ones.
 
 ```bash
 make verify
@@ -50,11 +50,10 @@ make verify
 Expected output ends with:
 
 ```
-recompute engine:  [N] passed
-dependency graph:  [N] passed
-preflight:         [N] passed
-OK
+[N] passed
 ```
+
+Every module is covered. If a test fails here, stop: nothing downstream is trustworthy, because the recompute engine is where every impact figure in the results comes from.
 
 ## 3. Build the corpus
 

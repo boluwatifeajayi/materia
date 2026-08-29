@@ -15,6 +15,7 @@ from pathlib import Path
 from materia.corpus.generate import LegitimateBreak, generate
 from materia.corpus.layout import DECLARED_OUTPUTS, MONTHS
 from materia.corpus.manifest import MANIFEST_VERSION, write_manifest
+from materia.corpus.mutate import Mutation, inject, plan_for
 from materia.preflight import preflight
 from materia.recompute import Model
 
@@ -64,7 +65,12 @@ def sha256_of(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _entry(spec: WorkbookSpec, path: Path, breaks: list[LegitimateBreak]) -> dict:
+def _entry(
+    spec: WorkbookSpec,
+    path: Path,
+    breaks: list[LegitimateBreak],
+    mutations: list[Mutation],
+) -> dict:
     report = preflight(path)
     model = Model.load(path, outputs=DECLARED_OUTPUTS)
     return {
@@ -83,8 +89,7 @@ def _entry(spec: WorkbookSpec, path: Path, breaks: list[LegitimateBreak]) -> dic
             {"kind": item.kind, "cells": list(item.cells), "why": item.why}
             for item in breaks
         ],
-        # Filled in by the mutation injector in T09.
-        "mutations": [],
+        "mutations": [item.as_manifest_entry() for item in mutations],
     }
 
 
@@ -107,7 +112,11 @@ def build_corpus(directory: str | Path) -> dict:
         path, breaks = generate(
             directory / spec.file_name, spec.seed, spec.legitimate_breaks
         )
-        entries.append(_entry(spec, path, breaks))
+        # Mutations are measured against the clean workbook, then written into
+        # it. The deltas in the manifest are what each error costs on its own.
+        clean = Model.load(path, outputs=DECLARED_OUTPUTS)
+        mutations = inject(path, plan_for(spec.identifier, clean, spec.seed), clean)
+        entries.append(_entry(spec, path, breaks, mutations))
 
     manifest = {
         "version": MANIFEST_VERSION,
