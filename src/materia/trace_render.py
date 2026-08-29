@@ -107,6 +107,8 @@ def _render_record(record: Record) -> str:
         return "\n\n".join(parts)
 
     if record.type == "verdict":
+        if "findings" in content:
+            return _baseline_verdict(heading, content)
         parts = [heading, f"**{content.get('verdict', 'unknown')}**, "
                           f"confidence {content.get('confidence', 'unknown')}"]
         if content.get("proposed_formula"):
@@ -255,8 +257,16 @@ FEATURED: list[Featured] = [
         shows="The failure the whole project is about: a capable general agent reporting confident findings on a workbook with nothing wrong in it.",
         path=None,
         preamble=(
-            "The baseline harness is T18 and has not been built. There is no "
-            "baseline run, so there is no baseline trajectory.\n\n"
+            "The harness exists as of T18 and there is a proof run against "
+            "`C03` in the index below. What does not exist is a baseline run "
+            "against a clean control, which is what this entry needs: the "
+            "failure is an agent reporting confident findings on a workbook "
+            "with nothing wrong in it, and that only shows up on `C09` or "
+            "`C10`.\n\n"
+            "The scored run is T19 and covers all twelve workbooks, so it will "
+            "produce this. Until it does, the entry stays empty rather than "
+            "borrowing the `C03` proof run, which is a seeded workbook and so "
+            "cannot show a false positive.\n\n"
             "The equivalent measurement does exist without an agent: the "
             "detectors alone report twenty one findings on `C09` and twenty "
             "five on `C10`, both of which contain no errors at all. That is "
@@ -303,6 +313,37 @@ FEATURED: list[Featured] = [
 # --- the index -------------------------------------------------------------
 
 
+def _verdict_label(verdict) -> str:
+    """One cell of the index table. The baseline has a count, not a verdict."""
+    if verdict is None:
+        return ""
+    content = verdict.content
+    if "findings" in content:
+        count = content.get("count", len(content.get("findings") or []))
+        return f"{count} reported"
+    return content.get("verdict", "")
+
+
+def _baseline_verdict(heading: str, content: dict) -> str:
+    """The baseline reports a findings file, not a single verdict.
+
+    Same record type, different shape: it is asked for a list, so the shape is
+    a list. Rendering it as a missing verdict would read as a broken trace.
+    """
+    count = content.get("count", len(content.get("findings") or []))
+    parts = [heading, f"Wrote a findings file listing **{count}** "
+                      f"{'finding' if count == 1 else 'findings'}."]
+    for finding in content.get("findings") or []:
+        cell = f"{finding.get('sheet')}!{finding.get('cell')}"
+        parts.append(
+            f"- `{cell}`, confidence {finding.get('confidence', 'unstated')}, "
+            f"impact {finding.get('estimated_impact', 'unstated')}"
+        )
+    if content.get("malformed_findings_file"):
+        parts.append("The file it wrote is not valid JSON. Kept as written.")
+    return "\n\n".join(parts)
+
+
 def _row(path: Path, root: Path) -> dict:
     records = read(path)
     start = records[0]
@@ -315,7 +356,7 @@ def _row(path: Path, root: Path) -> dict:
         "cell": start.content.get("cell", ""),
         "steps": len(records),
         "tool_calls": len([r for r in records if r.type == "tool_call"]),
-        "verdict": (verdict.content.get("verdict", "") if verdict else ""),
+        "verdict": _verdict_label(verdict),
         "tokens": tokens["in"] + tokens["out"],
         "file": str(path.relative_to(root)),
     }

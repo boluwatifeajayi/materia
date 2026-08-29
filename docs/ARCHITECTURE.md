@@ -106,6 +106,16 @@ Two outcomes are possible when a reported figure does not line up:
 
 The second case is not hypothetical. It happened on the first candidate of the first live run: the model called the tool, received 8704573.0, and reported -6102169. See README section 8.
 
+### Tool output is kept in full, deliberately
+
+A tool result stays in the conversation verbatim and is resent on every later turn. Measured across the adjudications on disk, that resent growth is 30% of billed input, and the cached `value` on each cell of an `inspect_range` result is 25.8% of that payload: dropping it would save about 8% of input, roughly 160,000 tokens across a twelve workbook run.
+
+It is kept anyway, for two reasons.
+
+The value is evidence. Telling an `ERROR` apart from a deliberate difference often turns on whether a cell's number is the right order of magnitude for its row, and that judgement is not available from the formula alone.
+
+The second reason is narrower and applies until the scored runs are done. The baseline's turn and token caps in `config.yaml` are derived from the solution's measured spend per candidate. Changing what the solution sends changes that measurement, so trimming the payload now would either invalidate the caps or require re-measuring at a cost larger than the saving.
+
 ## 6. Recompute engine
 
 A small deterministic evaluator over the supported grammar. Applies a patch to one cell, recomputes in topological order, returns the delta on each declared output.

@@ -16,7 +16,7 @@ trajectories/
     C03_adjudicator_H42.jsonl        one file per candidate adjudicated
     C03_reporter.jsonl
   baseline/
-    C03_baseline.jsonl
+    C03_baseline_openai.jsonl        one file per workbook per provider
   index.md                           this table, generated
 ```
 
@@ -60,7 +60,9 @@ Four, chosen to show the system working, the system declining, the system correc
 
 This is the failure mode in README section 8 happening on the first candidate of the first live run, unprompted. It is also the reason the reporter's cross check is a code check rather than a line in the prompt: the prompt already says, as rule 1, never state an impact figure you did not obtain from the tool. The model agreed and then did it anyway.
 
-**Two of the four exist. `trajectories/index.md` says which, and why the other two do not.** Trajectory 2 needs an adjudication run against `C10`, which has not happened. Trajectory 4 needs the baseline harness from T18, which has not been built. Neither is written until a run produces it: a trajectory composed to demonstrate a capability nobody exercised is a fabrication, and this is the one deliverable where that would be most obvious to a reader who checks.
+**Two of the four exist. `trajectories/index.md` says which, and why the other two do not.** Trajectory 2 needs an adjudication run against `C10`, which has not happened. Trajectory 4 needs a baseline run against a clean control: the harness is built as of T18 and there is a proof run against `C03` in the index, but `C03` is a seeded workbook, so it cannot show the false positive this entry is about. That needs `C09` or `C10`, which the scored sweep in T19 covers.
+
+Neither is written until a run produces it: a trajectory composed to demonstrate a capability nobody exercised is a fabrication, and this is the one deliverable where that would be most obvious to a reader who checks.
 
 | # | File | Agent | Shows |
 | --- | --- | --- | --- |

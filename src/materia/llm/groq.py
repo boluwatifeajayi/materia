@@ -22,6 +22,7 @@ from materia.llm.openai_compatible import (
     TokenPacer,
     estimate_tokens,
     parse_arguments,
+    scrub,
 )
 
 BASE_URL = "https://api.groq.com/openai/v1"
@@ -52,11 +53,12 @@ class GroqClient(OpenAICompatibleClient):
 
     def _translate_error(self, error: Exception) -> ProviderError:
         text = str(error).lower()
+        message = scrub(str(error))
         if "does not exist" in text or "model_not_found" in text or "decommissioned" in text:
-            return ModelNotAvailable(f"Groq will not serve {self.model!r}: {error}")
+            return ModelNotAvailable(f"Groq will not serve {self.model!r}: {message}")
         if "rate_limit" in text or "rate limit" in text:
-            return RateLimited(f"Groq rate limit reached: {error}")
-        return ProviderError(f"Groq request failed: {error}")
+            return RateLimited(f"Groq rate limit reached: {message}")
+        return ProviderError(f"Groq request failed: {message}")
 
 
 def _translate_error(error: Exception, model: str) -> ProviderError:

@@ -36,6 +36,7 @@ from materia.llm.openai_compatible import (
     TokenPacer,
     estimate_tokens,
     parse_arguments,
+    scrub,
 )
 from materia.llm.types import AgentResponse, Message, ToolCall, ToolDefinition, Usage
 
@@ -103,20 +104,23 @@ class OpenAIClient(OpenAICompatibleClient):
 
     def _translate_error(self, error: Exception) -> ProviderError:
         text = str(error).lower()
+        message = scrub(str(error))
         if any(
             phrase in text
             for phrase in ("does not exist", "model_not_found", "invalid model", "deprecated")
         ):
             return ModelNotAvailable(
-                f"OpenAI will not serve {self.model!r}: {error}. "
+                f"OpenAI will not serve {self.model!r}: {message}. "
                 "Do not guess another model id: a run scored against a model "
                 "nobody chose is not a result."
             )
         if "rate_limit" in text or "rate limit" in text or "429" in text:
-            return RateLimited(f"OpenAI rate limit reached: {error}")
+            return RateLimited(f"OpenAI rate limit reached: {message}")
         if "insufficient_quota" in text or "billing" in text:
-            return ProviderError(f"OpenAI refused the request for billing reasons: {error}")
-        return ProviderError(f"OpenAI request failed: {error}")
+            return ProviderError(
+                f"OpenAI refused the request for billing reasons: {message}"
+            )
+        return ProviderError(f"OpenAI request failed: {message}")
 
     # --- the interface ---
 

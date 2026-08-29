@@ -758,3 +758,52 @@ class TestOpenAILive:
         call = response.tool_calls[0]
         assert call.name == "add_numbers"
         assert {call.arguments["a"], call.arguments["b"]} == {17, 25}
+
+
+class TestTheAccountIdNeverReachesATrace:
+    """Rate limit messages name the organisation the key belongs to.
+
+    Not a credential, but trajectories are a published deliverable and there is
+    no reason for an account identifier to be sitting in one.
+    """
+
+    MESSAGE = (
+        "Error code: 429 - Rate limit reached for model `x` in organization "
+        "`org_01m16gh92wefbbd5r1rt6hzy8b` service tier `on_demand`"
+    )
+
+    def test_groq_strips_it(self):
+        from materia.llm.groq import GroqClient
+
+        client = GroqClient.__new__(GroqClient)
+        client.model = "m"
+        translated = str(client._translate_error(Exception(self.MESSAGE)))
+        assert "org_01m16gh92wefbbd5r1rt6hzy8b" not in translated
+        assert "org_[redacted]" in translated
+        assert "Rate limit reached" in translated
+
+    def test_openai_strips_it(self):
+        from materia.llm.openai_client import OpenAIClient
+
+        client = OpenAIClient.__new__(OpenAIClient)
+        client.model = "m"
+        translated = str(client._translate_error(Exception(self.MESSAGE)))
+        assert "org_01m16gh92wefbbd5r1rt6hzy8b" not in translated
+        assert "org_[redacted]" in translated
+
+    def test_it_leaves_everything_else_alone(self):
+        from materia.llm.openai_compatible import scrub
+
+        assert scrub("no account id here") == "no account id here"
+        assert scrub("organization or org_short") == "organization or org_short"
+
+    def test_no_committed_trajectory_carries_one(self):
+        import re
+        from pathlib import Path
+
+        pattern = re.compile(r"\borg_[A-Za-z0-9]{8,}")
+        offenders = [
+            str(p) for p in Path("trajectories").rglob("*.jsonl")
+            if pattern.search(p.read_text())
+        ]
+        assert offenders == []

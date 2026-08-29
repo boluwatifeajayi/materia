@@ -13,6 +13,7 @@ limiter is needed, and the strings a provider uses when it refuses.
 from __future__ import annotations
 
 import json
+import re
 import sys
 import time
 from collections import deque
@@ -128,6 +129,19 @@ def estimate_tokens(request: dict) -> int:
     reply is allowed for on top.
     """
     return len(json.dumps(request)) // 4 + 600
+
+
+_ACCOUNT_ID = re.compile(r"\borg_[A-Za-z0-9]{8,}")
+
+
+def scrub(text: str) -> str:
+    """Take the account identifier out of a provider error before it is traced.
+
+    Rate limit messages name the organisation the key belongs to. That is not
+    a credential, but trajectories are a published deliverable and there is no
+    reason for an account id to be in one.
+    """
+    return _ACCOUNT_ID.sub("org_[redacted]", text)
 
 
 class OpenAICompatibleClient:

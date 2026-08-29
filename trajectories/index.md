@@ -36,7 +36,9 @@ So the retry the table describes has not happened. It is a plausible path throug
 
 ### 4. The baseline reporting errors in a clean workbook
 
-The baseline harness is T18 and has not been built. There is no baseline run, so there is no baseline trajectory.
+The harness exists as of T18 and there is a proof run against `C03` in the index below. What does not exist is a baseline run against a clean control, which is what this entry needs: the failure is an agent reporting confident findings on a workbook with nothing wrong in it, and that only shows up on `C09` or `C10`.
+
+The scored run is T19 and covers all twelve workbooks, so it will produce this. Until it does, the entry stays empty rather than borrowing the `C03` proof run, which is a seeded workbook and so cannot show a false positive.
 
 The equivalent measurement does exist without an agent: the detectors alone report twenty one findings on `C09` and twenty five on `C10`, both of which contain no errors at all. That is in the changelog as Iteration 1. It is not this trajectory.
 
@@ -46,6 +48,8 @@ The same cell appears more than once where it was adjudicated in more than one r
 
 | Run | Agent | Cell | Steps | Tool calls | Verdict | Tokens | File |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| `base-C03-d7d6` | baseline | - | 7 | 1 | 0 reported | 1,199 | `baseline/C03_baseline_groq.jsonl` |
+| `base-C03-67c2` | baseline | - | 27 | 8 | 0 reported | 42,704 | `baseline/C03_baseline_openai.jsonl` |
 | `sol-C03-e76d` | adjudicator | Costs!C5 | 11 | 3 | INTENTIONAL | 5,553 | `solution/C03_adjudicator_Costs_C5_D2.jsonl` |
 | `sol-C03-7297` | adjudicator | P&L!AA15 | 14 | 4 | ERROR | 9,035 | `solution/C03_adjudicator_P&L_AA15_D2.jsonl` |
 | `sol-C03-247d` | adjudicator | Revenue!C3 | 14 | 4 | INTENTIONAL | 6,809 | `solution/C03_adjudicator_Revenue_C3_D1.jsonl` |
@@ -63,4 +67,4 @@ The same cell appears more than once where it was adjudicated in more than one r
 | `sol-C03-c194` | adjudicator | P&L!AA3 | 8 | 2 | INTENTIONAL | 3,104 | `solution_full/C03_adjudicator_P&L_AA3_D1.jsonl` |
 | `sol-C03-38d5` | adjudicator | P&L!AA5 | 8 | 2 | - | 3,324 | `solution_full/C03_adjudicator_P&L_AA5_D2.jsonl` |
 
-16 trajectories.
+18 trajectories.

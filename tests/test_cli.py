@@ -6,6 +6,8 @@ the output: make stops on a non zero exit, and a corpus check that failed
 silently would let a run score a different corpus from ours.
 """
 
+from pathlib import Path
+
 import pytest
 
 from materia.__main__ import main
@@ -276,3 +278,76 @@ class TestRepairFlag:
         monkeypatch.setattr("builtins.input", refuse)
         run(capsys, "report", str(subject), "--traces", str(traces))
         assert not (tmp_path / "C03.repaired.xlsx").exists()
+
+
+class TestBaselineCommand:
+    @staticmethod
+    def _scripted(monkeypatch, findings=None):
+        import json as _json
+
+        from materia.llm import AgentResponse, ToolCall, Usage
+
+        class Agent:
+            provider, model = "scripted", "scripted-1"
+
+            def __init__(self):
+                self.turn = 0
+
+            def complete(self, *_, **__):
+                self.turn += 1
+                if self.turn == 1 and findings is not None:
+                    return AgentResponse(
+                        text=None,
+                        tool_calls=(ToolCall("c1", "write_file", {
+                            "path": "findings.json",
+                            "content": _json.dumps({"findings": findings}),
+                        }),),
+                        stop_reason="tool_calls", usage=Usage(100, 20),
+                    )
+                return AgentResponse(text="done", stop_reason="stop", usage=Usage(50, 10))
+
+        monkeypatch.setattr("materia.llm.get_client", lambda *_a, **_k: Agent())
+
+    def test_it_runs_and_reports_what_the_agent_found(self, capsys, monkeypatch, tmp_path):
+        self._scripted(monkeypatch, [{"sheet": "Revenue", "cell": "H5", "confidence": "high"}])
+        code, out, _ = run(
+            capsys, "baseline", "corpus/C03.xlsx",
+            "--traces", str(tmp_path), "--max-turns", "4",
+        )
+        assert code == 0
+        assert "1 findings reported" in out
+        assert "Revenue!H5" in out
+        assert "trajectory:" in out
+
+    def test_the_caps_default_to_config(self, capsys, monkeypatch, tmp_path):
+        """docs/EVALUATION.md section 4 requires equal budgets, so the number
+        lives in one place rather than being repeated in the CLI."""
+        import yaml
+
+        from materia.__main__ import build_parser
+
+        config = yaml.safe_load(Path("config.yaml").read_text())
+        arguments = build_parser().parse_args(["baseline", "corpus/C03.xlsx"])
+        assert arguments.max_turns == config["baseline"]["max_turns"]
+        assert arguments.max_tokens == config["baseline"]["max_tokens"]
+
+    def test_it_writes_a_result_set_when_asked(self, capsys, monkeypatch, tmp_path):
+        self._scripted(monkeypatch, [])
+        results = tmp_path / "results"
+        run(capsys, "baseline", "corpus/C03.xlsx", "--traces", str(tmp_path),
+            "--results", str(results), "--max-turns", "2")
+        assert (results / "C03.json").exists()
+        assert (results / "provider.json").exists()
+
+    def test_an_unknown_workbook_says_to_pass_outputs(self, capsys, monkeypatch, tmp_path, workbooks):
+        self._scripted(monkeypatch)
+        code, _, err = run(capsys, "baseline", str(workbooks["clean"]), "--traces", str(tmp_path))
+        assert code == 1
+        assert "--outputs" in err
+
+    def test_a_missing_key_stops_before_any_work(self, capsys, monkeypatch, tmp_path):
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        code, _, err = run(capsys, "baseline", "corpus/C03.xlsx",
+                           "--provider", "openai", "--traces", str(tmp_path))
+        assert code == 1
+        assert "OPENAI_API_KEY" in err

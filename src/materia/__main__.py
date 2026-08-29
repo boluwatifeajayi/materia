@@ -15,6 +15,21 @@ from materia import __version__
 DEFAULT_CORPUS = Path("corpus")
 
 
+def _config(section: str, key: str, fallback):
+    """Read a run budget from config.yaml.
+
+    The caps live there because docs/EVALUATION.md section 4 requires both
+    systems to get the same room, and a number hardcoded in two places drifts.
+    """
+    try:
+        import yaml
+
+        data = yaml.safe_load(Path("config.yaml").read_text())
+        return data[section][key]
+    except Exception:  # noqa: BLE001 - a missing config falls back, not crashes
+        return fallback
+
+
 def _build_corpus(arguments: argparse.Namespace) -> int:
     from materia.corpus.build import build_corpus
 
@@ -282,6 +297,64 @@ def _trace_index(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def _baseline(arguments: argparse.Namespace) -> int:
+    import json
+
+    from materia.audit import outputs_for
+    from materia.baseline import run_baseline
+    from materia.llm import ProviderError, get_client
+
+    try:
+        client = get_client(arguments.provider)
+    except ProviderError as error:
+        print(error, file=sys.stderr)
+        return 1
+
+    outputs = (
+        [item.strip() for item in arguments.outputs.split(",")]
+        if arguments.outputs
+        else None
+    )
+    try:
+        outputs = outputs or outputs_for(arguments.workbook)
+    except ValueError as error:
+        print(error, file=sys.stderr)
+        return 1
+
+    result = run_baseline(
+        arguments.workbook, outputs, client,
+        trace_directory=arguments.traces,
+        max_turns=arguments.max_turns,
+        max_tokens=arguments.max_tokens,
+    )
+
+    print(f"{result.workbook}: {len(result.findings)} findings reported")
+    print(f"  {result.turns} turns, {result.tool_calls} tool calls, "
+          f"{result.tokens['in'] + result.tokens['out']:,} tokens")
+    if result.stopped:
+        where = "the provider stopped it" if result.failed else "it used its budget"
+        print(f"  stopped early, {where}: {result.stopped}")
+    if result.raw_findings:
+        print("  the agent wrote a findings file that is not valid JSON", file=sys.stderr)
+    for finding in result.findings:
+        print(f"  {finding.get('sheet')}!{finding.get('cell')} "
+              f"confidence={finding.get('confidence')}")
+    print(f"  trajectory: {result.trace_path}")
+
+    if arguments.results:
+        arguments.results.mkdir(parents=True, exist_ok=True)
+        path = arguments.results / f"{Path(arguments.workbook).stem}.json"
+        path.write_text(json.dumps(result.as_dict(), indent=2, sort_keys=True) + "\n")
+        from materia.llm import write_provenance
+
+        write_provenance(arguments.results, client)
+        print(f"  result written to {path}")
+
+    # A run the provider cut short is not a baseline that found nothing, and
+    # make must not treat it as one.
+    return 1 if result.failed else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="materia", description=__doc__)
     parser.add_argument("-V", "--version", action="version", version=f"materia {__version__}")
@@ -357,6 +430,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
     report_command.add_argument("--repair-to", type=Path, default=None)
     report_command.set_defaults(handler=_report)
+
+    baseline = commands.add_parser(
+        "baseline", help="run the baseline agent against one workbook"
+    )
+    baseline.add_argument("workbook", type=Path)
+    baseline.add_argument("--outputs", default=None)
+    baseline.add_argument("--provider", default=None, choices=["groq", "openai"])
+    baseline.add_argument("--traces", type=Path, default=Path("trajectories/baseline"))
+    baseline.add_argument("--results", type=Path, default=None)
+    baseline.add_argument(
+        "--max-turns", type=int, default=_config("baseline", "max_turns", 67),
+        help="defaults to the cap in config.yaml, which equals the solution's average",
+    )
+    baseline.add_argument(
+        "--max-tokens", type=int, default=_config("baseline", "max_tokens", 211_000)
+    )
+    baseline.set_defaults(handler=_baseline)
 
     trace = commands.add_parser("trace", help="read and index agent trajectories")
     trace_actions = trace.add_subparsers(dest="trace_action", required=True)

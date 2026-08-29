@@ -24,10 +24,10 @@ corpus:
 corpus-check:
 	$(PYTHON) -m materia corpus check
 
-## Baseline agent over the corpus. T18, T19.
+## Baseline agent over the corpus. The scored sweep is T19.
 baseline:
-	@echo "make baseline: not implemented (T18, T19)" >&2
-	@exit 1
+	$(PYTHON) -m materia baseline corpus/C03.xlsx \
+	  --traces trajectories/baseline --results results/baseline
 
 ## Materia over the corpus. Full corpus lands with T20.
 solution:

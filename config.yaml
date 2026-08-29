@@ -16,14 +16,19 @@ provider:
 
 # Per workbook run budgets. The baseline's caps are set equal to the
 # solution's measured per workbook average, so neither side gets more room
-# than the other. docs/EVALUATION.md section 4. Measured at T18.
+# than the other. docs/EVALUATION.md section 4.
+#
+# Derived, not chosen. Measured on gpt-5.6-terra: 3.0 model calls and 9,463
+# tokens per candidate. The corpus averages 22.2 candidates per workbook, so
+# the solution spends about 67 calls and 211,000 tokens on one workbook, and
+# the baseline is given the same.
 solution:
-  max_turns: null
-  max_tokens: null
+  calls_per_candidate: 3.0
+  tokens_per_candidate: 9463
 
 baseline:
-  max_turns: null
-  max_tokens: null
+  max_turns: 67
+  max_tokens: 211000
 
 # Corpus generation. docs/REPRODUCTION.md section 9.
 corpus:

@@ -89,7 +89,12 @@ class Trace:
         self.agent = agent
         self._step = 0
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self._handle = self.path.open("a", encoding="utf-8")
+
+        # One file, one run. Appending merged a rerun into the file already
+        # there, and the result read as a single incoherent run: two
+        # run_starts, two run_ends, step numbers restarting halfway down.
+        # Nothing reads a trace expecting more than one run in it.
+        self._handle = self.path.open("w", encoding="utf-8")
 
     # --- lifecycle ---
 

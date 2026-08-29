@@ -4,7 +4,7 @@ Written for someone starting from a clean machine with nothing installed. Follow
 
 Every figure below was measured from a fresh clone into an empty directory, not estimated. Where a step is not built yet, this guide says so rather than describing it as though it were.
 
-> **`make all` does not currently run to completion.** It stops at `make baseline`, which is not built. Everything before it works: `verify`, `corpus`, `corpus-check`, `eval`, and `solution` on a single workbook. Run those individually until the baseline lands.
+> **`make all` runs end to end but does not produce the full results yet.** `make baseline` and `make solution` each audit a single workbook, not the corpus. The twelve workbook sweeps are T19 and T20. Everything else works as described: `verify`, `corpus`, `corpus-check`, and `eval`.
 
 ---
 
@@ -91,11 +91,26 @@ Compares SHA256 of each workbook against `corpus/checksums.txt`. If these match,
 
 ## 4. Run the baseline
 
-**Not built.** `make baseline` exits with `not implemented (T18, T19)`. The harness is T18 and the scored run is T19.
+```bash
+make baseline
+```
 
-When it lands it will give a general purpose coding agent each workbook and a sandboxed shell, free to write its own analysis code, with instructions in `docs/AGENT_INSTRUCTIONS.md` section 3, writing to `results/baseline/` and `trajectories/baseline/`.
+**One workbook, not twelve.** The harness is built and audits `corpus/C03.xlsx`. The scored sweep over the corpus is T19, and until it runs there is no baseline column in the headline table: `docs/EVALUATION.md` section 5 shows it as `[TBD]` rather than as a number.
 
-Until then there is no baseline column in the headline table, and `docs/EVALUATION.md` section 5 shows it as `[TBD]` rather than as a number.
+The baseline is a general purpose coding agent given the workbook as `model.xlsx` in a sandboxed directory, a shell, and `openpyxl` already installed. It is free to write whatever analysis code it wants. Its instructions are in `docs/AGENT_INSTRUCTIONS.md` section 3, and they name the error families, declare the output cells, and say precision counts. It is not a strawman.
+
+Its caps come from `config.yaml` and are derived rather than chosen:
+
+| | |
+| --- | --- |
+| Model calls | 67 per workbook |
+| Tokens | 211,000 per workbook |
+
+Those are the solution's own measured spend: 3.0 model calls and 9,463 tokens per candidate on `gpt-5.6-terra`, times the 22.2 candidates the corpus averages. Both systems get the same room, which is what `docs/EVALUATION.md` section 4 requires for the comparison to mean anything.
+
+Output: `results/baseline/C03.json` and a full trajectory in `trajectories/baseline/`.
+
+The harness was proved on one run. That run stopped at a deliberately low turn bound before the agent wrote its findings file, so it reported nothing, and nothing about the comparison should be read into that. The trajectory is in `trajectories/index.md`.
 
 ## 5. Run the solution
 
@@ -172,13 +187,15 @@ Needs no API key. The whole thing is deterministic, and on a fresh clone it repr
 make all
 ```
 
-Runs verify, corpus, baseline, solution, eval in sequence. **It stops at `baseline`, which is not built**, so until T18 lands run the steps individually:
+Runs verify, corpus, baseline, solution, eval in sequence. Both agent steps need a key, and on the free Groq tier both are slow for the reason in section 5.
+
+For the parts that need no key and no model at all:
 
 ```bash
 make verify && make corpus && make corpus-check && make eval
 ```
 
-That is about 70 seconds end to end, needs no API key, and reproduces the Iteration 1 numbers above. Add `make solution` for the agent run and the roughly 25 minutes it takes.
+That is about 70 seconds end to end and reproduces the Iteration 1 numbers above.
 
 ---
 
@@ -193,7 +210,7 @@ What holds today:
 
 What needs the tasks that are not done:
 
-- The baseline column in the headline table needs T18 and T19.
+- The baseline column in the headline table needs the scored sweep, T19. The harness runs today, on one workbook.
 - The `C11` suppressed count needs the materiality gate, T21. Today its mutation is detected and reported rather than suppressed, because there is no gate to suppress it.
 - Both systems missing the `M6` mutation in `C12` needs a full corpus run, T20.
 
@@ -217,13 +234,13 @@ Everything here was hit during an actual clean clone run, except the last two ro
 | --- | --- | --- |
 | `command not found: python3.11` | An earlier version of this guide hardcoded 3.11 | Use whichever of 3.11 or 3.12 you have: `python3.12 -m venv .venv` |
 | `GROQ_API_KEY is not set` after exporting an OpenAI key | `MATERIA_PROVIDER` defaults to `groq` | Either set `GROQ_API_KEY`, or set `MATERIA_PROVIDER=openai` as well as the OpenAI key |
-| `make all` stops at `make baseline` | The baseline harness is T18 and is not built | Run the steps individually. See section 7. |
+| `baseline: stopped early: turn cap of 67 reached` | The agent used its whole budget without writing `findings.json` | Expected and left as is. The cap is the solution's own measured average and is what makes the comparison fair. A baseline that ran out of room reported nothing, and that is a result about the baseline. |
 | `groq: N tokens used in the last minute, waiting 60s` | The free tier caps this account at 8,000 tokens a minute | Nothing. That is the rate limiter holding a request back so it does not get refused. A full C03 audit takes about 25 minutes, most of it waiting. |
 | `Groq rate limit reached ... tokens per day (TPD)` | The free tier caps 200,000 tokens a day and one C03 audit uses about 142,000 | Wait for the reset, or bound the run with `--max-candidates N`. A run cut short keeps the verdicts it earned and says in its funnel how many were not examined. |
 | `Groq request failed ... tool_use_failed` | The dev loop model sometimes emits a malformed tool call | Nothing. That candidate is recorded as `INCONCLUSIVE` with the reason and the run continues. See `docs/ARCHITECTURE.md` section 9. |
 | `PreflightRejected` on your own workbook | Contains VBA, external links, array formulas, a defined name, or an unsupported function | Expected. The reason is named in the error. See README section 6. |
 | `make corpus-check` mismatch | Different `openpyxl` version writing different XML | `openpyxl` is pinned exactly in `pyproject.toml` for this reason, so first check your install honoured the pin: `python -c "import openpyxl; print(openpyxl.__version__)"` must print `3.1.5`. |
-| Baseline run exceeds budget | Not applicable yet, the baseline is T18 | Per workbook caps are in `config.yaml`. Caps are identical for both systems. |
+| Baseline run exceeds budget | It cannot. The run stops at the cap and records why | Per workbook caps are in `config.yaml` under `baseline`. They are derived from the solution's measured spend, so raising them for one side breaks the comparison. |
 
 ## 11. Running on your own workbook
 

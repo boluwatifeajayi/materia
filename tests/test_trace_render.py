@@ -5,6 +5,7 @@ a reader can follow the run without knowing this codebase, and the index tells
 the truth about what is and is not there.
 """
 
+import json
 from pathlib import Path
 
 import pytest
@@ -147,10 +148,22 @@ class TestTheIndex:
         assert "4. The baseline reporting errors in a clean workbook" in index
 
     def test_every_trajectory_on_disk_has_a_row(self, index):
+        """Counted from the table itself rather than by run id prefix. The
+        prefixes are per agent, so a filter listing them has to be updated
+        every time an agent is added, and silently undercounts until it is."""
         traces = list(Path("trajectories").rglob("*.jsonl"))
-        rows = [line for line in index.splitlines() if line.startswith("| `sol-")
-                or line.startswith("| `repair-")]
+        table = index.split("## Every trajectory")[1]
+        rows = [
+            line for line in table.splitlines()
+            if line.startswith("| ") and not line.startswith("| ---") and "| Run |" not in line
+        ]
         assert len(rows) == len(traces)
+
+    def test_every_agent_appears_in_the_index(self, index):
+        """The trajectory deliverable needs one per agent used."""
+        table = index.split("## Every trajectory")[1]
+        for agent in ("adjudicator", "reporter", "baseline"):
+            assert f"| {agent} |" in table, agent
 
     def test_a_row_says_which_run_it_came_from(self, index):
         """Two runs adjudicated P&L!AA15 and disagreed. Without the file column
@@ -283,3 +296,50 @@ class TestEveryRecordShape:
             trace._handle.flush()
         assert "unexpected" in render(path)
         assert "run_end" in RECORD_TYPES
+
+
+class TestBaselineVerdictShape:
+    """The baseline writes a findings list under the same record type the
+    adjudicator uses for a single verdict. Rendering it through the
+    adjudicator branch printed 'unknown, confidence unknown', which reads as a
+    broken trace rather than as a run that reported nothing."""
+
+    @staticmethod
+    def _trace(tmp_path, content):
+        path = tmp_path / "C03_baseline.jsonl"
+        rows = [
+            {"ts": "2026-08-29T00:00:00Z", "run_id": "base-C03-aaaa", "agent": "baseline",
+             "step": 1, "type": "run_start", "content": {"workbook": "C03.xlsx"},
+             "tokens": {"in": 0, "out": 0}, "latency_ms": 0},
+            {"ts": "2026-08-29T00:00:01Z", "run_id": "base-C03-aaaa", "agent": "baseline",
+             "step": 2, "type": "verdict", "content": content,
+             "tokens": {"in": 0, "out": 0}, "latency_ms": 0},
+        ]
+        path.write_text("\n".join(json.dumps(row) for row in rows) + "\n")
+        return path
+
+    def test_an_empty_run_says_it_reported_nothing(self, tmp_path):
+        path = self._trace(tmp_path, {"count": 0, "findings": [],
+                                      "malformed_findings_file": False})
+        rendered = render(path)
+        assert "0" in rendered and "findings" in rendered
+        assert "unknown" not in rendered
+
+    def test_findings_are_listed_with_the_impact_the_agent_claimed(self, tmp_path):
+        path = self._trace(tmp_path, {
+            "count": 1, "malformed_findings_file": False,
+            "findings": [{"sheet": "Revenue", "cell": "H5", "confidence": "high",
+                          "estimated_impact": "about 6 million"}],
+        })
+        rendered = render(path)
+        assert "Revenue!H5" in rendered
+        assert "about 6 million" in rendered
+
+    def test_a_malformed_findings_file_is_said_out_loud(self, tmp_path):
+        path = self._trace(tmp_path, {"count": 0, "findings": [],
+                                      "malformed_findings_file": True})
+        assert "not valid JSON" in render(path)
+
+    def test_the_index_column_shows_a_count_not_a_verdict(self, tmp_path):
+        self._trace(tmp_path, {"count": 3, "findings": [], "malformed_findings_file": False})
+        assert "3 reported" in build_index(tmp_path)

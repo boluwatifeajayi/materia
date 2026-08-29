@@ -188,10 +188,17 @@ class TestWrittenAsItGoes:
         assert trace.steps == 2
         trace.close()
 
-    def test_two_runs_can_append_to_one_file(self, trace_path):
+    def test_a_second_run_replaces_the_first_rather_than_joining_it(self, trace_path):
+        """This used to append. A rerun of one workbook then produced a file
+        with two run_starts, two run_ends and step numbers restarting halfway
+        down, which the index read as a single run of double the length.
+        Nothing reads a trace expecting more than one run in it."""
         a_full_run(trace_path)
         a_full_run(trace_path)
-        assert len(read(trace_path)) == 14
+        records = read(trace_path)
+        assert len(records) == 7
+        assert len([r for r in records if r.type == "run_start"]) == 1
+        assert [r.step for r in records] == sorted(r.step for r in records)
 
 
 class TestHelpers:
