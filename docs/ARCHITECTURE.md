@@ -94,6 +94,8 @@ It must return exactly one of three verdicts:
 
 A small deterministic evaluator over the supported grammar. Applies a patch to one cell, recomputes in topological order, returns the delta on each declared output.
 
+It evaluates the AST produced by `src/materia/formula/`, which follows Excel's operator precedence rather than the more familiar one from programming languages. Unary minus binds tighter than exponentiation, so `-2^2` is 4, and `^` is left associative, so `2^3^2` is 64. Both differ from Python, and either one implemented the usual way would put a silently wrong number into an impact figure.
+
 **Why not use a real Excel calculation engine.** Three reasons, in order of weight:
 1. Reproducibility. A judge on a clean Linux box with no office suite must be able to run this. That is 15 points of the rubric.
 2. Setup risk. Headless office automation is the classic weekend killer.

@@ -20,15 +20,8 @@ import networkx as nx
 import openpyxl
 from openpyxl.worksheet.formula import ArrayFormula
 
+from materia.formula import SUPPORTED_FUNCTIONS
 from materia.parse import REFERENCE, parse_reference, strip_string_literals
-
-# README.md section 6. Do not extend without changing that section and the
-# recompute engine in the same commit: every function here has to be
-# faithfully evaluable by src/materia/recompute.py.
-SUPPORTED_FUNCTIONS = frozenset(
-    {"SUM", "AVERAGE", "MIN", "MAX", "IF", "ROUND", "ABS", "SUMIF"}
-)
-
 
 class Reason(str, Enum):
     """Named rejection reasons. The user always gets one of these."""

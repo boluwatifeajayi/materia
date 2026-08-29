@@ -141,7 +141,7 @@ Materia refuses workbooks it cannot reason about faithfully, rather than guessin
 - functions outside the supported grammar
 - user defined names, because a defined name and a cell reference are the same thing in formula text
 
-**Supported grammar (v1):** arithmetic operators, cell and range references (relative, absolute, mixed), cross sheet references, and `SUM`, `AVERAGE`, `MIN`, `MAX`, `IF`, `ROUND`, `ABS`, `SUMIF`.
+**Supported grammar (v1):** arithmetic operators (`+ - * / ^`, unary minus, postfix `%`), comparison operators (`= <> < <= > >=`, which `IF` conditions need), number, text and boolean literals, cell and range references (relative, absolute, mixed), cross sheet references, and `SUM`, `AVERAGE`, `MIN`, `MAX`, `IF`, `ROUND`, `ABS`, `SUMIF`.
 
 This is a deliberate choice, not a gap we are hiding. A tool that silently mis-evaluates a formula it does not understand is worse than one that declines the file. See `docs/ARCHITECTURE.md` for why we wrote our own evaluator over this grammar rather than depending on a general Excel calculation engine.
 
