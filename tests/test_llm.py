@@ -442,3 +442,110 @@ class TestTokenPacing:
         large = _estimate_tokens({"messages": [{"role": "user", "content": "x" * 4000}]})
         assert small > 0
         assert large > small + 900
+
+
+class _Choice:
+    def __init__(self, message, finish_reason="stop"):
+        self.message = message
+        self.finish_reason = finish_reason
+
+
+class _GroqMessage:
+    def __init__(self, content=None, tool_calls=None):
+        self.content = content
+        self.tool_calls = tool_calls
+
+
+class _GroqCall:
+    def __init__(self, identifier, name, arguments):
+        self.id = identifier
+        self.function = type("F", (), {"name": name, "arguments": arguments})()
+
+
+class _Completion:
+    def __init__(self, choices, model="openai/gpt-oss-120b"):
+        self.choices = choices
+        self.model = model
+        self.usage = type("U", (), {"prompt_tokens": 151, "completion_tokens": 52,
+                                    "total_tokens": 203})()
+
+
+def _groq_client(reply):
+    """A GroqClient wired to a stub SDK.
+
+    Same reasoning as the Anthropic stub: this pins the half of the adapter
+    that runs after the API answers, which the live test no longer covers now
+    that it is opt in.
+    """
+    client = GroqClient.__new__(GroqClient)
+    client.model = "openai/gpt-oss-120b"
+    client.pacer = None
+
+    captured = {}
+
+    class Completions:
+        @staticmethod
+        def create(**request):
+            captured.update(request)
+            return reply
+
+    class Sdk:
+        class chat:  # noqa: N801
+            completions = Completions()
+
+    client._client = Sdk()
+    return client, captured
+
+
+class TestGroqResponses:
+    def test_a_tool_call_is_normalised(self):
+        reply = _Completion(
+            [
+                _Choice(
+                    _GroqMessage(
+                        content=None,
+                        tool_calls=[_GroqCall("fc_1", "add_numbers", '{"a": 17, "b": 25}')],
+                    ),
+                    finish_reason="tool_calls",
+                )
+            ]
+        )
+        client, _ = _groq_client(reply)
+        response = client.complete("s", [Message(role="user", content="go")], [ADD])
+
+        assert response.provider == "groq"
+        assert response.tool_calls == (ToolCall("fc_1", "add_numbers", {"a": 17, "b": 25}),)
+        assert response.stop_reason == "tool_calls"
+        assert response.usage.total == 203
+
+    def test_a_plain_reply_carries_its_text(self):
+        client, _ = _groq_client(_Completion([_Choice(_GroqMessage(content="The sum is 42."))]))
+        response = client.complete("s", [Message(role="user", content="go")])
+        assert response.text == "The sum is 42."
+        assert response.tool_calls == ()
+
+    def test_the_request_is_deterministic_and_carries_the_tools(self):
+        client, captured = _groq_client(_Completion([_Choice(_GroqMessage(content="x"))]))
+        client.complete("be brief", [Message(role="user", content="go")], [ADD])
+        assert captured["temperature"] == 0
+        assert captured["messages"][0] == {"role": "system", "content": "be brief"}
+        assert captured["tools"][0]["function"]["name"] == "add_numbers"
+
+    def test_no_tools_field_when_there_are_none(self):
+        client, captured = _groq_client(_Completion([_Choice(_GroqMessage(content="x"))]))
+        client.complete("s", [Message(role="user", content="go")])
+        assert "tools" not in captured
+
+    def test_the_pacer_is_consulted_and_told_what_was_spent(self):
+        from materia.llm import TokenPacer
+
+        client, _ = _groq_client(_Completion([_Choice(_GroqMessage(content="x"))]))
+        client.pacer = TokenPacer(8000)
+        client.complete("s", [Message(role="user", content="go")])
+        assert client.pacer._used(__import__("time").monotonic()) == 203
+
+    def test_a_real_client_gets_a_pacer_by_default(self, monkeypatch):
+        """The free tier limit is low enough that an unpaced client fails on
+        its second call."""
+        monkeypatch.setenv("GROQ_API_KEY", "test-key")
+        assert GroqClient().pacer is not None

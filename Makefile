@@ -29,10 +29,10 @@ baseline:
 	@echo "make baseline: not implemented (T18, T19)" >&2
 	@exit 1
 
-## Materia over the corpus. T17, T20, T21.
+## Materia over the corpus. Full corpus lands with T20.
 solution:
-	@echo "make solution: not implemented (T17, T20, T21)" >&2
-	@exit 1
+	$(PYTHON) -m materia audit corpus/C03.xlsx --explain \
+	  --traces trajectories/solution --results results/solution
 
 ## Score result sets into results/.
 eval:

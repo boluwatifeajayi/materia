@@ -108,3 +108,104 @@ class TestLlmCheck:
         assert code == 1
         assert "NOT CALLED" in out
         assert "did not call the tool" in err
+
+
+class TestAudit:
+    """The command a reproducer runs on one workbook."""
+
+    @staticmethod
+    def _scripted(monkeypatch):
+        from materia.llm import AgentResponse, ToolCall, Usage
+
+        class Declines:
+            provider, model = "scripted", "scripted-1"
+
+            def complete(self, *_, **__):
+                return AgentResponse(
+                    text=None,
+                    tool_calls=(
+                        ToolCall(
+                            "v1",
+                            "submit_verdict",
+                            {
+                                "verdict": "INTENTIONAL",
+                                "confidence": "high",
+                                "evidence": ["the row label says Actual"],
+                                "reasoning": "Deliberate.",
+                            },
+                        ),
+                    ),
+                    stop_reason="tool_calls",
+                    usage=Usage(800, 40),
+                )
+
+        monkeypatch.setattr("materia.llm.get_client", lambda *_a, **_k: Declines())
+
+    def test_it_prints_the_funnel_and_the_report(self, capsys, monkeypatch, tmp_path):
+        self._scripted(monkeypatch)
+        code, out, _ = run(
+            capsys,
+            "audit",
+            "corpus/C03.xlsx",
+            "--traces",
+            str(tmp_path),
+            "--max-candidates",
+            "2",
+        )
+        assert code == 0
+        assert "MODEL HEALTH" in out
+        assert "formulas parsed" in out
+        assert "WHAT WAS SET ASIDE" in out
+
+    def test_explain_shows_where_every_figure_came_from(self, capsys, monkeypatch, tmp_path):
+        self._scripted(monkeypatch)
+        _, out, _ = run(
+            capsys, "audit", "corpus/C03.xlsx", "--explain",
+            "--traces", str(tmp_path), "--max-candidates", "1",
+        )
+        assert "HOW TO CHECK THIS" in out
+        assert ".jsonl" in out
+        assert "scripted" in out
+
+    def test_it_writes_a_result_set_when_asked(self, capsys, monkeypatch, tmp_path):
+        self._scripted(monkeypatch)
+        results = tmp_path / "results"
+        run(
+            capsys, "audit", "corpus/C03.xlsx",
+            "--traces", str(tmp_path), "--results", str(results),
+            "--max-candidates", "1",
+        )
+        assert (results / "C03.json").exists()
+        assert (results / "provider.json").exists()
+
+    def test_a_rejected_workbook_gets_its_own_exit_code(
+        self, capsys, monkeypatch, tmp_path, workbooks
+    ):
+        """Exit 2, so a caller can tell an unsupported file from a failure."""
+        self._scripted(monkeypatch)
+        code, _, err = run(
+            capsys, "audit", str(workbooks["vba"]),
+            "--outputs", "Sheet!A1", "--traces", str(tmp_path),
+        )
+        assert code == 2
+        assert "VBA_PRESENT" in err
+        assert "was not audited" in err
+
+    def test_a_workbook_with_unknown_outputs_says_what_to_pass(
+        self, capsys, monkeypatch, tmp_path, workbooks
+    ):
+        self._scripted(monkeypatch)
+        code, _, err = run(
+            capsys, "audit", str(workbooks["clean"]), "--traces", str(tmp_path)
+        )
+        assert code == 1
+        assert "--outputs" in err
+
+    def test_a_missing_key_stops_before_any_work(self, capsys, monkeypatch, tmp_path):
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        code, _, err = run(
+            capsys, "audit", "corpus/C03.xlsx",
+            "--provider", "anthropic", "--traces", str(tmp_path),
+        )
+        assert code == 1
+        assert "ANTHROPIC_API_KEY" in err

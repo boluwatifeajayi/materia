@@ -145,6 +145,63 @@ def _llm_check(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def _audit(arguments: argparse.Namespace) -> int:
+    from materia.audit import audit, write_result
+    from materia.llm import ProviderError, get_client
+    from materia.preflight import PreflightRejected
+
+    try:
+        client = get_client(arguments.provider)
+    except ProviderError as error:
+        print(error, file=sys.stderr)
+        return 1
+
+    outputs = (
+        [item.strip() for item in arguments.outputs.split(",")]
+        if arguments.outputs
+        else None
+    )
+
+    try:
+        result = audit(
+            arguments.workbook,
+            outputs=outputs,
+            client=client,
+            trace_directory=arguments.traces,
+            max_candidates=arguments.max_candidates,
+        )
+    except PreflightRejected as rejection:
+        print(f"{arguments.workbook} was not audited.", file=sys.stderr)
+        print(f"  {rejection.message}", file=sys.stderr)
+        return 2
+    except ValueError as error:
+        print(error, file=sys.stderr)
+        return 1
+
+    print(result.render())
+
+    if arguments.results:
+        written = write_result(result, arguments.results)
+        print(f"result written to {written}")
+    if arguments.explain:
+        print(_explain(result))
+    return 0
+
+
+def _explain(result) -> str:
+    """Where every figure came from, for a reader checking the work."""
+    lines = ["HOW TO CHECK THIS", ""]
+    lines.append(f"  provider {result.provider}, model {result.model}")
+    lines.append("")
+    for verdict in result.verdicts:
+        lines.append(
+            f"  {verdict.address:18} {verdict.verdict:13} "
+            f"{verdict.turns} turns, {verdict.tool_calls} tool calls"
+        )
+        lines.append(f"  {'':18} {verdict.trace_path}")
+    return "\n".join(lines)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="materia", description=__doc__)
     parser.add_argument("-V", "--version", action="version", version=f"materia {__version__}")
@@ -171,6 +228,29 @@ def build_parser() -> argparse.ArgumentParser:
         help="fill the matching changelog row in this file",
     )
     evaluate.set_defaults(handler=_evaluate)
+
+    audit_command = commands.add_parser("audit", help="audit one workbook")
+    audit_command.add_argument("workbook", type=Path)
+    audit_command.add_argument(
+        "--outputs",
+        default=None,
+        help='declared output cells, comma separated, for example "P&L!AA15,Valuation!B7"',
+    )
+    audit_command.add_argument("--provider", default=None, choices=["groq", "anthropic"])
+    audit_command.add_argument("--traces", type=Path, default=Path("trajectories/solution"))
+    audit_command.add_argument("--results", type=Path, default=None)
+    audit_command.add_argument(
+        "--max-candidates",
+        type=int,
+        default=None,
+        help="stop after this many candidates, for a quick look or a tight budget",
+    )
+    audit_command.add_argument(
+        "--explain",
+        action="store_true",
+        help="print where every figure came from, trajectory paths included",
+    )
+    audit_command.set_defaults(handler=_audit)
 
     llm = commands.add_parser("llm", help="check the configured model provider")
     llm_actions = llm.add_subparsers(dest="llm_action", required=True)
