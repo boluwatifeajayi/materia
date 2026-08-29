@@ -1,0 +1,31 @@
+# Materia configuration. Placeholder values, filled in as tasks land.
+
+# Fraction of a declared output's value a correction must move for a finding
+# to be shown. docs/ARCHITECTURE.md section 7. T21 implements the gate.
+materiality:
+  threshold: 0.01
+
+# Provider selection. MATERIA_PROVIDER overrides "name" at startup. The
+# provider that produced a results/ directory is recorded alongside it, so a
+# dev loop run cannot be mistaken for a scored one. T12.
+provider:
+  name: groq
+  models:
+    groq: llama-3.3-70b-versatile
+    anthropic: claude-sonnet-5
+
+# Per workbook run budgets. The baseline's caps are set equal to the
+# solution's measured per workbook average, so neither side gets more room
+# than the other. docs/EVALUATION.md section 4. Measured at T18.
+solution:
+  max_turns: null
+  max_tokens: null
+
+baseline:
+  max_turns: null
+  max_tokens: null
+
+# Corpus generation. docs/REPRODUCTION.md section 9.
+corpus:
+  seed: 20260828
+  workbooks: 12

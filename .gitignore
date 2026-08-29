@@ -1,1 +1,28 @@
+# Secrets. Never commit these.
 .env
+
+# Environments
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS
+.DS_Store
+
+# Workbooks are generated, not committed, with one exception: the corpus is
+# committed so a judge gets byte identical inputs. See docs/REPRODUCTION.md
+# section 3.
+*.xlsx
+!corpus/*.xlsx
+
+# results/ and trajectories/ ARE committed. Do not add them here.
+# README section 10 and docs/EVALUATION.md section 5 both depend on it.
