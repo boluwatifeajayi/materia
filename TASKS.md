@@ -77,7 +77,7 @@ Status values: `TODO`, `IN PROGRESS`, `DONE`, `CUT`.
 | ID | Task | Status | Acceptance |
 | --- | --- | --- | --- |
 | T23 | Repair mode | DONE | `--repair` writes a corrected copy, never the original, and prompts per finding. Declines logged as `human_checkpoint` records. Tested: original file byte identical after a repair run. |
-| T24 | Trajectory rendering | TODO | `materia trace render` produces readable markdown. Pick and render the four featured trajectories from `docs/TRAJECTORIES.md`, write their preambles. `make trace-index` generates `trajectories/index.md`. |
+| T24 | Trajectory rendering | DONE (2 of 4 featured exist, 2 recorded as absent) | `materia trace render` produces readable markdown. Pick and render the four featured trajectories from `docs/TRAJECTORIES.md`, write their preambles. `make trace-index` generates `trajectories/index.md`. |
 | T25 | Clean clone reproduction | TODO | **Fresh clone, fresh venv, `make all` start to finish.** Fix whatever breaks. This is 15 rubric points and the only way to know is to actually do it. |
 | T26 | Variance and sensitivity | TODO | `make eval-repeat N=3` producing `results/variance.md`. Sensitivity at three materiality thresholds to `results/sensitivity.md`. Cuttable if behind. |
 | T27 | Docs finalisation | TODO | Every `[TBD]` filled from `results/`. Changelog complete including the removed experiment. Failure mode section written from what actually happened, not from the prediction currently in the doc. |
@@ -109,4 +109,4 @@ If behind, cut in this order. Do not improvise cuts.
 | 4 Agent layer | T12 to T17 | 6/6 |
 | 5 Baseline | T18 to T20 | 0/3 |
 | 6 Thesis | T21 to T22 | 1/2 |
-| 7 Deliverables | T23 to T29 | 1/7 |
+| 7 Deliverables | T23 to T29 | 2/7 |

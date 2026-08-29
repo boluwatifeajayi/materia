@@ -43,7 +43,6 @@ eval-repeat:
 	@echo "make eval-repeat N=$(N): not implemented (T26)" >&2
 	@exit 1
 
-## Generate trajectories/index.md. T24.
+## Render the featured trajectories and generate trajectories/index.md.
 trace-index:
-	@echo "make trace-index: not implemented (T24)" >&2
-	@exit 1
+	$(PYTHON) -m materia trace index

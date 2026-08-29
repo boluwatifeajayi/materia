@@ -212,18 +212,30 @@ class TestAudit:
 
 
 class TestRepairFlag:
-    def test_it_asks_before_writing_anything(self, capsys, monkeypatch, tmp_path):
-        """The ground rule: consequential actions are gated behind a person."""
+    @staticmethod
+    def _isolated(tmp_path):
+        """A copy of the workbook and its trajectories.
+
+        A repair writes its own trace into the directory it read from, which
+        is right for a real run and wrong for a test: pointing these at the
+        committed trajectories left a test artefact in the deliverable.
+        """
         import shutil
 
         subject = tmp_path / "C03.xlsx"
         shutil.copy("corpus/C03.xlsx", subject)
+        traces = tmp_path / "traces"
+        shutil.copytree("trajectories/solution", traces)
+        return subject, traces
+
+    def test_it_asks_before_writing_anything(self, capsys, monkeypatch, tmp_path):
+        """The ground rule: consequential actions are gated behind a person."""
+        subject, traces = self._isolated(tmp_path)
         asked = []
         monkeypatch.setattr("builtins.input", lambda prompt: asked.append(prompt) or "n")
 
         code, out, _ = run(
-            capsys, "report", str(subject),
-            "--traces", "trajectories/solution", "--repair",
+            capsys, "report", str(subject), "--traces", str(traces), "--repair"
         )
         assert code == 0
         assert len(asked) == 2
@@ -231,26 +243,21 @@ class TestRepairFlag:
 
     def test_declining_leaves_the_input_untouched(self, capsys, monkeypatch, tmp_path):
         import hashlib
-        import shutil
 
-        subject = tmp_path / "C03.xlsx"
-        shutil.copy("corpus/C03.xlsx", subject)
+        subject, traces = self._isolated(tmp_path)
         before = hashlib.sha256(subject.read_bytes()).hexdigest()
         monkeypatch.setattr("builtins.input", lambda _p: "n")
 
-        run(capsys, "report", str(subject), "--traces", "trajectories/solution", "--repair")
+        run(capsys, "report", str(subject), "--traces", str(traces), "--repair")
         assert hashlib.sha256(subject.read_bytes()).hexdigest() == before
 
     def test_approving_writes_a_copy_and_says_where(self, capsys, monkeypatch, tmp_path):
-        import shutil
-
-        subject = tmp_path / "C03.xlsx"
-        shutil.copy("corpus/C03.xlsx", subject)
+        subject, traces = self._isolated(tmp_path)
         target = tmp_path / "fixed.xlsx"
         monkeypatch.setattr("builtins.input", lambda _p: "y")
 
         _, out, _ = run(
-            capsys, "report", str(subject), "--traces", "trajectories/solution",
+            capsys, "report", str(subject), "--traces", str(traces),
             "--repair", "--repair-to", str(target),
         )
         assert target.exists()
@@ -261,14 +268,11 @@ class TestRepairFlag:
         self, capsys, monkeypatch, tmp_path
     ):
         """Repair is opt in. A plain report must never touch a file."""
-        import shutil
-
-        subject = tmp_path / "C03.xlsx"
-        shutil.copy("corpus/C03.xlsx", subject)
+        subject, traces = self._isolated(tmp_path)
 
         def refuse(_prompt):
             raise AssertionError("a plain report must not prompt")
 
         monkeypatch.setattr("builtins.input", refuse)
-        run(capsys, "report", str(subject), "--traces", "trajectories/solution")
+        run(capsys, "report", str(subject), "--traces", str(traces))
         assert not (tmp_path / "C03.repaired.xlsx").exists()

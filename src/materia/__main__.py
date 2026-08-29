@@ -256,6 +256,32 @@ def _report(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def _trace_render(arguments: argparse.Namespace) -> int:
+    from materia.trace_render import render
+
+    try:
+        print(render(arguments.trajectory), end="")
+    except (FileNotFoundError, ValueError) as error:
+        print(error, file=sys.stderr)
+        return 1
+    return 0
+
+
+def _trace_index(arguments: argparse.Namespace) -> int:
+    from materia.trace_render import FEATURED, write_featured, write_index
+
+    written = write_featured(arguments.directory)
+    index = write_index(arguments.directory)
+
+    for path in written:
+        print(f"rendered {path}")
+    missing = [item for item in FEATURED if not item.available]
+    for item in missing:
+        print(f"not present: {item.number}. {item.title}", file=sys.stderr)
+    print(f"index written to {index}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="materia", description=__doc__)
     parser.add_argument("-V", "--version", action="version", version=f"materia {__version__}")
@@ -331,6 +357,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     report_command.add_argument("--repair-to", type=Path, default=None)
     report_command.set_defaults(handler=_report)
+
+    trace = commands.add_parser("trace", help="read and index agent trajectories")
+    trace_actions = trace.add_subparsers(dest="trace_action", required=True)
+
+    render_command = trace_actions.add_parser(
+        "render", help="print one trajectory as readable markdown"
+    )
+    render_command.add_argument("trajectory", type=Path)
+    render_command.set_defaults(handler=_trace_render)
+
+    index_command = trace_actions.add_parser(
+        "index", help="render the featured trajectories and write the index"
+    )
+    index_command.add_argument("--directory", type=Path, default=Path("trajectories"))
+    index_command.set_defaults(handler=_trace_index)
 
     llm = commands.add_parser("llm", help="check the configured model provider")
     llm_actions = llm.add_subparsers(dest="llm_action", required=True)
