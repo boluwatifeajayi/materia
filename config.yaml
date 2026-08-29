@@ -11,7 +11,7 @@ materiality:
 provider:
   name: groq
   models:
-    groq: llama-3.3-70b-versatile
+    groq: openai/gpt-oss-120b
     anthropic: claude-sonnet-5
 
 # Per workbook run budgets. The baseline's caps are set equal to the

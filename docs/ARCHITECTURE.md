@@ -150,7 +150,7 @@ Two implementations, used for different purposes and never mixed within one scor
 
 | Provider | Role | Why |
 | --- | --- | --- |
-| **Groq** | Dev-loop iteration | Fast inference, generous free tier, OpenAI-compatible tool-calling schema, so it is the cheapest place to debug the adjudicator's tool call sequence repeatedly against the corpus |
+| **Groq** (`openai/gpt-oss-120b`) | Dev-loop iteration | Fast inference, generous free tier, OpenAI-compatible tool-calling schema, so it is the cheapest place to debug the adjudicator's tool call sequence repeatedly against the corpus |
 | **Anthropic (`claude-sonnet-5`)** | Final scored run | Required by `EVALUATION.md`: solution and baseline must run on the same model, so the headline table isolates the workflow's contribution rather than a difference in raw model capability |
 
 Selected by `MATERIA_PROVIDER` env var (`groq` or `anthropic`), read once at startup. `config.yaml` records which provider produced any given `results/` directory, so a stray dev-loop run can never be mistaken for the scored one.
@@ -159,7 +159,9 @@ Each provider gets a thin adapter translating `recompute_with_patch` and `inspec
 
 **What this abstraction is not for:** it is not a claim of multi-provider robustness as a feature. It exists purely so development iteration is fast and free, while the number that ships in `EVALUATION.md` comes from one accountable model. Only the Anthropic run is ever cited as a result.
 
-**Groq's free tier only serves open models** (Llama family and similar), which is fine for exercising the tool-call loop and catching bugs in the adjudication logic, but is not a substitute data point for the headline comparison. Do not report Groq-run numbers anywhere in `README.md` or `EVALUATION.md`.
+**Groq's free tier only serves open models**, which is fine for exercising the tool-call loop and catching bugs in the adjudication logic, but is not a substitute data point for the headline comparison. Do not report Groq-run numbers anywhere in `README.md` or `EVALUATION.md`.
+
+This project was originally specified against `llama-3.3-70b-versatile`. Groq no longer serves it, so the dev-loop model is `openai/gpt-oss-120b`, chosen from what the provider reports it will actually serve rather than guessed. The distinction matters more for Anthropic, where a scored run against a model nobody chose would not be a result: `ModelNotAvailable` is a separate exception class for exactly that reason, and the adapter says so rather than falling back.
 
 ---
 

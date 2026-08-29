@@ -93,6 +93,58 @@ def _evaluate(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def _llm_check(arguments: argparse.Namespace) -> int:
+    """One trivial call, to confirm the configured model is real.
+
+    Worth its own command because the alternative is discovering a wrong model
+    id part way through a scored run.
+    """
+    from materia.llm import (
+        Message,
+        ModelNotAvailable,
+        ProviderError,
+        ToolDefinition,
+        get_client,
+    )
+
+    try:
+        client = get_client(arguments.provider)
+    except ProviderError as error:
+        print(error, file=sys.stderr)
+        return 1
+
+    tool = ToolDefinition(
+        name="add_numbers",
+        description="Add two numbers together and return the sum.",
+        parameters={
+            "type": "object",
+            "properties": {"a": {"type": "number"}, "b": {"type": "number"}},
+            "required": ["a", "b"],
+        },
+    )
+    try:
+        response = client.complete(
+            system="You are a calculator. Use the add_numbers tool for any arithmetic.",
+            messages=[Message(role="user", content="What is 17 plus 25?")],
+            tools=[tool],
+        )
+    except ModelNotAvailable as error:
+        print(error, file=sys.stderr)
+        return 2
+    except ProviderError as error:
+        print(error, file=sys.stderr)
+        return 1
+
+    print(f"provider: {client.provider}")
+    print(f"model:    {response.model}")
+    print(f"tools:    {'called' if response.tool_calls else 'NOT CALLED'}")
+    print(f"tokens:   {response.usage.input_tokens} in, {response.usage.output_tokens} out")
+    if not response.tool_calls:
+        print("the model did not call the tool", file=sys.stderr)
+        return 1
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="materia", description=__doc__)
     parser.add_argument("-V", "--version", action="version", version=f"materia {__version__}")
@@ -119,6 +171,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="fill the matching changelog row in this file",
     )
     evaluate.set_defaults(handler=_evaluate)
+
+    llm = commands.add_parser("llm", help="check the configured model provider")
+    llm_actions = llm.add_subparsers(dest="llm_action", required=True)
+    check_model = llm_actions.add_parser(
+        "check", help="make one trivial call to confirm the model id is real"
+    )
+    check_model.add_argument("--provider", default=None, choices=["groq", "anthropic"])
+    check_model.set_defaults(handler=_llm_check)
 
     return parser
 

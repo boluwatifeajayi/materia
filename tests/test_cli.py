@@ -63,3 +63,48 @@ class TestEntrypoint:
             main(["--version"])
         assert exit_code.value.code == 0
         assert "materia" in capsys.readouterr().out
+
+
+class TestLlmCheck:
+    """The command that confirms a model id is real before a run depends on it."""
+
+    def test_it_reports_a_missing_key_rather_than_failing_obscurely(
+        self, capsys, monkeypatch
+    ):
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        code, _, err = run(capsys, "llm", "check", "--provider", "anthropic")
+        assert code == 1
+        assert "ANTHROPIC_API_KEY" in err
+
+    def test_an_unavailable_model_gets_its_own_exit_code(self, capsys, monkeypatch):
+        """Exit 2 rather than 1, so a caller can tell a wrong model id from a
+        network problem without reading the message."""
+        from materia.llm import ModelNotAvailable
+
+        class Refusing:
+            provider, model = "groq", "made-up"
+
+            def complete(self, *_, **__):
+                raise ModelNotAvailable("no such model")
+
+        monkeypatch.setattr("materia.llm.get_client", lambda *_a, **_k: Refusing())
+        code, _, err = run(capsys, "llm", "check", "--provider", "groq")
+        assert code == 2
+        assert "no such model" in err
+
+    def test_a_model_that_ignores_the_tool_fails(self, capsys, monkeypatch):
+        """A provider that answers in prose cannot drive the adjudicator, so
+        passing the check would be misleading."""
+        from materia.llm import AgentResponse
+
+        class Chatty:
+            provider, model = "groq", "chatty"
+
+            def complete(self, *_, **__):
+                return AgentResponse(text="42", model="chatty", provider="groq")
+
+        monkeypatch.setattr("materia.llm.get_client", lambda *_a, **_k: Chatty())
+        code, out, err = run(capsys, "llm", "check", "--provider", "groq")
+        assert code == 1
+        assert "NOT CALLED" in out
+        assert "did not call the tool" in err

@@ -304,7 +304,8 @@ Read docs/ARCHITECTURE.md section 9 first.
 
 Build src/materia/llm/ with an LLMClient protocol and two adapters:
   - GroqClient, via the openai package pointed at
-    https://api.groq.com/openai/v1, model llama-3.3-70b-versatile
+    https://api.groq.com/openai/v1. Pick the model from what the account is
+    actually served rather than a hardcoded guess.
   - AnthropicClient, via the anthropic package
 
 Both translate our tool definitions into the provider's native tool calling
