@@ -393,3 +393,90 @@ class TestAdjudicatingMany:
         results = adjudicate(duplicated, client, tools, graph, "C03", tmp_path)
         assert len(results) == 2
         assert len(client.requests) == 2
+
+
+class TestOneBadCandidateDoesNotEndTheRun:
+    """Observed live: on the seventeenth candidate the model emitted corrupt
+    JSON inside a tool call, the provider rejected the request, and the whole
+    run died taking sixteen earned verdicts with it."""
+
+    @staticmethod
+    def _raising(error):
+        class Failing:
+            provider, model = "scripted", "scripted-1"
+
+            def complete(self, *_, **__):
+                raise error
+
+        return Failing()
+
+    def test_a_malformed_reply_becomes_an_inconclusive_verdict(self, setup, tmp_path):
+        from materia.llm import ProviderError
+
+        tools, graph, candidates = setup
+        result = adjudicate_one(
+            candidates["Revenue!H5"],
+            self._raising(ProviderError("Failed to parse tool call arguments as JSON")),
+            tools, graph, "C03", tmp_path,
+        )
+        assert result.verdict == "INCONCLUSIVE"
+        assert "parse tool call" in result.error
+
+    def test_the_run_carries_on_to_the_next_candidate(self, setup, tmp_path):
+        tools, graph, candidates = setup
+        chosen = list(candidates.values())[:3]
+
+        class FailsOnTheSecond:
+            provider, model = "scripted", "scripted-1"
+
+            def __init__(self):
+                self.seen = 0
+
+            def complete(self, *_, **__):
+                from materia.llm import ProviderError
+
+                self.seen += 1
+                if self.seen == 2:
+                    raise ProviderError("Failed to parse tool call arguments as JSON")
+                return verdict_response("INTENTIONAL")
+
+        results = adjudicate(chosen, FailsOnTheSecond(), tools, graph, "C03", tmp_path)
+        assert len(results) == 3
+        assert [r.verdict for r in results] == ["INTENTIONAL", "INCONCLUSIVE", "INTENTIONAL"]
+
+    def test_a_rate_limit_stops_the_run_instead(self, setup, tmp_path):
+        """Carrying on would hammer a provider that has already said no.
+        CLAUDE.md section 6 says back off."""
+        from materia.llm import RateLimited
+
+        tools, graph, candidates = setup
+        with pytest.raises(RateLimited):
+            adjudicate_one(
+                candidates["Revenue!H5"],
+                self._raising(RateLimited("rate limit reached")),
+                tools, graph, "C03", tmp_path,
+            )
+
+    def test_an_unavailable_model_stops_the_run_too(self, setup, tmp_path):
+        from materia.llm import ModelNotAvailable
+
+        tools, graph, candidates = setup
+        with pytest.raises(ModelNotAvailable):
+            adjudicate_one(
+                candidates["Revenue!H5"],
+                self._raising(ModelNotAvailable("no such model")),
+                tools, graph, "C03", tmp_path,
+            )
+
+    def test_the_failure_is_recorded_in_the_trajectory(self, setup, tmp_path):
+        from materia.llm import ProviderError
+
+        tools, graph, candidates = setup
+        result = adjudicate_one(
+            candidates["Revenue!H5"],
+            self._raising(ProviderError("Failed to parse tool call arguments as JSON")),
+            tools, graph, "C03", tmp_path,
+        )
+        records = read(result.trace_path)
+        assert any("error" in r.content for r in records if r.type == "model_message")
+        assert records[-1].content["status"] == "schema_violation"

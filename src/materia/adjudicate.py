@@ -21,7 +21,16 @@ from typing import Any
 
 from materia.detect import Candidate
 from materia.graph import DependencyGraph
-from materia.llm import AgentResponse, LLMClient, Message, ToolCall, ToolDefinition
+from materia.llm import (
+    AgentResponse,
+    LLMClient,
+    Message,
+    ModelNotAvailable,
+    ProviderError,
+    ToolCall,
+    ToolDefinition,
+)
+from materia.llm.groq import RateLimited
 from materia.prompts.adjudicator import (
     CONFIDENCES,
     SYSTEM_PROMPT,
@@ -284,10 +293,24 @@ def adjudicate_one(
 
         while turns < max_turns:
             turns += 1
-            with Timer() as timer:
-                response: AgentResponse = client.complete(
-                    SYSTEM_PROMPT, messages, tools.definitions + [VERDICT_TOOL]
-                )
+            try:
+                with Timer() as timer:
+                    response: AgentResponse = client.complete(
+                        SYSTEM_PROMPT, messages, tools.definitions + [VERDICT_TOOL]
+                    )
+            except (RateLimited, ModelNotAvailable):
+                # Not this candidate's fault and not survivable by retrying.
+                # CLAUDE.md section 6 says back off rather than hammer, so the
+                # run stops here and says why.
+                raise
+            except ProviderError as error:
+                # One malformed reply must not cost every verdict already
+                # earned. Observed: the model emitted corrupt JSON in a tool
+                # call, the provider rejected the request, and a run of
+                # seventeen candidates died on the last one.
+                failure = str(error)
+                trace.record("model_message", {"error": failure})
+                break
             trace.model_message(response, latency_ms=timer.elapsed_ms)
             tokens["in"] += response.usage.input_tokens
             tokens["out"] += response.usage.output_tokens
