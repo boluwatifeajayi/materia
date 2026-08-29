@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -75,8 +76,10 @@ TOOLS = [
     ToolDefinition(
         name="bash",
         description=(
-            "Run a shell command in the working directory. Python 3 is available "
-            "with openpyxl installed. Output is truncated if it is very long."
+            "Run a shell command in the working directory. The toolset is "
+            "fixed: python and python3 with openpyxl, plus the standard text "
+            "utilities. No spreadsheet application, no format converter, no "
+            "network. Output is truncated if it is very long."
         ),
         parameters={
             "type": "object",
@@ -139,23 +142,88 @@ class BaselineResult:
         }
 
 
-def _interpreter_on_path() -> dict[str, str]:
-    """Make the prompt's promise true.
+# The baseline's toolset, fixed rather than inherited.
+#
+# The first completed run found the headless LibreOffice installed on the
+# machine and used it to recalculate patched copies of the workbook. Good
+# work by the agent, and fatal to the comparison: the sandbox inherited the
+# host PATH, so the same code on a host without an office suite is a weaker
+# baseline, and the headline number would partly measure which machine it ran
+# on. docs/EVALUATION.md asks for the same resources, stated. Stated means
+# this list, not whatever happens to be installed.
+#
+# Python and openpyxl are the toolset. Everything else here is the ordinary
+# text handling a shell is expected to have, and none of it can evaluate a
+# formula.
+ALLOWED_BINARIES = (
+    "awk", "basename", "cat", "chmod", "cmp", "comm", "cp", "cut", "date",
+    "diff", "dirname", "du", "echo", "env", "expr", "file", "find", "fold",
+    "grep", "head", "join", "ln", "ls", "mkdir", "mktemp", "mv", "od",
+    "paste", "printf", "pwd", "rm", "rmdir", "sed", "seq", "sh", "sleep",
+    "sort", "stat", "tail", "tee", "test", "touch", "tr", "true", "false",
+    "uniq", "unzip", "wc", "which", "xargs", "zip",
+)
 
-    The prompt tells the agent Python is available with openpyxl installed.
-    Left to the ambient shell that is a guess: `python` is often not on PATH
-    at all, and an ambient `python3` is whichever one the machine happens to
-    have, which on a fresh clone is not the virtualenv holding openpyxl. The
-    first proof run lost a turn to `python: command not found`, and turns are
-    the baseline's budget.
+# Where an allowed binary may be found. Deliberately excludes the directories
+# where a package manager puts an office suite.
+_SEARCH = ("/bin", "/usr/bin", "/sbin", "/usr/sbin")
 
-    So the interpreter running Materia is put first on PATH. It is the one
-    with openpyxl in it, by construction.
+# A PATH restriction does not stop an absolute path, so the things the
+# restriction exists to exclude are named and refused wherever they are
+# invoked from. Anything here can recalculate a workbook, which is the
+# capability that has to come from the agent's own code to mean anything.
+DENIED_BINARIES = (
+    "soffice", "libreoffice", "localc", "oosplash", "excel", "gnumeric",
+    "ssconvert", "xlsx2csv", "in2csv", "csvsql", "unoconv", "pip", "pip3",
+    "easy_install", "conda", "uv", "poetry", "curl", "wget", "nc", "ssh",
+    "brew", "apt", "apt-get", "yum", "dnf",
+)
+
+_DENIED = re.compile(
+    r"(?:^|[\s/;|&`$(])(" + "|".join(re.escape(name) for name in DENIED_BINARIES) + r")\b"
+)
+
+
+def _fixed_toolset(directory: Path) -> dict[str, str]:
+    """Build the baseline's PATH out of an allowlist, not out of the host.
+
+    A directory of symlinks, outside the workspace so it does not show up in
+    the agent's own `ls`, holding the interpreter running Materia (the one
+    with openpyxl in it, by construction) and the allowed utilities. PATH is
+    that directory and nothing else.
     """
+    directory.mkdir(parents=True, exist_ok=True)
+
+    # A wrapper, not a symlink. Python resolves a symlinked interpreter back
+    # to its real path and loses the virtualenv with it: sys.prefix came out
+    # as the system framework Python and openpyxl came from wherever the host
+    # happened to have it, which on a fresh clone is nowhere.
+    for name in ("python", "python3"):
+        wrapper = directory / name
+        wrapper.write_text(f'#!/bin/sh\nexec "{sys.executable}" "$@"\n')
+        wrapper.chmod(0o755)
+
+    for name in ALLOWED_BINARIES:
+        if (directory / name).exists():
+            continue
+        for search in _SEARCH:
+            candidate = Path(search) / name
+            if candidate.exists():
+                (directory / name).symlink_to(candidate)
+                break
+
     env = dict(os.environ)
-    interpreter = Path(sys.executable).parent
-    env["PATH"] = os.pathsep.join([str(interpreter), env.get("PATH", "")])
+    env["PATH"] = str(directory)
+    # Neither the agent nor anything it runs has a reason for our keys.
+    for key in [k for k in env if k.endswith("_API_KEY")]:
+        del env[key]
     return env
+
+
+def denied_binary(command: str) -> str | None:
+    """Name the excluded tool this command reaches for, if it reaches for one."""
+    match = _DENIED.search(command)
+    return match.group(1) if match else None
 
 
 class Workspace:
@@ -166,7 +234,9 @@ class Workspace:
         self.root = Path(directory) if directory else Path(tempfile.mkdtemp(prefix="materia-baseline-"))
         self.root.mkdir(parents=True, exist_ok=True)
         shutil.copy2(self.source, self.root / WORKBOOK_NAME)
-        self.env = _interpreter_on_path()
+        # Outside the workspace: the agent's own `ls` should show one workbook.
+        self.toolset = self.root.parent / f"{self.root.name}-bin"
+        self.env = _fixed_toolset(self.toolset)
 
     def _resolve(self, path: str) -> Path:
         """Keep a path inside the workspace.
@@ -179,6 +249,17 @@ class Workspace:
         return target
 
     def bash(self, command: str) -> dict[str, Any]:
+        denied = denied_binary(command)
+        if denied is not None:
+            return {
+                "error": (
+                    f"{denied} is not available. The tools for this task are "
+                    "python (with openpyxl) and the standard text utilities. "
+                    "There is no spreadsheet application, no format converter "
+                    "and no network access."
+                )
+            }
+
         try:
             finished = subprocess.run(
                 command,
@@ -186,6 +267,10 @@ class Workspace:
                 cwd=self.root,
                 capture_output=True,
                 text=True,
+                # The workbook is a zip. A command pointed at it emits bytes
+                # that are not UTF-8, and strict decoding raised out of the
+                # tool call and ended the run over an agent typo.
+                errors="replace",
                 timeout=COMMAND_TIMEOUT_SECONDS,
                 env=self.env,
             )

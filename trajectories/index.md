@@ -36,9 +36,11 @@ So the retry the table describes has not happened. It is a plausible path throug
 
 ### 4. The baseline reporting errors in a clean workbook
 
-The harness exists as of T18 and there is a completed baseline run against `C03` in the index below. It is worth reading, but it is not this trajectory: on `C03` the baseline did well. It found both seeded mutations, proposed the right formula for each, and measured its impact figures rather than estimating them, by patching copies of the workbook and recalculating them through the headless LibreOffice it found on the machine. Its numbers agree with our recompute engine to the unit.
+The harness exists as of T18 and there is a completed baseline run against `C03` in the index below. Half of what this entry describes is already in it.
 
-What this entry needs is a baseline run against a clean control, and that has not been run. The failure is an agent reporting confident findings on a workbook with nothing wrong in it, and a seeded workbook cannot show that however the run goes. It only shows up on `C09` or `C10`, which the scored run in T19 covers.
+On `C03` the baseline found both seeded mutations and proposed the right formula for each. Having no way to make another program recalculate the workbook, it wrote its own evaluator in Python. Three of the four impact figures it then reported are right. The fourth says `Revenue!H5` moves total EBITDA by 20,785,882 where the measured figure is 8,704,573, and moves enterprise value by 134,475,619 where the measured figure is 92,752,830. Neither number corresponds to any quantity in the workbook. Both are reported at high confidence, wrapped in a paragraph of correct reasoning about why the cell is wrong.
+
+That is the estimated impact half of this entry, on the first workbook, unprompted. What is still missing is the other half, a baseline reporting findings on a workbook with nothing wrong in it, and that has not been run. A seeded workbook cannot show it however the run goes. It needs `C09` or `C10`, which the scored run in T19 covers.
 
 The equivalent measurement does exist without an agent: the detectors alone report twenty one findings on `C09` and twenty five on `C10`, both of which contain no errors at all. That is in the changelog as Iteration 1. It is not this trajectory.
 
@@ -49,7 +51,8 @@ The same cell appears more than once where it was adjudicated in more than one r
 | Run | Agent | Cell | Steps | Tool calls | Verdict | Tokens | File |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `base-C03-d7d6` | baseline | - | 7 | 1 | 0 reported | 1,199 | `baseline/C03_baseline_groq.jsonl` |
-| `base-C03-f2e3` | baseline | - | 46 | 14 | 2 reported | 151,079 | `baseline/C03_baseline_openai.jsonl` |
+| `base-C03-a6d2` | baseline | - | 49 | 15 | 2 reported | 177,276 | `baseline/C03_baseline_openai.jsonl` |
+| `base-C03-f2e3` | baseline | - | 46 | 14 | 2 reported | 151,079 | `baseline/C03_baseline_openai_inherited_path.jsonl` |
 | `sol-C03-e76d` | adjudicator | Costs!C5 | 11 | 3 | INTENTIONAL | 5,553 | `solution/C03_adjudicator_Costs_C5_D2.jsonl` |
 | `sol-C03-7297` | adjudicator | P&L!AA15 | 14 | 4 | ERROR | 9,035 | `solution/C03_adjudicator_P&L_AA15_D2.jsonl` |
 | `sol-C03-247d` | adjudicator | Revenue!C3 | 14 | 4 | INTENTIONAL | 6,809 | `solution/C03_adjudicator_Revenue_C3_D1.jsonl` |
@@ -67,4 +70,4 @@ The same cell appears more than once where it was adjudicated in more than one r
 | `sol-C03-c194` | adjudicator | P&L!AA3 | 8 | 2 | INTENTIONAL | 3,104 | `solution_full/C03_adjudicator_P&L_AA3_D1.jsonl` |
 | `sol-C03-38d5` | adjudicator | P&L!AA5 | 8 | 2 | - | 3,324 | `solution_full/C03_adjudicator_P&L_AA5_D2.jsonl` |
 
-18 trajectories.
+19 trajectories.

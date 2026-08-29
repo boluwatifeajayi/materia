@@ -99,6 +99,10 @@ make baseline
 
 The baseline is a general purpose coding agent given the workbook as `model.xlsx` in a sandboxed directory, a shell, and `openpyxl` already installed. It is free to write whatever analysis code it wants. Its instructions are in `docs/AGENT_INSTRUCTIONS.md` section 3, and they name the error families, declare the output cells, and say precision counts. It is not a strawman.
 
+**Its toolset is fixed rather than inherited from your machine**, which is what makes the comparison reproduce. `PATH` is built from an allowlist: Python with `openpyxl`, and the standard text utilities. No spreadsheet application, no format converter, no network, no package installation, and the excluded programs are refused by name as well as being off `PATH`. The reasoning is in `docs/EVALUATION.md` section 4, and the short version is that a baseline which quietly uses whatever the host has installed produces a headline number that partly measures the host.
+
+This is why section 1 lists no office suite as a requirement and means it. An earlier run of this harness inherited the host `PATH`, found the headless LibreOffice on the development machine and recalculated with it. On a machine without one, the same code is a different and weaker baseline.
+
 Its caps come from `config.yaml` and are derived rather than chosen:
 
 | | |
@@ -110,20 +114,36 @@ Those are the solution's own measured spend: 3.0 model calls and 9,463 tokens pe
 
 Output: `results/baseline/C03.json` and a full trajectory in `trajectories/baseline/`.
 
-Measured on `gpt-5.6-terra`, one completed run against `C03` with those caps:
+Measured on `gpt-5.6-terra`, one completed run against `C03` with those caps and the fixed toolset:
 
 | | |
 | --- | --- |
-| Model calls | 15 |
-| Tokens | 151,079, at 147,390 in and 3,689 out |
-| Tool calls | 14 |
-| Findings | 2, both seeded mutations, both with the right proposed formula |
+| Model calls | 16 |
+| Tokens | 177,276, at 172,752 in and 4,524 out |
+| Tool calls | 15 |
+| Findings | 2 |
+
+At the published `gpt-5.6-terra` rate of $2.00 per million input tokens and $12.00 per million output, that is **$0.40 for one workbook**.
 
 It finished on its own rather than hitting a cap. The trajectory is in `trajectories/index.md`.
 
-**The baseline is stronger than expected, and one reason is machine dependent.** It did not estimate its impact figures. It found the headless LibreOffice installed on the machine, wrote patched copies of the workbook, had LibreOffice recalculate them, and read the results back. Those figures agree with our recompute engine to the unit, which is a useful independent check on the engine and is pinned as a test.
+**What it produced, and what that shows.** It found both seeded mutations and proposed the right formula for each. Its impact figures are its own: with no way to have another program recalculate the workbook, it wrote its own evaluator in Python, complete with Excel's half away from zero rounding.
 
-It is also a hole in the comparison. The sandbox inherits the machine's `PATH`, so a reproducer with LibreOffice installed gets the baseline that measures, and a reproducer without it gets a baseline that has to reason instead. Those are different systems and they will not produce the same headline table. Section 1 lists no office suite as a requirement because nothing in *our* pipeline needs one, and that stays true. What is not yet decided is whether the baseline should be given a fixed toolset so the comparison reproduces, or left with whatever the machine has and the dependency documented. **This is open going into the scored run and is called out here rather than left to be discovered from a mismatched table.**
+One of the four figures it reported is materially wrong.
+
+| | Baseline claimed | Measured | Off by |
+| --- | --- | --- | --- |
+| `Revenue!H5`, effect on `P&L!AA15` | 20,785,882 | 8,704,573 | 139% |
+| `Revenue!H5`, effect on `Valuation!B7` | 134,475,619 | 92,752,830 | 45% |
+| `P&L!AA15`, effect on `P&L!AA15` | 1,550,882 | 1,550,882 | correct |
+
+Neither wrong figure corresponds to any quantity in the workbook under any reading. Both are reported at `high` confidence, each wrapped in a paragraph of specific and largely correct reasoning about why the cell is an error. The finding is right, the repair is right, and the number a person would act on is wrong by more than the number itself.
+
+The mechanism is visible in the trajectory. Its evaluator puts total EBITDA at 42,274,595 where the workbook's own value is 14,816,742, roughly three times out. It then reported the difference between two runs of that evaluator: 63,060,477 minus 42,274,595 is 20,785,882, and 384,831,049 minus 250,355,430 is 134,475,619. Both differences are exactly the figures it published. Taking a difference hides the error in the level, and nothing in its process compares either number against the workbook.
+
+**One reason it could not check itself is our corpus, and that is worth stating.** At step 33 it did try: it opened the workbook a second time with `data_only=True`, which is how you read the values Excel last cached, and reconciling against those would have caught a threefold error immediately. It got formula strings back. The corpus is generated by `openpyxl`, which writes no cached values, so there was nothing to reconcile against. A workbook saved by Excel would have them. That makes this particular failure easier to fall into on our corpus than on a real file, and the scored run inherits the same property. It is a limitation of the evaluation, not evidence against the agent, and the trajectory is the record of it.
+
+What the corpus does not explain is publishing the number anyway. The agent knew it had no independent check, said nothing about that in its evidence, and reported `high` confidence. That is the problem the project is about, from a capable agent told that precision counts, on the first workbook, without being provoked. The same failure appears one layer down in our own system, where an adjudicator called the recompute tool and then reported different figures than it received. The difference is that ours is caught: the reported figure is read back out of the tool result, so the number a user sees is measured whatever the model says about it. See README section 8.
 
 ## 5. Run the solution
 

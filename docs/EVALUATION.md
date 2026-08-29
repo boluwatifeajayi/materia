@@ -121,8 +121,7 @@ Rejected baseline: "flatten the workbook to CSV and ask an LLM to find errors". 
 **Chosen baseline:** a general purpose coding agent, explicitly listed as a valid baseline in the micro1 brief ("one general purpose agent with basic tools").
 
 - Same underlying model as the solution
-- Given the `.xlsx` file and a shell
-- May install and use `openpyxl` or anything else, and may write its own analysis code
+- Given the `.xlsx` file and a shell with `openpyxl`, free to write its own analysis code
 - Given the same declared output cells and the same output schema
 - Given the same task description and the same run budget
 - Same 12 workbooks
@@ -130,6 +129,22 @@ Rejected baseline: "flatten the workbook to CSV and ask an LLM to find errors". 
 Differences in available resources, stated for fairness: the baseline does not receive our dependency graph, our detectors, or our recompute engine. It is free to build equivalents. It has the same wall clock and token budget. That is the comparison we want: does purpose built agent tooling beat a capable general agent given the same file and the same freedom?
 
 Baseline instructions are in `docs/AGENT_INSTRUCTIONS.md` alongside the solution's, so the fairness of the comparison is auditable.
+
+### The toolset is fixed, not inherited
+
+"Stated for fairness" has to mean a list. The first completed baseline run made that concrete: given a shell and left to pick its own method, the agent ran `which soffice`, found the headless LibreOffice installed on that machine, wrote patched copies of the workbook, had LibreOffice recalculate them and read the values back. Its impact figures were measured rather than estimated, and they were right.
+
+That is good work by the agent and it cannot be allowed to stand as part of the comparison, for two reasons.
+
+The headline number would partly measure the host. A reproducer with an office suite installed gets a baseline that can recalculate; one without gets a baseline that has to reason its way to an impact figure. Those are different systems, they will score differently, and neither the number nor the gap between the columns would mean what the table says it means.
+
+It also contradicts what this project claims about itself. `docs/REPRODUCTION.md` section 1 says no Excel, no LibreOffice, no headless office suite is needed anywhere. That was written about our pipeline and it is still true of our pipeline, but a baseline that silently depends on one makes the claim false of the submission.
+
+So the baseline's shell has a fixed toolset: Python with `openpyxl`, and the standard text utilities. No spreadsheet application, no format converter, no network, no package installation. `PATH` is built from an allowlist rather than inherited, and because a `PATH` restriction does not stop an absolute path, the excluded programs are named and refused wherever they are invoked from. The list is `ALLOWED_BINARIES` and `DENIED_BINARIES` in `src/materia/baseline.py`, and the prompt in `docs/AGENT_INSTRUCTIONS.md` section 3 tells the agent exactly what it has, so it does not waste turns looking for tools that are not there.
+
+This is a restriction on capability, so it is worth being precise about what it removes. It does not remove the ability to determine impact: the agent has a full programming language and the library that reads the file format, which is what our own recompute engine is built from. It removes the ability to have a different program do it, where "a different program" varies by machine.
+
+**What it does not close:** code running inside `python` could invoke an absolute path we have not named. This is an evaluation harness pointed at a corpus we generated, not a security boundary, and it is not treated as one.
 
 ---
 
@@ -177,3 +192,4 @@ Stated rather than left for a judge to find.
 - **We chose the materiality threshold.** A different threshold changes precision and recall. The threshold is a published config value and `results/sensitivity.md` reports the metrics at three thresholds so the result is not a single tuned point.
 - **We wrote both the detectors and the mutations.** Partially mitigated by out of taxonomy mutations and clean controls, but not eliminated. This is the honest limit of a synthetic benchmark and it is why the out of taxonomy families are in there.
 - **Same model on both sides.** Deliberate. It isolates the contribution of the workflow rather than the model.
+- **The corpus carries no cached values, and that makes the baseline's job harder than it would be on a real file.** The workbooks are written by `openpyxl`, which stores formulas without the values Excel would have cached alongside them. Our pipeline does not care, because the recompute engine evaluates formulas from scratch. The baseline does care. In the `C03` run it opened the workbook with `data_only=True`, which is how you read those cached values, and got formula strings back, so it had nothing to check its own reimplementation against and published a figure that was threefold wrong. On a workbook saved by Excel it would have had that check. This makes the baseline's headline number worse than it would be on real inputs, and it applies to every workbook in the corpus. Recorded because it cuts against our own result.

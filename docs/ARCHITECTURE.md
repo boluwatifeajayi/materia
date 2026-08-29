@@ -143,7 +143,7 @@ The engine is the load bearing component of the whole submission. Every impact n
 
 The tests hold the engine to hand computed values, which proves it is self consistent and matches what we believe Excel does. An external oracle turned up on its own.
 
-The baseline agent, given a shell and left to pick its own method, found the headless LibreOffice on the machine, wrote patched copies of `C03`, had LibreOffice recalculate them, and read the values back. Its numbers are in its trajectory. On both patches and on the unpatched workbook, across both declared outputs, they agree with this engine exactly:
+The baseline agent, given a shell and left to pick its own method, found the headless LibreOffice on the machine, wrote patched copies of `C03`, had LibreOffice recalculate them, and read the values back. Its numbers are in `trajectories/baseline/C03_baseline_openai_inherited_path.jsonl`. On both patches and on the unpatched workbook, across both declared outputs, they agree with this engine exactly:
 
 | Workbook | `P&L!AA15` | `Valuation!B7` |
 | --- | --- | --- |
@@ -153,7 +153,7 @@ The baseline agent, given a shell and left to pick its own method, found the hea
 
 Six figures, produced by software that was never written to agree with ours, matching to the unit. Those values are pinned in `tests/test_recompute.py`, along with a check that they are still present in the trajectory they came from, so they cannot quietly become numbers somebody typed in.
 
-This does not change the reasoning above. LibreOffice is still not a dependency of this project, and the engine still has to work on a machine without it.
+This does not change the reasoning above. LibreOffice is still not a dependency of this project, and the engine still has to work on a machine without it. The baseline's sandbox now has a fixed toolset and cannot reach an office suite at all, for reasons in `docs/EVALUATION.md` section 4, so that trajectory is the only place these figures exist and it is kept for that reason.
 
 ## 7. Materiality gate
 

@@ -407,6 +407,106 @@ class TestTheResultSet:
         assert set(data) >= {"findings", "turns", "tokens", "trace_path", "stopped"}
 
 
+class TestTheFixedToolset:
+    """The sandbox used to inherit the host PATH.
+
+    The first completed run found the headless LibreOffice installed on the
+    machine and used it to recalculate patched copies of the workbook. That is
+    good work by the agent and fatal to the comparison: the same code on a
+    host without an office suite is a weaker baseline, so the headline number
+    would partly measure which machine it ran on. docs/EVALUATION.md asks for
+    the same resources, stated. Stated means a list, not whatever is
+    installed.
+    """
+
+    def test_the_path_is_the_toolset_and_nothing_else(self, tmp_path):
+        workspace = Workspace(WORKBOOK, tmp_path / "ws")
+        result = workspace.bash("echo $PATH")
+        assert result["stdout"].strip() == str(workspace.toolset)
+
+    @pytest.mark.parametrize("command", [
+        "which soffice",
+        "soffice --headless --convert-to xlsx model.xlsx",
+        "/usr/local/bin/soffice --headless model.xlsx",
+        "libreoffice --convert-to csv model.xlsx",
+        "ssconvert model.xlsx out.csv",
+        "pip install formulas",
+        "python -m pip install formulas",
+        "curl -sO https://example.com/thing",
+        "cat model.xlsx | unoconv -f csv",
+    ])
+    def test_a_recalculation_route_is_refused_wherever_it_is_invoked_from(
+        self, tmp_path, command
+    ):
+        """A PATH restriction alone does not stop an absolute path, so the
+        excluded tools are named as well as unreachable."""
+        workspace = Workspace(WORKBOOK, tmp_path / "ws")
+        result = workspace.bash(command)
+        assert "error" in result, result
+        assert "not available" in result["error"]
+
+    @pytest.mark.parametrize("command", [
+        "ls", "cat model.xlsx > /dev/null", "grep -c . model.xlsx",
+        "python -c 'import openpyxl; print(1)'", "sed -n '1p' model.xlsx",
+        "awk 'END{print NR}' model.xlsx", "wc -c model.xlsx", "sort /dev/null",
+    ])
+    def test_the_ordinary_utilities_still_work(self, tmp_path, command):
+        workspace = Workspace(WORKBOOK, tmp_path / "ws")
+        assert workspace.bash(command)["exit_code"] == 0
+
+    def test_a_subprocess_started_from_python_inherits_the_restriction(self, tmp_path):
+        """The restriction is the environment, so it survives one level down."""
+        workspace = Workspace(WORKBOOK, tmp_path / "ws")
+        result = workspace.bash(
+            "python -c \"import subprocess, sys;"
+            "subprocess.run(['ssconvert'])\" 2>&1 || true"
+        )
+        assert "FileNotFoundError" in result["stderr"] + result["stdout"]
+
+    def test_binary_output_does_not_end_the_run(self, tmp_path):
+        """The workbook is a zip. A command pointed at it emits bytes that are
+        not UTF-8, and strict decoding used to raise out of the tool call."""
+        workspace = Workspace(WORKBOOK, tmp_path / "ws")
+        result = workspace.bash("cat model.xlsx")
+        assert result["exit_code"] == 0
+        assert isinstance(result["stdout"], str)
+
+    def test_our_api_keys_are_not_in_its_environment(self, tmp_path):
+        workspace = Workspace(WORKBOOK, tmp_path / "ws")
+        assert not [k for k in workspace.env if k.endswith("_API_KEY")]
+
+    def test_the_toolset_directory_is_not_in_the_workspace(self, tmp_path):
+        """The agent's own `ls` should show one workbook, not our scaffolding."""
+        workspace = Workspace(WORKBOOK, tmp_path / "ws")
+        assert workspace.toolset.parent != workspace.root
+        assert workspace.bash("ls -a")["stdout"].split() == [".", "..", WORKBOOK_NAME]
+
+    def test_building_it_twice_is_harmless(self, tmp_path):
+        """Two workspaces under one parent share the toolset directory."""
+        from materia.baseline import _fixed_toolset
+
+        directory = tmp_path / "bin"
+        first = _fixed_toolset(directory)
+        second = _fixed_toolset(directory)
+        assert first["PATH"] == second["PATH"]
+        assert (directory / "python").exists()
+
+    def test_a_key_in_the_environment_is_removed(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("OPENAI_API_KEY", "sk-not-a-real-key")
+        monkeypatch.setenv("GROQ_API_KEY", "gsk-not-a-real-key")
+        workspace = Workspace(WORKBOOK, tmp_path / "ws")
+        assert "OPENAI_API_KEY" not in workspace.env
+        assert "GROQ_API_KEY" not in workspace.env
+        assert "sk-not-a-real-key" not in workspace.bash("env")["stdout"]
+
+    def test_the_prompt_says_what_the_sandbox_actually_is(self):
+        """It used to promise package installation, which is now false."""
+        prompt = " ".join(SYSTEM_PROMPT.split())
+        assert "no network access" in prompt
+        assert "no package can be installed" in prompt
+        assert "no spreadsheet application" in prompt.lower()
+
+
 class TestTheInterpreterThePromptPromises:
     """The prompt tells the agent Python is available with openpyxl installed.
 

@@ -550,10 +550,16 @@ class TestAgreementWithLibreOffice:
     pinning: if the engine ever drifts, this fails against something that was
     never written to agree with it.
 
-    Source: trajectories/baseline/C03_baseline_openai.jsonl, step 37.
+    That run is kept as `C03_baseline_openai_inherited_path.jsonl`: it is the
+    one whose sandbox inherited the host PATH, which is why it had LibreOffice
+    to reach for. The baseline's toolset is fixed now and no later run can
+    produce these figures, so this trajectory is the record of where they came
+    from. docs/EVALUATION.md section 4 has the reasoning.
+
+    Source: that file, step 37.
     """
 
-    TRACE = Path("trajectories/baseline/C03_baseline_openai.jsonl")
+    TRACE = Path("trajectories/baseline/C03_baseline_openai_inherited_path.jsonl")
     LIBREOFFICE = {
         "unpatched": {"P&L!AA15": 14816742, "Valuation!B7": 143535444},
         ("Revenue!H5", "=G9"): {"P&L!AA15": 23521315, "Valuation!B7": 236288274},

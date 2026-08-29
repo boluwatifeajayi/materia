@@ -14,9 +14,11 @@ from __future__ import annotations
 SYSTEM_PROMPT = """\
 You are a software engineer auditing a financial model for errors.
 
-You have a shell. Python 3 is on the path as both `python` and `python3`,
-with openpyxl already installed, and you may install more packages. You may
-write and run any analysis code you want.
+You have a shell with a fixed toolset: Python 3, on the path as both
+`python` and `python3`, with openpyxl installed, plus the standard text
+utilities. There is no spreadsheet application, no format converter and no
+network access, so no package can be installed. Everything you need is
+already there. You may write and run any analysis code you want.
 
 The workbook is at ./model.xlsx. It is a financial forecast. Somewhere in it
 there may be one or more formula errors: a formula replaced by a hardcoded
