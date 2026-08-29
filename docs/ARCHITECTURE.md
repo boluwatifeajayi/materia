@@ -77,12 +77,15 @@ Five detectors, one per in taxonomy mutation family (see `EVALUATION.md` section
 
 Per candidate, the model receives: the cell, its formula, its normalised form, its peer group with their formulas, its position in the block, any cell comment, and the dependency path to each declared output.
 
-It has exactly two tools:
+It has exactly two tools for gathering evidence, and a third that is how it answers:
 
 | Tool | Signature | Purpose |
 | --- | --- | --- |
 | `recompute_with_patch` | `(cell, proposed_formula) -> {output: delta}` | Test a hypothesis and get the true impact |
 | `inspect_range` | `(sheet, range) -> cells with formulas` | Pull more surrounding context |
+| `submit_verdict` | `(verdict, confidence, ...) -> end of turn` | Return the answer as structured data |
+
+`submit_verdict` is the output channel, not a source of evidence. Asking for JSON in prose makes the schema a request; making it a tool call makes it a constraint the provider enforces, and puts the verdict in the trajectory as data rather than as text somebody has to parse.
 
 It must return exactly one of three verdicts:
 

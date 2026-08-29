@@ -139,13 +139,17 @@ def d1_hardcoded_value(workbook: Workbook) -> list[Candidate]:
                 if (row, column) not in sheet.values:
                     continue
                 address = f"{sheet.name}!{_column_letter(column)}{row}"
+                # The cells either side, not the leftmost three. In a monthly
+                # model the first column is legitimately different, so showing
+                # it as the peer group would be misleading evidence.
+                nearest = sorted(formula_columns, key=lambda c: abs(c - column))[:3]
                 neighbours = tuple(
                     PeerCell(
                         sheet.formulas[(row, c)].address,
                         sheet.formulas[(row, c)].formula,
                         sheet.formulas[(row, c)].r1c1,
                     )
-                    for c in formula_columns[:3]
+                    for c in sorted(nearest)
                 )
                 candidates.append(
                     Candidate(

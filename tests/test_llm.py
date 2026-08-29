@@ -343,6 +343,7 @@ class TestGroqFailures:
     def test_a_failure_is_normalised(self, monkeypatch):
         client = GroqClient.__new__(GroqClient)
         client.model = "openai/gpt-oss-120b"
+        client.pacer = None
 
         class Sdk:
             class chat:  # noqa: N801
@@ -364,3 +365,59 @@ class TestAgentResponse:
         assert AgentResponse(
             text=None, tool_calls=(ToolCall("1", "t", {}),)
         ).wants_tools is True
+
+
+class TestTokenPacing:
+    """Groq's free tier caps tokens per minute. The pacer waits before a call
+    that would break the cap rather than retrying after it is refused, which
+    is what CLAUDE.md section 6 rules out: a retry spends quota on a request
+    that was never going to succeed."""
+
+    def test_it_does_not_wait_when_the_window_is_empty(self):
+        from materia.llm import TokenPacer
+
+        assert TokenPacer(8000).wait_for(2000) == 0.0
+
+    def test_it_leaves_headroom_under_the_published_limit(self):
+        """The limit counts the reply too, and the reply size is unknown when
+        the request goes out."""
+        from materia.llm import TokenPacer
+
+        assert TokenPacer(8000).budget < 8000
+
+    def test_it_waits_when_the_window_is_full(self, monkeypatch):
+        from materia.llm import groq as groq_module
+
+        slept: list[float] = []
+        monkeypatch.setattr(groq_module.time, "sleep", slept.append)
+
+        pacer = groq_module.TokenPacer(8000)
+        pacer.record(6000)
+        pacer.wait_for(2000)
+        assert slept, "it should have waited"
+
+    def test_spending_older_than_a_minute_stops_counting(self, monkeypatch):
+        from materia.llm import groq as groq_module
+
+        clock = [1000.0]
+        monkeypatch.setattr(groq_module.time, "monotonic", lambda: clock[0])
+        pacer = groq_module.TokenPacer(8000)
+        pacer.record(6000)
+        clock[0] += 61
+        assert pacer.wait_for(2000) == 0.0
+
+    def test_a_rate_limit_reply_gets_its_own_error_class(self):
+        """So a caller can stop rather than hammer."""
+        from materia.llm import RateLimited
+        from materia.llm.groq import _translate_error
+
+        error = _translate_error(Exception("rate_limit_exceeded"), "m")
+        assert isinstance(error, RateLimited)
+
+    def test_the_estimate_covers_the_request_and_a_reply(self):
+        from materia.llm.groq import _estimate_tokens
+
+        small = _estimate_tokens({"messages": [{"role": "user", "content": "hi"}]})
+        large = _estimate_tokens({"messages": [{"role": "user", "content": "x" * 4000}]})
+        assert small > 0
+        assert large > small + 900

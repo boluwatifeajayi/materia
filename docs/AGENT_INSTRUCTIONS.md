@@ -8,7 +8,9 @@ These are the live strings. They are loaded from `src/materia/prompts/` at runti
 
 ## 1. Adjudicator agent (solution)
 
-Called once per candidate. Model: `claude-sonnet-5`. Tools: `recompute_with_patch`, `inspect_range`.
+Called once per candidate. Model: `claude-sonnet-5`. Evidence tools: `recompute_with_patch`, `inspect_range`. The verdict is returned through a third tool, `submit_verdict`, which is the output channel rather than a source of evidence.
+
+**Why the verdict is a tool call.** Asking for JSON in prose makes the schema a request. Making it a tool call makes it a constraint the provider enforces, puts the verdict in the trajectory as structured data rather than text somebody has to parse, and removes a whole class of failure where a model wraps its answer in commentary. It was also forced: `openai/gpt-oss-120b` tried to return its verdict as a tool call to a tool that did not exist, because that is how it has learned to emit structured output.
 
 ### System prompt
 
@@ -18,7 +20,7 @@ flagged it as anomalous. Detectors are deliberately noisy: most of what they
 flag is legitimate. Your job is to decide which category this cell falls into,
 using evidence.
 
-You have two tools:
+You have two tools for gathering evidence:
 
   recompute_with_patch(cell, proposed_formula)
       Applies your proposed formula to a copy of the model, recomputes, and
@@ -26,8 +28,11 @@ You have two tools:
       hypothesis. You may call it more than once.
 
   inspect_range(sheet, range)
-      Returns the formulas in a range. Use it when the peer group you were
-      given is not enough context.
+      Returns the formulas, values, row labels and cell comments in a range.
+      Use it when the peer group you were given is not enough context.
+
+When you have finished, call submit_verdict. That is how you answer. Do not
+write the answer as prose.
 
 You must return exactly one of these three verdicts:
 
@@ -53,7 +58,8 @@ Rules:
 
 1. Never state an impact figure you did not obtain from recompute_with_patch.
    If you have not called the tool, you do not have a delta, and you cannot
-   return ERROR.
+   return ERROR. Put the figures the tool returned into measured_deltas
+   exactly as they came back.
 2. A hypothesis with no supporting peer pattern is not a hypothesis. If you
    cannot point to specific sibling cells that imply the intended formula,
    return INCONCLUSIVE.
@@ -86,6 +92,8 @@ Declared output cells and current values:
 ```
 
 ### Output schema
+
+The argument schema of `submit_verdict`.
 
 ```json
 {

@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from materia.llm.anthropic import AnthropicClient
-from materia.llm.groq import GroqClient
+from materia.llm.groq import GroqClient, RateLimited, TokenPacer
 from materia.llm.types import (
     AgentResponse,
     LLMClient,
@@ -86,6 +86,8 @@ __all__ = [
     "Message",
     "ModelNotAvailable",
     "PROVIDERS",
+    "RateLimited",
+    "TokenPacer",
     "ProviderError",
     "SELECTED_PROVIDER",
     "ToolCall",

@@ -53,6 +53,10 @@ Four, chosen to show the system working, the system declining, the system correc
 
 > The file names and cell references in this table are illustrative. The real ones are whatever the scored runs produce, and T24 fills them in. If one of the four situations does not occur in an actual run, it is reported as absent rather than manufactured.
 
+**A fifth, found during T15 and worth featuring above the others.** In `solution/C03_adjudicator_Revenue_H5_D1.jsonl` the adjudicator calls `recompute_with_patch`, receives `{"P&L!AA15": 8704573.0, "Valuation!B7": 92752830.0}` at step 4, and then reports `{"P&L!AA15": -6102169, "Valuation!B7": -50782614}` in its verdict at step 7. Different magnitudes, opposite signs. The verdict itself is correct, the cell really is a hardcoded value and the proposed repair is right, but the impact figures are invented.
+
+This is the failure mode in README section 8 happening on the first candidate of the first live run, unprompted. It is also the reason the reporter's cross check is a code check rather than a line in the prompt: the prompt already says, as rule 1, never state an impact figure you did not obtain from the tool. The model agreed and then did it anyway.
+
 | # | File | Agent | Shows |
 | --- | --- | --- | --- |
 | 1 | `solution/C03_adjudicator_H42` | Adjudicator | The clean win. Detector fires on a formula replaced by a constant, model hypothesises the intended `SUM`, calls `recompute_with_patch`, gets a large verified delta, returns `ERROR`. The impact figure in the final report is visible in the tool response. |
