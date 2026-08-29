@@ -36,6 +36,10 @@ Rejects rather than guesses. Named reasons: `VBA_PRESENT`, `EXTERNAL_LINK`, `ARR
 
 **Why:** a tool that mis-evaluates a formula it does not understand produces confident wrong impact numbers, which is worse than producing nothing. Rejection is also what makes the recompute engine tractable in a weekend: we only have to be correct over a grammar we control.
 
+Those five are the complete list. `PreflightRejected` means "a real workbook containing something we cannot evaluate faithfully", so a file that is not a readable `.xlsx` at all raises an ordinary `ValueError` instead of being forced into one of the codes. Reporting a renamed CSV as `VBA_PRESENT` would tell the user something untrue.
+
+Preflight runs before the dependency graph exists, so it cannot use it. Cycle detection here is a small separate pass over the same formulas: ranges are resolved against the set of formula cells rather than expanded, since only a formula cell can carry a cycle. That keeps it bounded by the number of formulas rather than by how large a range someone wrote.
+
 ## 2. Parser and R1C1 normaliser
 
 `openpyxl` in formula mode gives raw A1 strings. A row of copied formulas looks like twelve different strings in A1 and one identical string in R1C1. Peer group comparison is only possible after normalisation, so this happens before anything else.

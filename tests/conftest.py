@@ -1,13 +1,18 @@
-"""Shared pytest fixtures and session hooks.
-
-No fixtures yet. Workbook fixtures arrive with the preflight validator in T02.
-"""
+"""Shared pytest fixtures and session hooks."""
 
 from pathlib import Path
 
 import pytest
 
+from fixtures.build import build_all
+
 TESTS_DIR = Path(__file__).parent
+
+
+@pytest.fixture(scope="session")
+def workbooks(tmp_path_factory) -> dict[str, Path]:
+    """Every fixture workbook, generated once per test session."""
+    return build_all(tmp_path_factory.mktemp("workbooks"))
 
 
 def pytest_sessionfinish(session, exitstatus):
@@ -18,7 +23,7 @@ def pytest_sessionfinish(session, exitstatus):
     unconditionally would hide a worse problem later: if the suite stopped
     being collected at all, verify would go green with nothing running. So the
     exit code is only downgraded while tests/ genuinely contains no test
-    modules. Once T02 adds one, a zero collection run fails again.
+    modules.
     """
     if exitstatus != pytest.ExitCode.NO_TESTS_COLLECTED:
         return
