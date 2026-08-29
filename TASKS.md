@@ -49,7 +49,7 @@ Status values: `TODO`, `IN PROGRESS`, `DONE`, `CUT`.
 | ID | Task | Status | Acceptance |
 | --- | --- | --- | --- |
 | T12 | LLM provider abstraction | DONE (Anthropic model id unverified, no key) | `LLMClient` protocol plus Groq and Anthropic adapters per `docs/ARCHITECTURE.md` section 9. `MATERIA_PROVIDER` env var. Tool schemas translated per provider. Tested with one trivial call per provider. **The trivial Anthropic call must confirm `claude-sonnet-5` is a valid model id before anything depends on it. If it errors, stop and report rather than guessing another string.** |
-| T13 | Trace capture | TODO | Every model call, tool call and tool result logged to JSONL per `docs/TRAJECTORIES.md`. Written as the run proceeds, not reconstructed. Tested: a run produces a well formed trace with correct step ordering. |
+| T13 | Trace capture | DONE | Every model call, tool call and tool result logged to JSONL per `docs/TRAJECTORIES.md`. Written as the run proceeds, not reconstructed. Tested: a run produces a well formed trace with correct step ordering. |
 | T14 | Agent tools | TODO | `recompute_with_patch` and `inspect_range` wired as callable tools with the right schemas. Tested directly, outside the agent loop, before any model sees them. |
 | T15 | Adjudicator agent | TODO | Prompt from `docs/AGENT_INSTRUCTIONS.md` section 1, loaded from `src/materia/prompts/`. Three verdict schema (`ERROR`, `INTENTIONAL`, `INCONCLUSIVE`; the gate owns `IMMATERIAL`). **Run on Groq against one workbook only.** Tested: produces valid verdicts, calls the recompute tool, trace is readable. |
 | T16 | Report renderer and cross check | TODO | Deterministic renderer, no model call. Renders findings into evidence cards. **Drops any finding whose delta has no matching tool result in the trace**, and logs the violation. Tested with a deliberately fabricated delta that must get dropped. The report writer agent is T22, not here. |
@@ -106,7 +106,7 @@ If behind, cut in this order. Do not improvise cuts.
 | 1 Engine | T04 to T05 | 2/2 |
 | 2 Graph and corpus | T06 to T09 | 4/4 |
 | 3 Detection | T10 to T11 | 2/2 |
-| 4 Agent layer | T12 to T17 | 1/6 |
+| 4 Agent layer | T12 to T17 | 2/6 |
 | 5 Baseline | T18 to T20 | 0/3 |
 | 6 Thesis | T21 to T22 | 0/2 |
 | 7 Deliverables | T23 to T29 | 0/7 |
