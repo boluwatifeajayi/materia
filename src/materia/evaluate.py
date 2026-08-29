@@ -411,6 +411,46 @@ def suppressed_count(directory: str | Path) -> int:
     return total
 
 
+FUNNEL_MARKER = "<!-- funnel -->"
+
+
+def update_funnel(readme: str | Path, corpus: str | Path = "corpus",
+                  results: str | Path = RESULTS) -> str | None:
+    """Rewrite the funnel block in README section 4 from a real result set.
+
+    Rule 7: no number that belongs in `results/` is typed into a doc. The
+    block is rendered by the same `Funnel` the CLI prints, so the README shows
+    what a reader will actually see rather than an artist's impression of it.
+
+    `C11` is the workbook used, because it is the only one whose funnel
+    exercises every row including the suppressed count, which is the row the
+    product exists for.
+    """
+    from materia.audit import Audit
+    from materia.report import Funnel
+
+    readme = Path(readme)
+    text = readme.read_text()
+    if text.count(FUNNEL_MARKER) != 2:
+        return None
+
+    data = json.loads((Path(results) / "solution" / "C11.json").read_text())
+    rendered = Funnel(
+        formulas=data["formulas"],
+        candidates=data["candidates"],
+        survived=len(data["findings"]) + len(data["immaterial"]),
+        findings=len(data["findings"]),
+        suppressed=len(data["immaterial"]),
+        adjudicated=data["adjudicated"],
+    ).render(data["workbook"])
+
+    before, _, rest = text.partition(FUNNEL_MARKER)
+    _, _, after = rest.partition(FUNNEL_MARKER)
+    block = f"{FUNNEL_MARKER}\n```\n{rendered}\n```\n{FUNNEL_MARKER}"
+    readme.write_text(before + block + after)
+    return rendered
+
+
 # --- changelog -------------------------------------------------------------
 
 CHANGELOG_MARKER = "| **{stage}** |"

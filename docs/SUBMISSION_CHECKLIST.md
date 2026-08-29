@@ -73,7 +73,7 @@ Two purposes: make sure nothing required is missing, and make sure every rubric 
 
 ## Final pass
 
-- [ ] No `[TBD]` markers left in README, EVALUATION or REPRODUCTION
+- [x] No `[TBD]` markers left in README, EVALUATION or REPRODUCTION. Enforced by `tests/test_evaluate.py::TestTheDocsCarryNoUnfilledPlaceholders`, which covers VIDEO_SCRIPT too.
 - [ ] Every number in every doc regenerated from `results/`, none hand typed
 - [ ] `make all` run once more from a clean clone
 - [ ] Repo public or judge access granted

@@ -372,3 +372,82 @@ class TestTheResultsTableInTheDoc:
             )
         # $2.00 per million in, $12.00 per million out, same both runs.
         assert run_cost(tmp_path) == {"cost": "$3.20 on `gpt-5.6-terra`"}
+
+
+class TestTheDocsCarryNoUnfilledPlaceholders:
+    """T27. The submission is judged on these files, and a `[TBD]` left in one
+    reads as an unfinished claim rather than an honest omission."""
+
+    DOCS = ["README.md", "docs/EVALUATION.md", "docs/REPRODUCTION.md",
+            "docs/VIDEO_SCRIPT.md"]
+
+    @pytest.mark.parametrize("name", DOCS)
+    def test_no_placeholder_remains(self, name):
+        text = Path(name).read_text()
+        assert "[TBD" not in text, name
+
+    @pytest.mark.parametrize("name", DOCS + ["docs/ARCHITECTURE.md",
+                                             "docs/AGENT_INSTRUCTIONS.md",
+                                             "docs/TRAJECTORIES.md"])
+    def test_no_em_dashes(self, name):
+        """CLAUDE.md section 5 bans them outright."""
+        text = Path(name).read_text()
+        for character in ("—", "―"):
+            assert character not in text, f"{name} contains {character!r}"
+
+
+class TestTheFunnelInTheReadmeIsGenerated:
+    """Rule 7 again. The funnel is the first thing a reader sees and it used
+    to be a layout sketch full of placeholders."""
+
+    def test_it_matches_the_result_set_it_claims_to_come_from(self):
+        from materia.report import Funnel
+
+        data = json.loads(Path("results/solution/C11.json").read_text())
+        expected = Funnel(
+            formulas=data["formulas"],
+            candidates=data["candidates"],
+            survived=len(data["findings"]) + len(data["immaterial"]),
+            findings=len(data["findings"]),
+            suppressed=len(data["immaterial"]),
+            adjudicated=data["adjudicated"],
+        ).render(data["workbook"])
+        assert expected in Path("README.md").read_text()
+
+    def test_rewriting_it_is_idempotent(self, tmp_path):
+        from materia.evaluate import FUNNEL_MARKER, update_funnel
+
+        readme = tmp_path / "README.md"
+        readme.write_text(f"before\n{FUNNEL_MARKER}\nold\n{FUNNEL_MARKER}\nafter\n")
+        update_funnel(readme)
+        once = readme.read_text()
+        update_funnel(readme)
+        assert readme.read_text() == once
+        assert "before" in once and "after" in once
+
+    def test_a_readme_without_markers_is_left_alone(self, tmp_path):
+        from materia.evaluate import update_funnel
+
+        readme = tmp_path / "README.md"
+        readme.write_text("no markers here\n")
+        assert update_funnel(readme) is None
+        assert readme.read_text() == "no markers here\n"
+
+
+class TestTheChangelogIsComplete:
+    def test_every_row_has_evidence(self):
+        """An entry written after the fact is not evidence, and an entry with
+        no evidence at all is not an entry."""
+        rows = [
+            line for line in Path("README.md").read_text().splitlines()
+            if line.startswith("| **")
+        ]
+        assert len(rows) >= 6
+        for row in rows:
+            evidence = row.split("|")[3].strip()
+            assert evidence and "TBD" not in evidence, row[:60]
+
+    def test_the_removed_experiment_is_named(self):
+        text = Path("README.md").read_text()
+        assert "| **Removed** |" in text
+        assert "report writer" in text

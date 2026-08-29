@@ -73,7 +73,7 @@ Afternoon:
 
 - [ ] `make eval-repeat N=3` for the variance table
 - [ ] Record the video. Allow two takes. Do the live run in advance as a fallback.
-- [ ] Final read through of README and EVALUATION for `[TBD]` markers
+- [x] Final read through of README and EVALUATION for `[TBD]` markers. None remain, and a test fails if one returns.
 
 **Cutoff 16:00.** Submit. Two hours of buffer before the deadline, because platforms fail and files are large.
 

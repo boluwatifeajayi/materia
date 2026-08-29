@@ -2,7 +2,7 @@
 
 Target 4:30, hard cap 5:00. Screen recording with voiceover. Record after the results are final so no number has to be re-shot.
 
-> **Every `[TBD]` in this script is an unmeasured placeholder.** The first draft of this document carried invented figures that read as real. They have been removed. Fill each one from `results/` after the scored runs, and do not record a take with a `[TBD]` still spoken aloud.
+Every figure spoken here comes from `results/` or `corpus/manifest.json`. The workbook on screen is `C03` unless a section says otherwise. If a rerun changes a number, change it here before recording.
 
 The brief requires: the problem, the simple baseline, one realistic execution end to end, the final comparison, the changelog, the biggest contributing change, and one experiment that was removed.
 
@@ -12,13 +12,13 @@ The brief requires: the problem, the simple baseline, one realistic execution en
 
 ## 0:00 to 0:35 | The problem
 
-**On screen:** an open workbook, scrolled to the valuation tab. Enterprise value visible: `[TBD]`.
+**On screen:** `C03.xlsx`, scrolled to the Valuation tab. Enterprise value visible: 143,535,444.
 
-> "This model says the company is worth `[TBD]`. It was built by four people over eleven months. Every sheet reconciles. Excel shows no errors."
+> "This model says the company is worth a hundred and forty three million. Every sheet reconciles. Excel shows no errors."
 
-Scroll to the seeded cell in the chosen workbook, `[TBD cell ref]`. Zoom.
+Scroll to `Revenue!H5`. Zoom.
 
-> "This cell should be a subtotal formula. It is a hardcoded number. Somebody pasted a value to check something and never put the formula back. The model is wrong by `[TBD]` and there is nothing on screen that tells you."
+> "This cell should read the previous month's closing customers. It is the number 7,200, pasted from month one and never put back. Enterprise value is understated by ninety two million, and there is nothing on screen that tells you."
 
 > "Whoever inherits this model is accountable for that number and did not write a single formula in it. That is the problem."
 
@@ -26,7 +26,7 @@ Scroll to the seeded cell in the chosen workbook, `[TBD cell ref]`. Zoom.
 
 **On screen:** a deterministic linter's output. A long scrolling list of flagged cells.
 
-> "Spreadsheet linters have existed for twenty years and they do find this cell. Here it is, in position `[TBD]` of `[TBD]` flagged cells."
+> "Spreadsheet linters have existed for twenty years and they do find this cell. Here it is, one of twenty two flagged in this workbook, and two hundred and sixty seven across the twelve I tested."
 
 Scroll the list. Let it keep going a beat too long.
 
@@ -40,9 +40,9 @@ Scroll the list. Let it keep going a beat too long.
 
 > "The obvious thing to try is a general purpose coding agent. Same model I use, given the file and a shell, free to write its own analysis code. It is not a strawman, it can build a dependency graph if it wants to."
 
-Baseline output appears: `[TBD]` findings on a workbook with zero errors.
+Baseline output appears: one finding on a workbook with zero errors.
 
-> "This workbook has no errors in it. The agent found `[TBD]`, with impact figures it calculated by reasoning rather than by recomputing anything. That is the failure this project is about."
+> "This workbook has no errors in it. The agent reports one, at high confidence: a cell held at a fixed figure on purpose, with a comment on it saying so. It never read the comment. Its impact number is correct. Its judgement is wrong, and a correct number attached to a wrong judgement is the failure this project is about."
 
 ## 1:35 to 3:05 | One realistic execution
 
@@ -53,13 +53,13 @@ Baseline output appears: `[TBD]` findings on a workbook with zero errors.
 Funnel renders:
 
 ```
-[TBD] formulas parsed
-[TBD] structural anomalies detected
-[TBD] survived hypothesis testing
-[TBD] material findings
+    738  formulas parsed
+     22  structural anomalies detected
+      2  survived hypothesis testing
+      2  material findings   <-- what you read
 ```
 
-> "Detectors run first and they are deliberately noisy. `[TBD]` candidates. Then each one goes to an agent that has to do something specific: propose what the formula should have been, and then call a deterministic engine to actually recompute the model with that patch applied."
+> "Detectors run first and they are deliberately noisy. Twenty two candidates on this workbook. Then each one goes to an agent that has to do something specific: propose what the formula should have been, and then call a deterministic engine to recompute the model with that patch applied."
 
 **On screen:** live trajectory view of `H42`. Hypothesis, then the `recompute_with_patch` call, then the returned delta.
 
@@ -71,7 +71,7 @@ Funnel renders:
 
 **On screen:** the final report. Evidence card for `H42`.
 
-> "`[TBD]` findings. Consequence first, cell reference second, the dependency path to enterprise value, and the measured impact. `[TBD]` suppressed, counted, and shown, because suppression the user cannot see is indistinguishable from a bug."
+> "Two findings. Consequence first, cell reference second, the dependency path to enterprise value, and the measured impact. Twenty declined as deliberate, counted and shown, because suppression the user cannot see is indistinguishable from a bug."
 
 ## 3:05 to 3:50 | The comparison
 
@@ -79,12 +79,12 @@ Funnel renders:
 
 | | Baseline | Materia |
 | --- | --- | --- |
-| Material finding precision | `[TBD]` | `[TBD]` |
-| Material recall | `[TBD]` | `[TBD]` |
-| FP per clean workbook | `[TBD]` | `[TBD]` |
-| Human time per workbook | `[TBD]` | `[TBD]` |
+| Material finding precision | 83% | 100% |
+| Material recall | 71% | 93% |
+| FP per clean workbook | 0.50 | 0.00 |
+| Human time per workbook | not measured | not measured |
 
-> "Twelve workbooks. Ten seeded from a published spreadsheet error taxonomy, two clean controls, and one workbook where the error is real but changes the output by `[TBD]` percent, well under the threshold. Correct behaviour there is to detect it and suppress it, and the report shows it in the suppressed count."
+> "Twelve workbooks. Ten seeded from a published spreadsheet error taxonomy, two clean controls, and one where the error is real but moves the output by three hundredths of a percent, well under the one percent threshold. Correct behaviour there is to detect it and suppress it, and the report shows it in the suppressed count."
 
 > "Both systems also miss one mutation entirely: an assumption that should be one point two percent and says twelve percent. Structurally perfect, no peer signal exists. Nothing structural can catch that and I report it as a limitation."
 
@@ -92,11 +92,11 @@ Funnel renders:
 
 **On screen:** the changelog table.
 
-> "Detectors alone: high recall, precision of `[TBD]`. Adding the agent loop with the recompute tool took it to `[TBD]`. Adding the materiality gate took it to `[TBD]`."
+> "Detectors alone: ninety three percent recall, five percent precision. Adding the agent loop with the recompute tool took precision to ninety three. Adding the materiality gate took it to a hundred, with recall unchanged."
 
-> "The biggest single contributor was `[TBD]`."
+> "The biggest single contributor was the agent loop, and I have to be honest that it arrived as one change rather than three, so I can tell you it is worth eighty eight points of precision but not how those split between hypothesis testing, the recompute gate, and letting the model say a cell is fine."
 
-> "The experiment I removed: `[TBD]`. What it taught me was `[TBD]`."
+> "The experiment I removed was a report writer agent. I gave it the verified findings and told it not to reinterpret any figure. It printed every number correctly and then wrote that enterprise value was overstated where the measurement says understated, on all four findings. Guarding the numbers does not guard the sentences around them, so the renderer that ships is a template."
 
 ## 4:20 to 4:40 | Hot take
 

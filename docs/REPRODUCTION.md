@@ -95,7 +95,7 @@ Compares SHA256 of each workbook against `corpus/checksums.txt`. If these match,
 make baseline
 ```
 
-**One workbook, not twelve.** The harness is built and audits `corpus/C03.xlsx`. The scored sweep over the corpus is T19, and until it runs there is no baseline column in the headline table: `docs/EVALUATION.md` section 5 shows it as `[TBD]` rather than as a number.
+`make baseline` runs all twelve workbooks. The scored run is in `results/baseline/` and fills the Baseline column of the headline table in `docs/EVALUATION.md` section 5.
 
 The baseline is a general purpose coding agent given the workbook as `model.xlsx` in a sandboxed directory, a shell, and `openpyxl` already installed. It is free to write whatever analysis code it wants. Its instructions are in `docs/AGENT_INSTRUCTIONS.md` section 3, and they name the error families, declare the output cells, and say precision counts. It is not a strawman.
 

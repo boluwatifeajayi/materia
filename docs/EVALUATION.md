@@ -58,7 +58,7 @@ Measured, not estimated. For each of three workbooks, a reviewer starts a timer,
 | `C01` to `C08` | Seeded | 1 to 3 mutations each, drawn from the taxonomy below |
 | `C09` | Clean control | No mutations |
 | `C10` | Clean control | No mutations, but contains three *legitimate* pattern breaks (hardcoded actuals row, first period column, deliberate manual override with a comment) |
-| `C11` | Hard case | Contains a real mutation that is genuinely immaterial. Generator target: moves a declared output by less than 0.1%. Actual delta `[TBD]`, measured by the recompute engine at injection time and recorded in the manifest. Correct behaviour is to detect and suppress it. |
+| `C11` | Hard case | Contains a real mutation that is genuinely immaterial. Generator target: moves a declared output by less than 0.1%. Actual delta 4,165 on `P&L!AA15` and 28,321 on `Valuation!B7`, which is 0.0217% and 0.0300% of those outputs, measured by the recompute engine at injection time and recorded in the manifest. Correct behaviour is to detect and suppress it. |
 | `C12` | Hard case | Contains one in taxonomy mutation and one out of taxonomy mutation |
 
 `C10` is the workbook that breaks naive tools, and `C11` is the one that tests the actual thesis. Both are discussed explicitly in the write up.

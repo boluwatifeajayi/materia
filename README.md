@@ -36,7 +36,7 @@ The tooling that exists does not solve it either. Deterministic spreadsheet lint
 
 Because the cost of the miss is asymmetric and large. Spreadsheet error research (Panko, EuSpRIG) has documented significant error rates in operational workbooks for over twenty years, and the published horror stories are financial rather than cosmetic. A single reference error in a forecast row propagates through gross profit, EBITDA and any multiple applied to it.
 
-The value of a tool here is not "finds errors". It is **finds the few that matter and proves it, so that checking the model takes minutes instead of hours.** That is a claim to be measured rather than asserted: the human time protocol is in `docs/EVALUATION.md` section 1 and the result is `[TBD]` until the timed trials run.
+The value of a tool here is not "finds errors". It is **finds the few that matter and proves it, so that checking the model takes minutes instead of hours.** That is a claim to be measured rather than asserted. The human time protocol is in `docs/EVALUATION.md` section 1 and the trials were not run, so it is reported as not measured rather than estimated. What is measured is the proxy: 267 structural anomalies across the corpus reduced to 13 findings, with the other 254 accounted for rather than dropped.
 
 ## 4. What we are building
 
@@ -51,18 +51,22 @@ Materia takes an `.xlsx` model and returns a small number of evidence backed fin
 
 And critically, the count of anomalies it **suppressed** and why.
 
-> **Layout only. Every figure below is a `[TBD]` placeholder.** Nothing in this block has been measured. `make eval` fills it from `results/`, and until it does, no number here may be quoted anywhere.
+Written by `make eval` from `results/solution/`, not typed. This is `C11`, the workbook carrying a real error too small to matter:
 
+<!-- funnel -->
 ```
-MODEL HEALTH                      <workbook>.xlsx
+MODEL HEALTH                                                      C11.xlsx
+==========================================================================
 
-  [TBD]  formulas parsed
-  [TBD]  structural anomalies detected
-  [TBD]  survived hypothesis testing
-  [TBD]  material findings               <-- what the user reads
+      738  formulas parsed
+       22  structural anomalies detected
+        1  survived hypothesis testing
+        0  material findings   <-- what you read
+        1  suppressed as immaterial
 ```
+<!-- funnel -->
 
-That funnel is the product. Everything above the last line is what existing tools already give you. The last line is what makes anyone use it twice.
+That funnel is the product. Everything above the last two lines is what existing tools already give you. `material findings` is what makes anyone use it twice, and `suppressed as immaterial` is what makes them trust it: the error in `C11` is real, it is 3.0 basis points, and the tool says so rather than either hiding it or putting it in front of you.
 
 ### The core design decision
 
@@ -150,7 +154,7 @@ This is a deliberate choice, not a gap we are hiding. A tool that silently mis-e
 
 Full evaluation methodology in `docs/EVALUATION.md`. Every row below is scored on the **same 12 case corpus** with the **same metric**.
 
-> Fill `[TBD]` as each experiment completes. Do not reconstruct this at the end. An entry written after the fact is not evidence.
+Every Evidence cell is written by `make eval` from `results/`. None of it is typed.
 
 | Stage | What was tried and why | Evidence | Decision / learning |
 | --- | --- | --- | --- |
@@ -158,27 +162,36 @@ Full evaluation methodology in `docs/EVALUATION.md`. Every row below is scored o
 | **Iteration 1** | Deterministic detectors only, no model. This is a deliberate stand-in for the existing commercial category (Operis, Macabacus, ExceLint): structural detection with no impact reasoning. Tests the claim that the hard part is precision, not detection. | 5% material precision, 93% material recall, 23.00 false positives per clean workbook, 267 findings reported | Expect high recall, poor precision. **This row is the numeric answer to "doesn't Macabacus already do this".** If precision is already good, the thesis is wrong and we pivot the framing. |
 | **Iteration 2** | Add the agent loop with the recompute tool, no materiality gate. Every surviving candidate is reported. | 93% material precision, 93% material recall, 0.00 false positives per clean workbook, 14 findings reported | Isolates the contribution of hypothesis testing from the contribution of materiality filtering |
 | **Iteration 3** | Add the materiality gate over declared output cells. | 100% material precision, 93% material recall, 0.00 false positives per clean workbook, 13 findings reported | Isolates the single change we claim is the differentiator |
-| **Iteration 4** | Add peer group evidence to the agent context after observing `[failure mode]`. | `[TBD]` | `[kept / revised / removed]` |
-| **Iteration 5 (removed)** | `[experiment that was tried and cut]` | `[TBD]` | What it taught us about the problem |
-| **Final** | Combination of the changes that survived | `[TBD]` | Largest single contributor: `[TBD]` |
+| **Removed** | A report writer agent, given the verified findings and asked to render the report, with explicit instructions not to reinterpret any figure. | Printed every number correctly, then wrote that enterprise value was overstated where the measurement says understated, flipping the direction of all four findings. Also put the dependency path at 6 steps where it is 21, and called an `INTENTIONAL` verdict "suppressed". | Removed. The deterministic renderer ships instead. Guarding the figures does not guard the sentences around them. |
+| **Final** | Iteration 3. Detectors, the adjudicator loop with the recompute tool, the materiality gate, and a template renderer. | 100% material precision, 93% material recall, 0.00 false positives per clean workbook, 13 findings reported | Largest single contributor: the adjudicator loop, worth 5% to 93% precision. The gate is worth the last 7 points. |
+
+There was no Iteration 4. Peer group evidence was in the adjudicator's context from the first version rather than added in response to a failure, so there is no before and after to report, and inventing one would make this table fiction.
+
+**On the Final row's attribution.** Iteration 1 to 2 is the agent loop arriving as a whole: hypothesis testing, the recompute gate on impact figures, and `INTENTIONAL` as a first class verdict, all at once. That step is worth 88 points of precision and we did not run an ablation separating its three parts, so the honest claim is that the loop did it, not that any one piece did. Iteration 2 to 3 is a single change and its 7 points are attributable.
+
+The one other thing tried and dropped was not an iteration and is not in the table: `gpt-5.6-terra` on `/v1/chat/completions` refuses function tools unless `reasoning_effort` is set to `none`. Both routes were tested live. `/v1/responses` was chosen because turning reasoning off removes exactly the capability the tier was picked for.
 
 ## 8. Main failure mode
 
-**The agent rationalises.**
+**Confident output that nobody checked against evidence that was already available.**
 
-Given a candidate cell and asked what the intended formula was, the model will almost always produce a plausible answer, including for cells that were deliberately different. It does not naturally say "this looks intentional". A hardcoded actuals row, a first period column with no prior to reference, a manual override: the model will invent an intent for all of them and report a finding.
+This was predicted as "the agent rationalises", which turned out to be half right and half too narrow. It happened three times during the build, and only two of the three involve a model at all.
 
-This is not a prompting problem that goes away with a better instruction. It is structural. The model is being asked to explain an anomaly, and explanation is the thing it is best at, so it explains regardless of whether an explanation is warranted.
+**The adjudicator invented figures it had already been given.** On the first candidate of the first live run, it called `recompute_with_patch`, received `{"P&L!AA15": 8704573.0, "Valuation!B7": 92752830.0}` at step 4, and reported `{"P&L!AA15": -6102169, "Valuation!B7": -50782614}` at step 7. Opposite signs, different magnitudes. The verdict was right and the proposed repair was right. Rule 1 of its own instructions says never state an impact figure you did not obtain from the tool, and it had the figure, in its own context window, three steps earlier. Trajectory: `trajectories/solution/C03_adjudicator_Revenue_H5_D1.jsonl`, steps 4 and 7.
 
-**Observed, not predicted.** On the first candidate of the first live adjudication run, the model called the recompute tool, received `{"P&L!AA15": 8704573.0, "Valuation!B7": 92752830.0}`, and then reported `{"P&L!AA15": -6102169, "Valuation!B7": -50782614}` as its measured impact. The verdict was right and the proposed repair was right. The numbers were invented. Rule 1 of its own instructions says never state an impact figure you did not obtain from the tool, and it had the figure. The trajectory is `trajectories/solution/C03_adjudicator_Revenue_H5_D1.jsonl`, steps 4 and 7.
+**The baseline judged intent without looking for it.** On `C10`, a workbook with no errors, it reported `Costs!I12` as an error at high confidence and proposed restoring the inflation formula. That cell carries a comment: "One off office move approved by the board in month 7. Held at this figure on purpose, do not restore the inflation formula." The string `.comment` does not appear anywhere in that trajectory. It was using `openpyxl` all run, one attribute away. Its impact figure for the change it proposed was, incidentally, correct. Trajectory: `trajectories/baseline/C10_baseline_openai.jsonl`.
 
-**And again, one layer up.** The report writer agent is handed verified figures and told not to reinterpret them. It printed every figure correctly and then wrote that enterprise value was overstated when the measurement says understated, flipping the direction of every finding, and put the dependency path at 6 steps when it is 21. Guarding the figures does not guard what is said about them, which is why the renderer that ships is deterministic. See `docs/AGENT_INSTRUCTIONS.md` section 2.
+**Our own code did the same thing.** `from_trajectories` rebuilt a workbook's audit by globbing every `.jsonl` in a directory. That was true while a directory held one workbook. When the corpus sweep put twelve in one place, rebuilding any single workbook silently picked up all 267 verdicts and reported them as that workbook's, and it wrote twelve result files that way before anything noticed. Every trace record carries the workbook name in `run_start`. The function read past it.
 
-Three mitigations, in order of how much they helped: `[TBD, fill from evaluation]`
+The common shape is the same in all three. The information needed to be correct was present and reachable. Nothing compared the output against it. That the third case is ordinary Python and no model is involved is the useful part: this is not a property of language models, it is a property of unverified assertions, and a codebase built to distrust a model's numbers has no excuse for trusting its own.
 
-1. The recompute gate. The model cannot report an impact it has not had verified.
-2. Requiring peer group evidence in the finding, so a hypothesis with no supporting pattern is rejected structurally.
-3. Explicit "intentional override" as a first class output class, so declining to flag is a success state rather than a non-answer.
+Each fix is the same move, a mechanical check that reads the source of truth and compares:
+
+1. **The cross check**, worth the most. Every figure in a report is read back out of a `tool_result` record in the trajectory. If there is no measurement behind a number, the finding is dropped and counted as a schema violation. If a measurement exists and the model said something else, the measured figure is substituted and the discrepancy is logged. The number a user sees is measured whatever the model claims. Across the 267 adjudications of the scored run this fired zero times, which is a better result than the first run and not a reason to remove it.
+2. **Put the evidence in front of the model rather than hoping it looks.** The cell comment, the row label, the peer group and the normalised peer formula are all in the adjudicator's opening context. On the same `Costs!I12` the baseline got wrong, the adjudicator returned `INTENTIONAL` in one turn, quoting the comment. It did not need to call `inspect_range` to find it, because it was never given the chance to fail to.
+3. **`INTENTIONAL` as a first class verdict.** If the only way to complete the task is to produce a finding, the model produces findings. Giving "this is fine, and here is why" the same standing as a finding is what makes declining possible, and it is what 253 of 267 candidates got.
+
+Ordering by measured contribution is only possible for the third of these against the second and first together: the loop that contains all three took precision from 5% to 93% in one step, and no ablation was run to separate them. That is stated in the changelog rather than guessed at here.
 
 ## 9. Hot take
 

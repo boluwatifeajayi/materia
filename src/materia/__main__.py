@@ -150,6 +150,12 @@ def _evaluate(arguments: argparse.Namespace) -> int:
                 print(f"{arguments.document}: filled the {column} column, "
                       f"{len(filled)} rows")
 
+    if arguments.changelog and Path(arguments.changelog).exists():
+        from materia.evaluate import update_funnel
+
+        if update_funnel(arguments.changelog, arguments.corpus, arguments.results):
+            print(f"changelog: funnel filled in {arguments.changelog}")
+
     if arguments.changelog:
         # Each system fills its own row. Looping every score into one stage
         # wrote the baseline's numbers over the detectors' in Iteration 1.
