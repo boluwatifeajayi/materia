@@ -12,8 +12,9 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
-from materia.llm.anthropic import AnthropicClient
-from materia.llm.groq import GroqClient, RateLimited, TokenPacer
+from materia.llm.groq import GroqClient
+from materia.llm.openai_client import OpenAIClient
+from materia.llm.openai_compatible import RateLimited, TokenPacer
 from materia.llm.types import (
     AgentResponse,
     LLMClient,
@@ -25,8 +26,13 @@ from materia.llm.types import (
     Usage,
 )
 
-PROVIDERS = {"groq": GroqClient, "anthropic": AnthropicClient}
+PROVIDERS = {"groq": GroqClient, "openai": OpenAIClient}
+
+# Groq is the dev loop and OpenAI is what results are scored on. Only a run
+# from the scored provider is ever cited as a number. See
+# docs/ARCHITECTURE.md section 9.
 DEFAULT_PROVIDER = "groq"
+SCORED_PROVIDER = "openai"
 PROVENANCE_NAME = "provider.json"
 
 # Read once, at import, exactly as docs/ARCHITECTURE.md section 9 says. A
@@ -61,7 +67,7 @@ def write_provenance(directory: str | Path, client: LLMClient) -> Path:
             {
                 "provider": client.provider,
                 "model": client.model,
-                "scored": client.provider == "anthropic",
+                "scored": client.provider == SCORED_PROVIDER,
                 "written_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             },
             indent=2,
@@ -79,16 +85,17 @@ def read_provenance(directory: str | Path) -> dict | None:
 
 __all__ = [
     "AgentResponse",
-    "AnthropicClient",
     "DEFAULT_PROVIDER",
     "GroqClient",
     "LLMClient",
     "Message",
     "ModelNotAvailable",
+    "OpenAIClient",
     "PROVIDERS",
     "RateLimited",
     "TokenPacer",
     "ProviderError",
+    "SCORED_PROVIDER",
     "SELECTED_PROVIDER",
     "ToolCall",
     "ToolDefinition",

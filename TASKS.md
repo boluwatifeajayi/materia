@@ -48,7 +48,7 @@ Status values: `TODO`, `IN PROGRESS`, `DONE`, `CUT`.
 
 | ID | Task | Status | Acceptance |
 | --- | --- | --- | --- |
-| T12 | LLM provider abstraction | DONE (Anthropic model id unverified, no key) | `LLMClient` protocol plus Groq and Anthropic adapters per `docs/ARCHITECTURE.md` section 9. `MATERIA_PROVIDER` env var. Tool schemas translated per provider. Tested with one trivial call per provider. **The trivial Anthropic call must confirm `claude-sonnet-5` is a valid model id before anything depends on it. If it errors, stop and report rather than guessing another string.** |
+| T12 | LLM provider abstraction | DONE (OpenAI model id UNVERIFIED: `llm check --provider openai` pending a key) | `LLMClient` protocol plus Groq and OpenAI adapters per `docs/ARCHITECTURE.md` section 9. `MATERIA_PROVIDER` env var. Both speak the OpenAI wire format, so the translation is shared rather than written twice. **The trivial OpenAI call must confirm `gpt-5.6-terra` is a valid model id before anything depends on it. If it errors, stop and report rather than guessing another string.** |
 | T13 | Trace capture | DONE | Every model call, tool call and tool result logged to JSONL per `docs/TRAJECTORIES.md`. Written as the run proceeds, not reconstructed. Tested: a run produces a well formed trace with correct step ordering. |
 | T14 | Agent tools | DONE | `recompute_with_patch` and `inspect_range` wired as callable tools with the right schemas. Tested directly, outside the agent loop, before any model sees them. |
 | T15 | Adjudicator agent | DONE | Prompt from `docs/AGENT_INSTRUCTIONS.md` section 1, loaded from `src/materia/prompts/`. Three verdict schema (`ERROR`, `INTENTIONAL`, `INCONCLUSIVE`; the gate owns `IMMATERIAL`). **Run on Groq against one workbook only.** Tested: produces valid verdicts, calls the recompute tool, trace is readable. |
@@ -61,14 +61,14 @@ Status values: `TODO`, `IN PROGRESS`, `DONE`, `CUT`.
 | ID | Task | Status | Acceptance |
 | --- | --- | --- | --- |
 | T18 | Baseline agent harness | TODO | Sandboxed working dir, workbook copied in, shell tool, prompt from `docs/AGENT_INSTRUCTIONS.md` section 3. Turn and token caps equal to the solution's. Traced. Tested on one workbook on Groq. |
-| T19 | Baseline scored run | TODO | **Anthropic. Full 12 workbook corpus.** `make baseline`. Results to `results/baseline/`, traces to `trajectories/baseline/`. Tell me the estimated cost before running. |
-| T20 | Solution scored run, no gate | TODO | **Anthropic. Full corpus, materiality gate disabled.** Record as changelog Iteration 2. This isolates hypothesis testing from materiality filtering. |
+| T19 | Baseline scored run | TODO | **OpenAI. Full 12 workbook corpus.** `make baseline`. Results to `results/baseline/`, traces to `trajectories/baseline/`. Tell me the estimated cost before running. |
+| T20 | Solution scored run, no gate | TODO | **OpenAI. Full corpus, materiality gate disabled.** Record as changelog Iteration 2. This isolates hypothesis testing from materiality filtering. |
 
 ## Phase 6: The thesis
 
 | ID | Task | Status | Acceptance |
 | --- | --- | --- | --- |
-| T21 | Materiality gate | TODO | Threshold on declared outputs, default 1%. Suppressed candidates counted and shown, never silently dropped. Buckets sum to the detector count. **Rerun on Anthropic, record as changelog Iteration 3.** This is the single change the whole project claims. |
+| T21 | Materiality gate | TODO | Threshold on declared outputs, default 1%. Suppressed candidates counted and shown, never silently dropped. Buckets sum to the detector count. **Rerun on OpenAI, record as changelog Iteration 3.** This is the single change the whole project claims. |
 | T22 | CLI report output and report writer agent | DONE (writer built and run, not shipped, cut list item 4) | The funnel from `README.md` section 4, evidence cards, consequence first ordering, suppressed count. Readable in a terminal at demo font sizes. No emoji, no AI voice. **Plus the report writer agent from `docs/AGENT_INSTRUCTIONS.md` section 2**, prompt loaded from `src/materia/prompts/`, one call per workbook, no tools, rendering over the verified findings the T16 renderer produced. It never recomputes or adjusts a figure. Traced like the adjudicator, since the trajectory deliverable requires one per agent. |
 
 ## Phase 7: Deliverables

@@ -169,17 +169,31 @@ Two implementations, used for different purposes and never mixed within one scor
 | Provider | Role | Why |
 | --- | --- | --- |
 | **Groq** (`openai/gpt-oss-120b`) | Dev-loop iteration | Fast inference, generous free tier, OpenAI-compatible tool-calling schema, so it is the cheapest place to debug the adjudicator's tool call sequence repeatedly against the corpus |
-| **Anthropic (`claude-sonnet-5`)** | Final scored run | Required by `EVALUATION.md`: solution and baseline must run on the same model, so the headline table isolates the workflow's contribution rather than a difference in raw model capability |
+| **OpenAI** (`gpt-5.6-terra`) | Final scored run | Required by `EVALUATION.md`: solution and baseline must run on the same model, so the headline table isolates the workflow's contribution rather than a difference in raw model capability. The balanced production tool-use tier rather than the mini or nano tier, because the adjudicator does multi-step tool use, forms and retries hypotheses, and has to return a structured verdict. |
 
-Selected by `MATERIA_PROVIDER` env var (`groq` or `anthropic`), read once at startup. `config.yaml` records which provider produced any given `results/` directory, so a stray dev-loop run can never be mistaken for the scored one.
+Selected by `MATERIA_PROVIDER` env var (`groq` or `openai`), read once at startup.
+
+**They share more than half, and not the half we expected.** Groq serves an OpenAI-compatible *chat* API, so the plan was to point the existing adapter at `api.openai.com` and be done. That is not possible: `gpt-5.6-terra` refuses function tools on `/v1/chat/completions` unless `reasoning_effort` is `'none'`.
+
+```
+Function tools with reasoning_effort are not supported for gpt-5.6-terra in
+/v1/chat/completions. To use function tools, use /v1/responses or set
+reasoning_effort to 'none'.
+```
+
+Both ways out work, and they trade against each other. Keeping the chat endpoint means keeping the shared translation and giving up the reasoning the tier was chosen for. Moving to `/v1/responses` keeps the reasoning and costs a second request shape. The adjudicator does multi-step tool use, forms and retries hypotheses, and returns a structured verdict, so the reasoning is the point and the second shape is the price.
+
+What is still shared, in `openai_compatible.py`: client construction, timeouts, retries, key handling, argument parsing, the token pacer, and the error classes. What is not: the request and reply mapping. On the chat API a tool call is a field on an assistant message; on the Responses API a call and its result are two separate input items joined by a `call_id`, the system prompt is `instructions` rather than a message, and tool definitions are flat rather than nested under a `function` key.
+
+Only Groq is fitted with a `TokenPacer` by default. Its free tier caps this account at 8,000 tokens a minute, which one adjudication exceeds on its own, so requests are held back rather than refused. A paid OpenAI account is not in that position and pacing a limit that is not binding would add an hour of waiting to a run for nothing. `config.yaml` records which provider produced any given `results/` directory, so a stray dev-loop run can never be mistaken for the scored one.
 
 Each provider gets a thin adapter translating `recompute_with_patch` and `inspect_range` into that provider's native tool schema, and normalising the response back into `AgentResponse`. This is the only provider-specific code in the system; the adjudicator, the report writer agent, the gate and the renderer are provider agnostic.
 
-**What this abstraction is not for:** it is not a claim of multi-provider robustness as a feature. It exists purely so development iteration is fast and free, while the number that ships in `EVALUATION.md` comes from one accountable model. Only the Anthropic run is ever cited as a result.
+**What this abstraction is not for:** it is not a claim of multi-provider robustness as a feature. It exists purely so development iteration is fast and free, while the number that ships in `EVALUATION.md` comes from one accountable model. Only the OpenAI run is ever cited as a result.
 
 **Groq's free tier only serves open models**, which is fine for exercising the tool-call loop and catching bugs in the adjudication logic, but is not a substitute data point for the headline comparison. Do not report Groq-run numbers anywhere in `README.md` or `EVALUATION.md`.
 
-This project was originally specified against `llama-3.3-70b-versatile`. Groq no longer serves it, so the dev-loop model is `openai/gpt-oss-120b`, chosen from what the provider reports it will actually serve rather than guessed. The distinction matters more for Anthropic, where a scored run against a model nobody chose would not be a result: `ModelNotAvailable` is a separate exception class for exactly that reason, and the adapter says so rather than falling back.
+This project was originally specified against `llama-3.3-70b-versatile`. Groq no longer serves it, so the dev-loop model is `openai/gpt-oss-120b`, chosen from what the provider reports it will actually serve rather than guessed. The distinction matters more on the scored side, where a run against a model nobody chose would not be a result: `ModelNotAvailable` is a separate exception class for exactly that reason, and the adapter says so rather than falling back. `python -m materia llm check --provider openai` is the one call that settles it.
 
 **What the dev loop actually costs, measured.** Two limits bind, and the second is the one that matters. Tokens per minute is 8,000 on this account, which one adjudication exceeds on its own, so requests are paced. Tokens per day is 200,000, which is roughly sixty adjudications. A full twelve workbook run is not possible on the free tier in a single day, and this is a planning fact rather than a bug.
 

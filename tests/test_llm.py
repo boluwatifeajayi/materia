@@ -4,9 +4,8 @@ Translation both ways is checked without a network, so the shape of what we
 send and what we read back is pinned regardless of whether a key is present.
 One live Groq call exercises the real round trip.
 
-The Anthropic adapter has no live test here. There is no ANTHROPIC_API_KEY in
-this environment, so `claude-sonnet-5` is unverified and T19 to T21 depend on
-it. That is recorded in the test at the bottom of this file rather than left
+The OpenAI adapter has no live test here. There is no OPENAI_API_KEY in this
+environment, so `gpt-5.6-terra` is unverified and T19 to T21 depend on it. That is recorded in the test at the bottom of this file rather than left
 as a note somebody has to remember.
 """
 
@@ -17,20 +16,22 @@ import pytest
 
 from materia.llm import (
     PROVIDERS,
-    AnthropicClient,
     GroqClient,
+    OpenAIClient,
     Message,
     ModelNotAvailable,
     ProviderError,
+    RateLimited,
     ToolCall,
     ToolDefinition,
     get_client,
     read_provenance,
     write_provenance,
 )
-from materia.llm.anthropic import _translate_error as anthropic_error
 from materia.llm.groq import _parse_arguments
 from materia.llm.groq import _translate_error as groq_error
+from materia.llm.openai_client import OpenAIClient as _OpenAIClient
+from materia.llm.openai_compatible import OpenAICompatibleClient
 
 ADD = ToolDefinition(
     name="add_numbers",
@@ -78,43 +79,63 @@ class TestGroqTranslation:
         assert payload[3] == {"role": "tool", "tool_call_id": "call_1", "content": "42"}
 
 
-class TestAnthropicTranslation:
-    def test_tools_use_an_input_schema(self):
-        [tool] = AnthropicClient._tools([ADD])
+class TestOpenAIUsesTheResponsesApi:
+    """The plan was to point the Groq adapter elsewhere, and Groq does speak
+    the chat wire format. But gpt-5.6-terra refuses function tools on
+    /v1/chat/completions unless reasoning_effort is 'none', which gives up the
+    reasoning this tier was chosen for. So the request and reply shapes differ
+    and complete() is written rather than inherited."""
+
+    def test_tools_are_flat_not_nested_under_a_function_key(self):
+        """The chat API wants {"function": {...}}. The Responses API does not."""
+        [tool] = OpenAIClient._tools([ADD])
         assert tool["name"] == "add_numbers"
-        assert tool["input_schema"] == ADD.parameters
-        assert "parameters" not in tool
+        assert tool["parameters"] == ADD.parameters
+        assert "function" not in tool
 
-    def test_tool_calls_become_tool_use_blocks(self):
-        payload = AnthropicClient._messages(CONVERSATION)
-        blocks = payload[1]["content"]
-        assert blocks[0]["type"] == "tool_use"
-        assert blocks[0]["input"] == {"a": 17, "b": 25}
+        [chat_tool] = GroqClient._tools([ADD])
+        assert chat_tool["function"]["name"] == "add_numbers"
 
-    def test_tool_results_become_user_blocks(self):
-        payload = AnthropicClient._messages(CONVERSATION)
-        assert payload[2]["role"] == "user"
-        assert payload[2]["content"][0]["type"] == "tool_result"
-        assert payload[2]["content"][0]["tool_use_id"] == "call_1"
+    def test_a_tool_call_and_its_result_become_two_linked_items(self):
+        """Not a message carrying a list of calls. They are separate input
+        items joined by call_id."""
+        items = OpenAIClient._input(CONVERSATION)
+        call = next(i for i in items if i.get("type") == "function_call")
+        result = next(i for i in items if i.get("type") == "function_call_output")
+        assert call["call_id"] == result["call_id"] == "call_1"
+        assert json.loads(call["arguments"]) == {"a": 17, "b": 25}
+        assert result["output"] == "42"
 
-    def test_consecutive_tool_results_share_one_turn(self):
-        """Anthropic rejects two user turns in a row, so results from a
-        parallel tool call have to be merged."""
-        messages = [
-            Message(role="user", content="go"),
-            Message(
-                role="assistant",
-                tool_calls=(
-                    ToolCall("a", "add_numbers", {}),
-                    ToolCall("b", "add_numbers", {}),
-                ),
-            ),
-            Message(role="tool", tool_call_id="a", content="1"),
-            Message(role="tool", tool_call_id="b", content="2"),
-        ]
-        payload = AnthropicClient._messages(messages)
-        assert len(payload) == 3
-        assert len(payload[2]["content"]) == 2
+    def test_a_plain_turn_stays_a_role_and_content_item(self):
+        items = OpenAIClient._input([Message(role="user", content="go")])
+        assert items == [{"role": "user", "content": "go"}]
+
+    def test_assistant_text_alongside_a_tool_call_is_kept(self):
+        items = OpenAIClient._input([
+            Message(role="assistant", content="Let me check.",
+                    tool_calls=(ToolCall("c1", "add_numbers", {}),))
+        ])
+        assert items[0] == {"role": "assistant", "content": "Let me check."}
+        assert items[1]["type"] == "function_call"
+
+    def test_the_shared_half_is_still_shared(self):
+        """Client construction, timeouts and key handling are not rewritten."""
+        assert OpenAIClient.__init__ is OpenAICompatibleClient.__init__
+        assert OpenAIClient._missing_key_message is OpenAICompatibleClient._missing_key_message
+
+    def test_the_providers_differ_only_where_they_have_to(self):
+        assert OpenAIClient.provider == "openai"
+        assert OpenAIClient.API_KEY_VARIABLE == "OPENAI_API_KEY"
+        assert OpenAIClient.BASE_URL is None  # the SDK default, api.openai.com
+        assert GroqClient.BASE_URL.startswith("https://api.groq.com")
+
+    def test_the_scored_provider_carries_no_pacer_by_default(self, monkeypatch):
+        """The free Groq tier needs one. Pacing a limit that is not binding
+        would add an hour of waiting to a run for nothing."""
+        monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+        monkeypatch.setenv("GROQ_API_KEY", "test-key")
+        assert OpenAIClient().pacer is None
+        assert GroqClient().pacer is not None
 
 
 class TestErrorTranslation:
@@ -127,16 +148,28 @@ class TestErrorTranslation:
         assert isinstance(error, ProviderError)
         assert not isinstance(error, ModelNotAvailable)
 
-    def test_an_unavailable_anthropic_model_says_not_to_guess(self):
+    @staticmethod
+    def _openai(model="gpt-5.6-terra"):
+        client = _OpenAIClient.__new__(_OpenAIClient)
+        client.model = model
+        return client
+
+    def test_an_unavailable_openai_model_says_not_to_guess(self):
         """Falling back to another model would produce a scored run against a
         model nobody chose, which is not a result."""
-        error = anthropic_error(Exception("model_not_found"), "claude-sonnet-5")
+        error = self._openai()._translate_error(Exception("model_not_found"))
         assert isinstance(error, ModelNotAvailable)
         assert "guess" in str(error)
 
+    def test_billing_refusals_are_not_mistaken_for_rate_limits(self):
+        """They need different action: one is waiting, the other is paying."""
+        error = self._openai()._translate_error(Exception("insufficient_quota"))
+        assert not isinstance(error, RateLimited)
+        assert "billing" in str(error)
+
     def test_a_missing_key_names_the_selected_provider(self, monkeypatch):
         """Found in a clean clone run. Following the guide and exporting only
-        an Anthropic key produced "GROQ_API_KEY is not set", which is true and
+        another provider's key produced "GROQ_API_KEY is not set", true and
         unhelpful: nothing said the provider defaults to groq."""
         monkeypatch.delenv("GROQ_API_KEY", raising=False)
         monkeypatch.delenv("MATERIA_PROVIDER", raising=False)
@@ -145,11 +178,12 @@ class TestErrorTranslation:
         assert "MATERIA_PROVIDER" in str(raised.value)
         assert "the default" in str(raised.value)
 
-    def test_a_missing_anthropic_key_says_how_to_switch_back(self, monkeypatch):
-        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    def test_a_missing_openai_key_names_the_variable_and_the_provider(self, monkeypatch):
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
         with pytest.raises(ProviderError) as raised:
-            AnthropicClient()
-        assert "MATERIA_PROVIDER=groq" in str(raised.value)
+            OpenAIClient()
+        assert "OPENAI_API_KEY" in str(raised.value)
+        assert "MATERIA_PROVIDER" in str(raised.value)
 
 
 class TestArgumentParsing:
@@ -170,7 +204,14 @@ class TestArgumentParsing:
 
 class TestSelection:
     def test_both_providers_are_registered(self):
-        assert set(PROVIDERS) == {"groq", "anthropic"}
+        assert set(PROVIDERS) == {"groq", "openai"}
+
+    def test_anthropic_is_gone_rather_than_left_as_dead_code(self):
+        import importlib
+
+        assert "anthropic" not in PROVIDERS
+        with pytest.raises(ModuleNotFoundError):
+            importlib.import_module("materia.llm.anthropic")
 
     def test_an_unknown_provider_is_refused(self):
         with pytest.raises(ProviderError, match="unknown provider"):
@@ -194,10 +235,10 @@ class TestProvenance:
         write_provenance(tmp_path, self._Fake())
         assert read_provenance(tmp_path)["scored"] is False
 
-    def test_an_anthropic_run_is_marked_as_scored(self, tmp_path):
+    def test_an_openai_run_is_marked_as_scored(self, tmp_path):
         class Scored:
-            provider = "anthropic"
-            model = "claude-sonnet-5"
+            provider = "openai"
+            model = "gpt-5.6-terra"
 
         write_provenance(tmp_path, Scored())
         assert read_provenance(tmp_path)["scored"] is True
@@ -234,123 +275,23 @@ class TestGroqLive:
         assert response.usage.total > 0
 
 
-class TestTheAnthropicModelIsUnverified:
+class TestTheScoredModelIsUnverified:
     """A standing reminder, kept in the suite rather than in a note.
 
-    T19 to T21 are scored on Anthropic. Nothing has ever confirmed that
-    `claude-sonnet-5` is a model the API will serve, because there is no key in
+    T19 to T21 are scored on OpenAI. Nothing has confirmed that
+    `gpt-5.6-terra` is a model the API will serve, because there is no key in
     this environment. This test passes while that is true and starts failing
     the moment a key appears, at which point the check should actually be run.
     """
 
     def test_run_the_live_check_once_a_key_exists(self):
-        if os.environ.get("ANTHROPIC_API_KEY"):
+        if os.environ.get("OPENAI_API_KEY"):
             pytest.fail(
-                "ANTHROPIC_API_KEY is now set. Run the live model id check "
-                "before T19: python -m materia llm check --provider anthropic"
+                "OPENAI_API_KEY is now set. Run the live model id check before "
+                "anything depends on it: "
+                "python -m materia llm check --provider openai"
             )
-        assert AnthropicClient.__init__ is not None  # the adapter is built and ready
-
-
-class _Block:
-    """A stand in for an SDK content block."""
-
-    def __init__(self, **fields):
-        self.__dict__.update(fields)
-
-
-class _Usage:
-    def __init__(self, input_tokens, output_tokens):
-        self.input_tokens = input_tokens
-        self.output_tokens = output_tokens
-
-
-class _Reply:
-    def __init__(self, content, stop_reason="end_turn", model="claude-sonnet-5"):
-        self.content = content
-        self.stop_reason = stop_reason
-        self.model = model
-        self.usage = _Usage(120, 45)
-
-
-def _anthropic_client(monkeypatch, reply):
-    """An AnthropicClient wired to a stub SDK.
-
-    No key and no network. What this pins is the half of the adapter that runs
-    after the API answers, which is where a scored run would break without
-    anybody noticing until T19.
-    """
-    client = AnthropicClient.__new__(AnthropicClient)
-    client.model = "claude-sonnet-5"
-
-    class Messages:
-        def __init__(self):
-            self.captured = None
-
-        def create(self, **request):
-            self.captured = request
-            if isinstance(reply, Exception):
-                raise reply
-            return reply
-
-    class Sdk:
-        def __init__(self):
-            self.messages = Messages()
-
-    sdk = Sdk()
-    client._client = sdk
-    return client, sdk
-
-
-class TestAnthropicResponses:
-    def test_text_and_tool_calls_are_normalised(self, monkeypatch):
-        reply = _Reply(
-            [
-                _Block(type="text", text="Let me check that."),
-                _Block(type="tool_use", id="tu_1", name="add_numbers", input={"a": 1}),
-            ],
-            stop_reason="tool_use",
-        )
-        client, _ = _anthropic_client(monkeypatch, reply)
-        response = client.complete("s", [Message(role="user", content="go")], [ADD])
-
-        assert response.provider == "anthropic"
-        assert response.text == "Let me check that."
-        assert response.tool_calls == (ToolCall("tu_1", "add_numbers", {"a": 1}),)
-        assert response.stop_reason == "tool_use"
-        assert response.usage.total == 165
-
-    def test_a_reply_with_no_text_gives_none_not_an_empty_string(self, monkeypatch):
-        reply = _Reply([_Block(type="tool_use", id="t", name="add_numbers", input={})])
-        client, _ = _anthropic_client(monkeypatch, reply)
-        assert client.complete("s", [Message(role="user", content="go")], [ADD]).text is None
-
-    def test_multiple_text_blocks_are_joined(self, monkeypatch):
-        reply = _Reply([_Block(type="text", text="one"), _Block(type="text", text="two")])
-        client, _ = _anthropic_client(monkeypatch, reply)
-        assert client.complete("s", [Message(role="user", content="go")]).text == "one\ntwo"
-
-    def test_the_system_prompt_goes_in_its_own_field(self, monkeypatch):
-        client, sdk = _anthropic_client(monkeypatch, _Reply([_Block(type="text", text="x")]))
-        client.complete("be brief", [Message(role="user", content="go")], [ADD])
-        assert sdk.messages.captured["system"] == "be brief"
-        assert sdk.messages.captured["temperature"] == 0
-        assert sdk.messages.captured["tools"][0]["name"] == "add_numbers"
-
-    def test_no_tools_field_when_there_are_no_tools(self, monkeypatch):
-        client, sdk = _anthropic_client(monkeypatch, _Reply([_Block(type="text", text="x")]))
-        client.complete("s", [Message(role="user", content="go")])
-        assert "tools" not in sdk.messages.captured
-
-    def test_a_failure_is_normalised_into_a_provider_error(self, monkeypatch):
-        client, _ = _anthropic_client(monkeypatch, RuntimeError("overloaded"))
-        with pytest.raises(ProviderError, match="Anthropic request failed"):
-            client.complete("s", [Message(role="user", content="go")])
-
-    def test_an_unavailable_model_surfaces_as_such(self, monkeypatch):
-        client, _ = _anthropic_client(monkeypatch, RuntimeError("model_not_found"))
-        with pytest.raises(ModelNotAvailable):
-            client.complete("s", [Message(role="user", content="go")])
+        assert OpenAIClient.__init__ is not None  # the adapter is built and ready
 
 
 class TestGroqFailures:
@@ -404,7 +345,7 @@ class TestTokenPacing:
         leave the pacer spinning against a real clock for a real minute, which
         is what a rate limiter is supposed to feel like and not what a test
         should."""
-        from materia.llm import groq as groq_module
+        from materia.llm import openai_compatible as pacing
 
         clock = [1000.0]
         slept: list[float] = []
@@ -413,10 +354,10 @@ class TestTokenPacing:
             slept.append(seconds)
             clock[0] += seconds
 
-        monkeypatch.setattr(groq_module.time, "monotonic", lambda: clock[0])
-        monkeypatch.setattr(groq_module.time, "sleep", fake_sleep)
+        monkeypatch.setattr(pacing.time, "monotonic", lambda: clock[0])
+        monkeypatch.setattr(pacing.time, "sleep", fake_sleep)
 
-        pacer = groq_module.TokenPacer(8000)
+        pacer = pacing.TokenPacer(8000)
         pacer.record(6000)
         waited = pacer.wait_for(2000)
 
@@ -425,11 +366,11 @@ class TestTokenPacing:
         assert waited < 120, "one window, not an unbounded spin"
 
     def test_spending_older_than_a_minute_stops_counting(self, monkeypatch):
-        from materia.llm import groq as groq_module
+        from materia.llm import openai_compatible as pacing
 
         clock = [1000.0]
-        monkeypatch.setattr(groq_module.time, "monotonic", lambda: clock[0])
-        pacer = groq_module.TokenPacer(8000)
+        monkeypatch.setattr(pacing.time, "monotonic", lambda: clock[0])
+        pacer = pacing.TokenPacer(8000)
         pacer.record(6000)
         clock[0] += 61
         assert pacer.wait_for(2000) == 0.0
@@ -437,12 +378,12 @@ class TestTokenPacing:
     def test_it_waits_for_the_entry_that_frees_enough_not_the_oldest(self, monkeypatch):
         """An old entry that frees enough on its own should not make the
         caller wait behind a newer one. Over a long run that is minutes."""
-        from materia.llm import groq as groq_module
+        from materia.llm import openai_compatible as pacing
 
         clock = [1000.0]
-        monkeypatch.setattr(groq_module.time, "monotonic", lambda: clock[0])
+        monkeypatch.setattr(pacing.time, "monotonic", lambda: clock[0])
 
-        pacer = groq_module.TokenPacer(8000)
+        pacer = pacing.TokenPacer(8000)
         pacer.record(5000)  # 50 seconds ago by the time we ask
         clock[0] += 50
         pacer.record(1000)  # just now
@@ -452,12 +393,12 @@ class TestTokenPacing:
         assert 10 < pause < 12, pause  # the old entry ages out in about 11s
 
     def test_it_waits_for_the_whole_window_when_one_entry_is_not_enough(self, monkeypatch):
-        from materia.llm import groq as groq_module
+        from materia.llm import openai_compatible as pacing
 
         clock = [1000.0]
-        monkeypatch.setattr(groq_module.time, "monotonic", lambda: clock[0])
+        monkeypatch.setattr(pacing.time, "monotonic", lambda: clock[0])
 
-        pacer = groq_module.TokenPacer(8000)
+        pacer = pacing.TokenPacer(8000)
         pacer.record(1000)
         clock[0] += 50
         pacer.record(5000)
@@ -467,16 +408,16 @@ class TestTokenPacing:
 
     def test_a_request_larger_than_the_whole_budget_still_goes_through(self, monkeypatch):
         """Otherwise a single oversized request would hang the run forever."""
-        from materia.llm import groq as groq_module
+        from materia.llm import openai_compatible as pacing
 
         clock = [1000.0]
         slept = []
-        monkeypatch.setattr(groq_module.time, "monotonic", lambda: clock[0])
+        monkeypatch.setattr(pacing.time, "monotonic", lambda: clock[0])
         monkeypatch.setattr(
-            groq_module.time, "sleep", lambda s: (slept.append(s), clock.__setitem__(0, clock[0] + s))
+            pacing.time, "sleep", lambda s: (slept.append(s), clock.__setitem__(0, clock[0] + s))
         )
 
-        pacer = groq_module.TokenPacer(1000)
+        pacer = pacing.TokenPacer(1000)
         pacer.record(500)
         pacer.wait_for(10_000)
         assert slept, "it should have waited once"
@@ -532,9 +473,9 @@ class _Completion:
 def _groq_client(reply):
     """A GroqClient wired to a stub SDK.
 
-    Same reasoning as the Anthropic stub: this pins the half of the adapter
-    that runs after the API answers, which the live test no longer covers now
-    that it is opt in.
+    This pins the half of the adapter that runs after the API answers, which
+    the live test no longer covers now that it is opt in. Both providers share
+    that code, so this covers the OpenAI path too.
     """
     client = GroqClient.__new__(GroqClient)
     client.model = "openai/gpt-oss-120b"
@@ -625,11 +566,11 @@ class TestRequestTimeouts:
         assert client._client.timeout == REQUEST_TIMEOUT_SECONDS
         assert client._client.max_retries > 0
 
-    def test_the_anthropic_client_sets_one(self, monkeypatch):
-        from materia.llm.anthropic import REQUEST_TIMEOUT_SECONDS
+    def test_the_openai_client_sets_one(self, monkeypatch):
+        from materia.llm.openai_compatible import REQUEST_TIMEOUT_SECONDS
 
-        monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
-        client = AnthropicClient()
+        monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+        client = OpenAIClient()
         assert client._client.timeout == REQUEST_TIMEOUT_SECONDS
         assert client._client.max_retries > 0
 
@@ -639,3 +580,181 @@ class TestRequestTimeouts:
         from materia.llm.groq import _translate_error
 
         assert isinstance(_translate_error(Exception("Request timed out."), "m"), ProviderError)
+
+
+class TestTheOpenAIErrorBranches:
+    """Each provider words a refusal differently, and the wrong reading sends
+    a caller down the wrong path: waiting out a rate limit that is actually a
+    wrong model id, or paying for quota when the model does not exist."""
+
+    @staticmethod
+    def _client():
+        client = OpenAIClient.__new__(OpenAIClient)
+        client.model = "gpt-5.6-terra"
+        return client
+
+    def test_a_rate_limit(self):
+        error = self._client()._translate_error(Exception("Error code: 429 rate_limit"))
+        assert isinstance(error, RateLimited)
+
+    def test_anything_else_is_a_plain_provider_error(self):
+        error = self._client()._translate_error(Exception("connection reset by peer"))
+        assert isinstance(error, ProviderError)
+        assert not isinstance(error, (RateLimited, ModelNotAvailable))
+        assert "OpenAI request failed" in str(error)
+
+    def test_a_deprecated_model_reads_as_unavailable(self):
+        """A model that used to work and no longer does is the same problem as
+        one that never existed: stop, do not substitute."""
+        error = self._client()._translate_error(Exception("this model is deprecated"))
+        assert isinstance(error, ModelNotAvailable)
+
+    def test_the_base_class_refuses_to_guess(self):
+        """A generic default would classify a wrong model id as a transient
+        failure, which is the one mistake this class exists to prevent."""
+        from materia.llm.openai_compatible import OpenAICompatibleClient
+
+        base = OpenAICompatibleClient.__new__(OpenAICompatibleClient)
+        base.model = "x"
+        with pytest.raises(NotImplementedError, match="words a refusal"):
+            base._translate_error(Exception("anything"))
+
+
+class TestGetClient:
+    def test_it_builds_the_selected_provider(self, monkeypatch):
+        monkeypatch.setenv("GROQ_API_KEY", "test-key")
+        monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+        assert get_client("groq").provider == "groq"
+        assert get_client("openai").provider == "openai"
+
+    def test_it_falls_back_to_the_configured_default(self, monkeypatch):
+        monkeypatch.setenv("GROQ_API_KEY", "test-key")
+        assert get_client().provider == "groq"
+
+    def test_a_model_can_be_named(self, monkeypatch):
+        monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+        assert get_client("openai", model="gpt-5.6-terra").model == "gpt-5.6-terra"
+
+
+class _Item:
+    """A stand in for a Responses API output item."""
+
+    def __init__(self, **fields):
+        self.__dict__.update(fields)
+
+
+class _ResponsesReply:
+    def __init__(self, output, output_text="", status="completed", model="gpt-5.6-terra"):
+        self.output = output
+        self.output_text = output_text
+        self.status = status
+        self.model = model
+        self.usage = type("U", (), {"input_tokens": 75, "output_tokens": 33})()
+
+
+def _openai_client(reply):
+    """An OpenAIClient wired to a stub SDK.
+
+    Pins the half that runs after the API answers. That half is not shared
+    with Groq any more, so it needs its own cover.
+    """
+    client = OpenAIClient.__new__(OpenAIClient)
+    client.model = "gpt-5.6-terra"
+    client.pacer = None
+    captured: dict = {}
+
+    class Responses:
+        @staticmethod
+        def create(**request):
+            captured.update(request)
+            if isinstance(reply, Exception):
+                raise reply
+            return reply
+
+    client._client = type("Sdk", (), {"responses": Responses()})()
+    return client, captured
+
+
+class TestOpenAIResponses:
+    def test_a_function_call_is_normalised(self):
+        reply = _ResponsesReply(
+            [_Item(type="function_call", call_id="call_1", name="add_numbers",
+                   arguments='{"a": 17, "b": 25}')]
+        )
+        client, _ = _openai_client(reply)
+        response = client.complete("s", [Message(role="user", content="go")], [ADD])
+
+        assert response.provider == "openai"
+        assert response.tool_calls == (ToolCall("call_1", "add_numbers", {"a": 17, "b": 25}),)
+        assert response.stop_reason == "tool_calls"
+        assert response.usage.total == 108
+
+    def test_a_text_reply_carries_its_text(self):
+        client, _ = _openai_client(_ResponsesReply([_Item(type="message")], output_text="42"))
+        response = client.complete("s", [Message(role="user", content="go")])
+        assert response.text == "42"
+        assert response.tool_calls == ()
+        assert response.stop_reason == "completed"
+
+    def test_an_empty_reply_gives_none_not_an_empty_string(self):
+        client, _ = _openai_client(_ResponsesReply([], output_text="   "))
+        assert client.complete("s", [Message(role="user", content="go")]).text is None
+
+    def test_the_system_prompt_becomes_instructions(self):
+        """Not a message with role system, which is the chat API's shape."""
+        client, captured = _openai_client(_ResponsesReply([], output_text="x"))
+        client.complete("be brief", [Message(role="user", content="go")], [ADD])
+        assert captured["instructions"] == "be brief"
+        assert all(item.get("role") != "system" for item in captured["input"])
+        assert captured["tools"][0]["name"] == "add_numbers"
+
+    def test_no_tools_field_when_there_are_none(self):
+        client, captured = _openai_client(_ResponsesReply([], output_text="x"))
+        client.complete("s", [Message(role="user", content="go")])
+        assert "tools" not in captured
+
+    def test_a_pacer_is_consulted_when_one_is_fitted(self):
+        """None by default, since a paid account is not on a limit one request
+        can exceed. An account that turns out to need one still gets paced."""
+        from materia.llm import TokenPacer
+
+        client, _ = _openai_client(_ResponsesReply([], output_text="x"))
+        client.pacer = TokenPacer(8000)
+        client.complete("s", [Message(role="user", content="go")])
+        assert client.pacer._used(__import__("time").monotonic()) == 108
+
+    def test_a_failure_is_normalised(self):
+        client, _ = _openai_client(RuntimeError("connection reset"))
+        with pytest.raises(ProviderError, match="OpenAI request failed"):
+            client.complete("s", [Message(role="user", content="go")])
+
+    def test_an_unavailable_model_surfaces_as_such(self):
+        client, _ = _openai_client(RuntimeError("model_not_found"))
+        with pytest.raises(ModelNotAvailable):
+            client.complete("s", [Message(role="user", content="go")])
+
+
+@pytest.mark.skipif(
+    not (os.environ.get("OPENAI_API_KEY") and os.environ.get("MATERIA_LIVE_TESTS")),
+    reason="set MATERIA_LIVE_TESTS=1 with an OPENAI_API_KEY to run the live check",
+)
+class TestOpenAILive:
+    """One real call against the scored provider.
+
+    Opt in for the same reason as the Groq one: docs/REPRODUCTION.md promises
+    make verify needs no API key. `python -m materia llm check --provider
+    openai` is the same check on demand.
+    """
+
+    def test_a_tool_call_round_trips(self):
+        client = OpenAIClient()
+        response = client.complete(
+            system="You are a calculator. Use the add_numbers tool for any arithmetic.",
+            messages=[Message(role="user", content="What is 17 plus 25?")],
+            tools=[ADD],
+        )
+        assert response.provider == "openai"
+        assert response.tool_calls, "the model did not call the tool"
+        call = response.tool_calls[0]
+        assert call.name == "add_numbers"
+        assert {call.arguments["a"], call.arguments["b"]} == {17, 25}

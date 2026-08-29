@@ -15,7 +15,7 @@ Every figure below was measured from a fresh clone into an empty directory, not 
 | Python | 3.11 or 3.12 | 3.13 is refused by `pyproject.toml`, not merely untested |
 | `uv` | optional | The `venv` and `pip` path below is what was tested. Nothing needs `uv`. |
 | OS | macOS, Linux, or WSL2 | No Excel or Windows required at any point |
-| API key | Groq, or Anthropic | See section 2. Which one you need depends on `MATERIA_PROVIDER`, and the default is Groq. |
+| API key | Groq, or OpenAI | See section 2. Which one you need depends on `MATERIA_PROVIDER`, and the default is Groq. |
 | Disk | 115 MB | 8 MB of repo and corpus, 107 MB of virtualenv |
 
 No Microsoft Excel, no LibreOffice, no headless office suite. The recompute engine is our own and runs in pure Python. This is deliberate: it removes the single most common reproduction failure for spreadsheet tooling.
@@ -34,15 +34,15 @@ pip install -e ".[dev]"
 
 Takes about 30 seconds and pulls roughly 107 MB of dependencies.
 
-**Set the key for the provider you are using.** `MATERIA_PROVIDER` selects between them and **defaults to `groq`**, so setting only an Anthropic key leaves `make solution` failing with `GROQ_API_KEY is not set`.
+**Set the key for the provider you are using.** `MATERIA_PROVIDER` selects between them and **defaults to `groq`**, so setting only an OpenAI key leaves `make solution` failing with `GROQ_API_KEY is not set`.
 
 ```bash
 # the default: the dev loop provider
 export GROQ_API_KEY="gsk_..."
 
 # or the scored provider
-export MATERIA_PROVIDER=anthropic
-export ANTHROPIC_API_KEY="sk-ant-..."
+export MATERIA_PROVIDER=openai
+export OPENAI_API_KEY="sk-..."
 ```
 
 Keys are read from the environment only and never written to disk. `python -m materia llm check` makes one trivial call and confirms the configured model is real before anything depends on it.
@@ -216,7 +216,7 @@ Everything here was hit during an actual clean clone run, except the last two ro
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | `command not found: python3.11` | An earlier version of this guide hardcoded 3.11 | Use whichever of 3.11 or 3.12 you have: `python3.12 -m venv .venv` |
-| `GROQ_API_KEY is not set` after exporting an Anthropic key | `MATERIA_PROVIDER` defaults to `groq` | Either set `GROQ_API_KEY`, or set `MATERIA_PROVIDER=anthropic` as well as the Anthropic key |
+| `GROQ_API_KEY is not set` after exporting an OpenAI key | `MATERIA_PROVIDER` defaults to `groq` | Either set `GROQ_API_KEY`, or set `MATERIA_PROVIDER=openai` as well as the OpenAI key |
 | `make all` stops at `make baseline` | The baseline harness is T18 and is not built | Run the steps individually. See section 7. |
 | `groq: N tokens used in the last minute, waiting 60s` | The free tier caps this account at 8,000 tokens a minute | Nothing. That is the rate limiter holding a request back so it does not get refused. A full C03 audit takes about 25 minutes, most of it waiting. |
 | `Groq rate limit reached ... tokens per day (TPD)` | The free tier caps 200,000 tokens a day and one C03 audit uses about 142,000 | Wait for the reset, or bound the run with `--max-candidates N`. A run cut short keeps the verdicts it earned and says in its funnel how many were not examined. |

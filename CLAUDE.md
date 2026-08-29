@@ -76,7 +76,7 @@ The submission is judged partly on whether the output "reads as clearly AI gener
 
 ## 6. API keys and cost
 
-- Keys come from environment variables only. `GROQ_API_KEY`, `ANTHROPIC_API_KEY`.
+- Keys come from environment variables only. `GROQ_API_KEY`, `OPENAI_API_KEY`.
 - **Never commit a key.** `.env` is gitignored. Check before every commit.
 - `.env.example` holds the variable names with empty values, and is committed.
 
@@ -85,7 +85,7 @@ The submission is judged partly on whether the output "reads as clearly AI gener
 - During development, run agent loops against **one or two workbooks at most**. Never loop the full 12 workbook corpus on Groq while debugging.
 - If you hit a rate limit, back off and tell me. Do not add retry loops that silently burn the quota.
 - Before any run that will make more than about 20 model calls, tell me the estimated call count and wait for approval.
-- Anthropic is used only for the final scored runs (baseline and solution), which are explicitly flagged in the task list.
+- OpenAI is used only for the final scored runs (baseline and solution), which are explicitly flagged in the task list.
 
 ## 7. Never do these
 

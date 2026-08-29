@@ -123,7 +123,7 @@ The `audit-xls` skill is worth singling out because it is the closest agentic co
 
 | Component | Status |
 | --- | --- |
-| `openpyxl`, `networkx`, `anthropic` SDK, `pytest` | Third party, pre-existing |
+| `openpyxl`, `networkx`, `openai` SDK, `pytest` | Third party, pre-existing |
 | Spreadsheet error taxonomy (Panko / EuSpRIG literature) | Pre-existing research, cited not authored |
 | Everything in `src/` | Built during the hackathon |
 | Corpus generator, mutation harness, evaluator | Built during the hackathon |

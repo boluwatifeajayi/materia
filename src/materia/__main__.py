@@ -316,7 +316,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help='declared output cells, comma separated, for example "P&L!AA15,Valuation!B7"',
     )
-    audit_command.add_argument("--provider", default=None, choices=["groq", "anthropic"])
+    audit_command.add_argument("--provider", default=None, choices=["groq", "openai"])
     audit_command.add_argument("--traces", type=Path, default=Path("trajectories/solution"))
     audit_command.add_argument("--results", type=Path, default=None)
     audit_command.add_argument(
@@ -378,7 +378,7 @@ def build_parser() -> argparse.ArgumentParser:
     check_model = llm_actions.add_parser(
         "check", help="make one trivial call to confirm the model id is real"
     )
-    check_model.add_argument("--provider", default=None, choices=["groq", "anthropic"])
+    check_model.add_argument("--provider", default=None, choices=["groq", "openai"])
     check_model.set_defaults(handler=_llm_check)
 
     return parser

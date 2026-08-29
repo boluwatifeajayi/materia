@@ -71,10 +71,10 @@ class TestLlmCheck:
     def test_it_reports_a_missing_key_rather_than_failing_obscurely(
         self, capsys, monkeypatch
     ):
-        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-        code, _, err = run(capsys, "llm", "check", "--provider", "anthropic")
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        code, _, err = run(capsys, "llm", "check", "--provider", "openai")
         assert code == 1
-        assert "ANTHROPIC_API_KEY" in err
+        assert "OPENAI_API_KEY" in err
 
     def test_an_unavailable_model_gets_its_own_exit_code(self, capsys, monkeypatch):
         """Exit 2 rather than 1, so a caller can tell a wrong model id from a
@@ -202,13 +202,13 @@ class TestAudit:
         assert "--outputs" in err
 
     def test_a_missing_key_stops_before_any_work(self, capsys, monkeypatch, tmp_path):
-        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
         code, _, err = run(
             capsys, "audit", "corpus/C03.xlsx",
-            "--provider", "anthropic", "--traces", str(tmp_path),
+            "--provider", "openai", "--traces", str(tmp_path),
         )
         assert code == 1
-        assert "ANTHROPIC_API_KEY" in err
+        assert "OPENAI_API_KEY" in err
 
 
 class TestRepairFlag:

@@ -8,7 +8,7 @@ These are the live strings. They are loaded from `src/materia/prompts/` at runti
 
 ## 1. Adjudicator agent (solution)
 
-Called once per candidate. Model: `claude-sonnet-5`. Evidence tools: `recompute_with_patch`, `inspect_range`. The verdict is returned through a third tool, `submit_verdict`, which is the output channel rather than a source of evidence.
+Called once per candidate. Model: `gpt-5.6-terra`. Evidence tools: `recompute_with_patch`, `inspect_range`. The verdict is returned through a third tool, `submit_verdict`, which is the output channel rather than a source of evidence.
 
 **Why the verdict is a tool call.** Asking for JSON in prose makes the schema a request. Making it a tool call makes it a constraint the provider enforces, puts the verdict in the trajectory as structured data rather than text somebody has to parse, and removes a whole class of failure where a model wraps its answer in commentary. It was also forced: `openai/gpt-oss-120b` tried to return its verdict as a tool call to a tool that did not exist, because that is how it has learned to emit structured output.
 
@@ -119,7 +119,7 @@ The second case is why the check exists in this form. On the first candidate of 
 
 ## 2. Report writer agent (solution)
 
-Called once per workbook, after adjudication. Model: `claude-sonnet-5`. No tools.
+Called once per workbook, after adjudication. Model: `gpt-5.6-terra`. No tools.
 
 **Built, run, and not shipped.** The deterministic renderer produces the report a user sees. This agent exists because the trajectory deliverable requires a representative trace for every agent used, and because what it did is worth reporting: given only verified figures and told in its own instructions not to reinterpret them, it reinterpreted them.
 
@@ -157,7 +157,7 @@ Write plainly. This is a document a person signs their name to.
 
 ## 3. Baseline agent
 
-Given the same task, the same file, and freedom to write its own code. Model: `claude-sonnet-5`, same as the solution. Tools: `bash`, `read_file`, `write_file` in a sandboxed working directory with the workbook copied in.
+Given the same task, the same file, and freedom to write its own code. Model: `gpt-5.6-terra`, same as the solution. Tools: `bash`, `read_file`, `write_file` in a sandboxed working directory with the workbook copied in.
 
 Turn cap and token budget are set equal to the solution's per workbook average. See `config.yaml`.
 

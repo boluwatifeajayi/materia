@@ -12,7 +12,7 @@ provider:
   name: groq
   models:
     groq: openai/gpt-oss-120b
-    anthropic: claude-sonnet-5
+    openai: gpt-5.6-terra
 
 # Per workbook run budgets. The baseline's caps are set equal to the
 # solution's measured per workbook average, so neither side gets more room

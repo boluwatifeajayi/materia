@@ -29,7 +29,7 @@ TASK T01: Repo scaffold.
 
 Set up the Python project skeleton. Package name "materia", src layout.
 
-  - pyproject.toml with dependencies: openpyxl, networkx, anthropic, openai
+  - pyproject.toml with dependencies: openpyxl, networkx, openai
     (for the Groq OpenAI-compatible client), pyyaml, rich, and dev extras
     pytest and pytest-cov
   - src/materia/ package with __init__.py and a __main__.py entrypoint stub
@@ -40,7 +40,7 @@ Set up the Python project skeleton. Package name "materia", src layout.
   - .gitignore covering .env, .venv, __pycache__, and *.xlsx EXCEPT
     corpus/ which is committed. results/ is NOT ignored, it is committed
     (README section 10, docs/EVALUATION.md section 5)
-  - .env.example with GROQ_API_KEY=, ANTHROPIC_API_KEY=, MATERIA_PROVIDER=groq
+  - .env.example with GROQ_API_KEY=, OPENAI_API_KEY=, MATERIA_PROVIDER=groq
   - config.yaml with placeholders for materiality threshold, provider,
     model names, and the baseline/solution turn caps
 
@@ -306,7 +306,7 @@ Build src/materia/llm/ with an LLMClient protocol and two adapters:
   - GroqClient, via the openai package pointed at
     https://api.groq.com/openai/v1. Pick the model from what the account is
     actually served rather than a hardcoded guess.
-  - AnthropicClient, via the anthropic package
+  - OpenAIClient, via the openai package against api.openai.com
 
 Both translate our tool definitions into the provider's native tool calling
 schema and normalise responses back into one internal AgentResponse shape.
@@ -317,7 +317,7 @@ Test: one trivial call per provider with a single dummy tool, asserting the
 tool call round trips correctly in both. That is two API calls total, well
 under any limit.
 
-The Anthropic call also confirms that claude-sonnet-5 is a valid model id,
+The OpenAI call also confirms that gpt-5.6-terra is a valid model id,
 before anything downstream depends on it. If it errors, stop and tell me.
 Do not guess another model string.
 
@@ -471,7 +471,7 @@ stop.
 ```
 TASK T19: Baseline scored run. THIS ONE COSTS MONEY.
 
-Switch MATERIA_PROVIDER to anthropic. Model claude-sonnet-5.
+Switch MATERIA_PROVIDER to openai. Model gpt-5.6-terra.
 
 Before running anything: tell me the estimated number of API calls and the
 estimated cost, and wait for my approval.
@@ -493,7 +493,7 @@ Then commit, push, update TASKS.md, and stop.
 ```
 TASK T20: Solution scored run with the materiality gate DISABLED.
 
-Anthropic, claude-sonnet-5, full twelve workbook corpus. Every candidate
+OpenAI, gpt-5.6-terra, full twelve workbook corpus. Every candidate
 that survives adjudication gets reported, regardless of impact size.
 
 Estimate calls and cost, wait for my approval, then run.
@@ -523,7 +523,7 @@ Assert in code that the four buckets (finding, intentional, inconclusive,
 immaterial) are mutually exclusive and sum to the detector candidate
 count.
 
-Then rerun on Anthropic, full corpus, and record as changelog Iteration 3.
+Then rerun on OpenAI, full corpus, and record as changelog Iteration 3.
 
 Check C11 specifically: its mutation must appear in the SUPPRESSED count,
 not in the findings and not missing entirely. Those three outcomes are very
