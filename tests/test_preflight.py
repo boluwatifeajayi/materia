@@ -29,6 +29,7 @@ REJECTIONS = [
     ("unsupported_function", "UNSUPPORTED_FUNCTION(VLOOKUP)"),
     ("unsupported_function_lookalike", "UNSUPPORTED_FUNCTION(LOG10)"),
     ("unsupported_function_nested", "UNSUPPORTED_FUNCTION(SQRT)"),
+    ("defined_name", "DEFINED_NAME"),
 ]
 
 
@@ -77,6 +78,24 @@ def test_clean_workbook_uses_every_supported_function(workbooks):
     workbook.close()
     for function in ("SUM", "AVERAGE", "MIN", "MAX", "IF", "ROUND", "ABS", "SUMIF"):
         assert f"{function}(" in formulas, f"{function} missing from the control"
+
+
+def test_a_defined_name_is_rejected_by_name(workbooks):
+    """The message has to say which name, or the user cannot go and find it."""
+    with pytest.raises(PreflightRejected) as raised:
+        preflight(workbooks["defined_name"])
+    assert raised.value.reason is Reason.DEFINED_NAME
+    assert "Q1" in raised.value.message
+
+
+def test_a_print_area_alone_is_not_a_defined_name(workbooks):
+    """Built in _xlnm. names never appear in a formula.
+
+    Rejecting a workbook for having a print area would be over-rejection, and
+    print areas are on almost every real model.
+    """
+    report = preflight(workbooks["print_area_only"])
+    assert report.formula_count == 1
 
 
 def test_deep_chains_are_not_mistaken_for_cycles(workbooks):

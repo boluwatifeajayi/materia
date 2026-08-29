@@ -38,6 +38,7 @@ class Reason(str, Enum):
     ARRAY_FORMULA = "ARRAY_FORMULA"
     CIRCULAR_REFERENCE = "CIRCULAR_REFERENCE"
     UNSUPPORTED_FUNCTION = "UNSUPPORTED_FUNCTION"
+    DEFINED_NAME = "DEFINED_NAME"
 
 
 class PreflightRejected(Exception):
@@ -136,6 +137,35 @@ def _check_container(path: Path) -> None:
             Reason.EXTERNAL_LINK,
             "the workbook links to another workbook. Materia cannot read the "
             "other file, so it cannot recompute this one.",
+        )
+
+
+def _check_defined_names(workbook: openpyxl.Workbook) -> None:
+    """Reject workbooks carrying user defined names.
+
+    A defined name is indistinguishable from a cell reference in formula text.
+    If a workbook defines Q1 as a name, then `=Q1*2` reads as a reference to
+    cell Q1, and every number downstream of it is wrong without anything
+    looking wrong. Excel's own built in names, print areas and filter ranges,
+    are prefixed `_xlnm.` and never appear in a formula, so they are ignored.
+
+    This is deliberately strict: it rejects on a name being defined rather
+    than on one being used. Deciding whether a bare identifier in a formula is
+    a name or a reference is the ambiguity itself, so it is not a decision
+    worth making on the user's behalf.
+    """
+    names = [name for name in workbook.defined_names if not name.startswith("_xlnm.")]
+    for sheet_name in workbook.sheetnames:
+        local = getattr(workbook[sheet_name], "defined_names", None) or ()
+        names.extend(name for name in local if not name.startswith("_xlnm."))
+
+    if names:
+        listed = ", ".join(sorted(names)[:5])
+        raise PreflightRejected(
+            Reason.DEFINED_NAME,
+            f"the workbook defines {listed}. A defined name is "
+            "indistinguishable from a cell reference in formula text, so "
+            "Materia cannot tell which one a formula meant.",
         )
 
 
@@ -278,6 +308,7 @@ def preflight(path: str | Path) -> PreflightReport:
     workbook = openpyxl.load_workbook(path, read_only=True, data_only=False)
     try:
         sheet_names = list(workbook.sheetnames)
+        _check_defined_names(workbook)
         formulas, value_cells = _check_formulas(workbook)
     finally:
         workbook.close()

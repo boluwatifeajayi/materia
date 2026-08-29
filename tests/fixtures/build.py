@@ -184,6 +184,36 @@ def deep_chain(path: Path) -> Path:
     return path
 
 
+def defined_name(path: Path) -> Path:
+    """A workbook where Q1 is a defined name, not cell Q1.
+
+    `=Q1*2` is the trap: it reads as a perfectly ordinary cell reference.
+    A print area is set as well, since that is a built in `_xlnm.` name and
+    must not cause a rejection on its own.
+    """
+    from openpyxl.workbook.defined_name import DefinedName
+
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet["B5"] = 0.2
+    sheet["A1"] = "=Q1*2"
+    sheet.print_area = "A1:D10"
+    workbook.defined_names.add(DefinedName("Q1", attr_text=f"{sheet.title}!$B$5"))
+    workbook.save(path)
+    return path
+
+
+def print_area_only(path: Path) -> Path:
+    """A print area and nothing else. Must still be accepted."""
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet["A1"] = 1
+    sheet["A2"] = "=A1*2"
+    sheet.print_area = "A1:D10"
+    workbook.save(path)
+    return path
+
+
 def copied_formulas(path: Path) -> Path:
     """Rows of copied formulas, one of them filled from the wrong origin.
 
@@ -282,6 +312,8 @@ BUILDERS = {
     "circular_cross_sheet": circular_cross_sheet,
     "deep_chain": deep_chain,
     "copied_formulas": copied_formulas,
+    "defined_name": defined_name,
+    "print_area_only": print_area_only,
     "unsupported_function": unsupported_function,
     "unsupported_function_lookalike": unsupported_function_lookalike,
     "unsupported_function_nested": unsupported_function_nested,

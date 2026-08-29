@@ -139,6 +139,7 @@ Materia refuses workbooks it cannot reason about faithfully, rather than guessin
 - dynamic array formulas and legacy CSE array formulas
 - circular references
 - functions outside the supported grammar
+- user defined names, because a defined name and a cell reference are the same thing in formula text
 
 **Supported grammar (v1):** arithmetic operators, cell and range references (relative, absolute, mixed), cross sheet references, and `SUM`, `AVERAGE`, `MIN`, `MAX`, `IF`, `ROUND`, `ABS`, `SUMIF`.
 

@@ -32,11 +32,13 @@ Every component below exists because it either produces evidence or constrains w
 
 ## 1. Preflight validator
 
-Rejects rather than guesses. Named reasons: `VBA_PRESENT`, `EXTERNAL_LINK`, `ARRAY_FORMULA`, `CIRCULAR_REFERENCE`, `UNSUPPORTED_FUNCTION(<name>)`.
+Rejects rather than guesses. Named reasons: `VBA_PRESENT`, `EXTERNAL_LINK`, `ARRAY_FORMULA`, `CIRCULAR_REFERENCE`, `UNSUPPORTED_FUNCTION(<name>)`, `DEFINED_NAME`.
 
 **Why:** a tool that mis-evaluates a formula it does not understand produces confident wrong impact numbers, which is worse than producing nothing. Rejection is also what makes the recompute engine tractable in a weekend: we only have to be correct over a grammar we control.
 
-Those five are the complete list. `PreflightRejected` means "a real workbook containing something we cannot evaluate faithfully", so a file that is not a readable `.xlsx` at all raises an ordinary `ValueError` instead of being forced into one of the codes. Reporting a renamed CSV as `VBA_PRESENT` would tell the user something untrue.
+`DEFINED_NAME` exists because a defined name is indistinguishable from a cell reference in formula text. If a workbook defines `Q1` as a name, `=Q1*2` reads as a reference to cell Q1, and every figure downstream is wrong with nothing looking wrong. The check is deliberately strict, rejecting on a name being defined rather than used, since deciding which one a bare identifier meant is the ambiguity itself.
+
+Those six are the complete list. `PreflightRejected` means "a real workbook containing something we cannot evaluate faithfully", so a file that is not a readable `.xlsx` at all raises an ordinary `ValueError` instead of being forced into one of the codes. Reporting a renamed CSV as `VBA_PRESENT` would tell the user something untrue.
 
 Preflight runs before the dependency graph exists, so it cannot use it. Cycle detection here is a small separate pass over the same formulas: ranges are resolved against the set of formula cells rather than expanded, since only a formula cell can carry a cycle. That keeps it bounded by the number of formulas rather than by how large a range someone wrote.
 
