@@ -186,7 +186,8 @@ class _Parser:
         if name not in FUNCTIONS:
             raise UnsupportedFormula(
                 f"{self._formula!r} uses {name}, which is outside the "
-                "supported grammar in README section 6"
+                "supported grammar in README section 6",
+                function=name,
             )
 
         self._expect("LPAREN")

@@ -214,6 +214,21 @@ def print_area_only(path: Path) -> Path:
     return path
 
 
+def unparseable_formula(path: Path) -> Path:
+    """A formula that is inside no grammar at all.
+
+    Not an unsupported function, just malformed. It gets its own reason code
+    because "we cannot read this" and "we do not support this function" are
+    different problems for the user.
+    """
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet["A1"] = 1
+    sheet["A2"] = "=A1+"
+    workbook.save(path)
+    return path
+
+
 def copied_formulas(path: Path) -> Path:
     """Rows of copied formulas, one of them filled from the wrong origin.
 
@@ -314,6 +329,7 @@ BUILDERS = {
     "copied_formulas": copied_formulas,
     "defined_name": defined_name,
     "print_area_only": print_area_only,
+    "unparseable_formula": unparseable_formula,
     "unsupported_function": unsupported_function,
     "unsupported_function_lookalike": unsupported_function_lookalike,
     "unsupported_function_nested": unsupported_function_nested,

@@ -155,6 +155,11 @@ class TestFunctions:
         assert node.arguments[0].operator == "*"
         assert node.arguments[1].operator == "+"
 
+    def test_sum_and_sumif_are_not_confused(self):
+        """A prefix match would read SUMIF as SUM followed by junk."""
+        assert parse_formula('=SUMIF(A1:A4,">2")').name == "SUMIF"
+        assert parse_formula("=SUM(A1:A4)").name == "SUM"
+
     def test_function_name_is_case_insensitive(self):
         assert parse_formula("=sum(A1:A3)") == parse_formula("=SUM(A1:A3)")
 
@@ -365,10 +370,39 @@ def test_every_formula_in_an_accepted_workbook_parses(workbooks, name):
         parse_formula(cell.formula)
 
 
-def test_the_parser_and_preflight_agree_on_the_function_list():
-    """One grammar, one list. Drift here would mean preflight accepts a
-    formula the parser cannot read, or rejects one it can."""
-    from materia.formula import SUPPORTED_FUNCTIONS
-    from materia.preflight import SUPPORTED_FUNCTIONS as preflight_functions
+def test_preflight_and_the_parser_cannot_disagree(tmp_path):
+    """There is no second function list to drift from this one.
 
-    assert SUPPORTED_FUNCTIONS is preflight_functions
+    Preflight used to keep its own copy of the supported function names and
+    its own scanner. It now runs this parser over every formula, so what the
+    grammar accepts and what preflight accepts are the same thing by
+    construction. This checks the wiring in both directions.
+    """
+    import openpyxl
+
+    from materia.formula import SUPPORTED_FUNCTIONS
+    from materia.preflight import PreflightRejected, preflight
+
+    def workbook_using(formula: str):
+        path = tmp_path / f"{abs(hash(formula))}.xlsx"
+        book = openpyxl.Workbook()
+        sheet = book.active
+        for row in range(1, 4):
+            sheet[f"A{row}"] = row
+        sheet["C1"] = formula
+        book.save(path)
+        return path
+
+    for name in sorted(SUPPORTED_FUNCTIONS):
+        arguments = {
+            "IF": "A1>0,1,2",
+            "ROUND": "A1,2",
+            "SUMIF": 'A1:A3,">1"',
+        }.get(name, "A1:A3")
+        preflight(workbook_using(f"={name}({arguments})"))
+
+    for name in ["VLOOKUP", "INDEX", "SQRT", "NPV", "TODAY"]:
+        assert name not in SUPPORTED_FUNCTIONS
+        with pytest.raises(PreflightRejected) as raised:
+            preflight(workbook_using(f"={name}(A1)"))
+        assert raised.value.code == f"UNSUPPORTED_FUNCTION({name})"

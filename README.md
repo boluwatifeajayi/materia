@@ -140,6 +140,7 @@ Materia refuses workbooks it cannot reason about faithfully, rather than guessin
 - circular references
 - functions outside the supported grammar
 - user defined names, because a defined name and a cell reference are the same thing in formula text
+- anything else the parser cannot read
 
 **Supported grammar (v1):** arithmetic operators (`+ - * / ^`, unary minus, postfix `%`), comparison operators (`= <> < <= > >=`, which `IF` conditions need), number, text and boolean literals, cell and range references (relative, absolute, mixed), cross sheet references, and `SUM`, `AVERAGE`, `MIN`, `MAX`, `IF`, `ROUND`, `ABS`, `SUMIF`.
 

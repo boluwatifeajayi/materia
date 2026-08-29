@@ -18,7 +18,15 @@ class UnsupportedFormula(ValueError):
     Raised rather than degrading, guessing, or returning a partial tree. A
     wrong evaluation is worse than a refusal, because it produces a confident
     number nobody can tell is wrong.
+
+    `function` is set when the cause was a function outside the grammar, so
+    preflight can name it in its reason code. It is None for a syntax error,
+    which is a different problem and gets a different code.
     """
+
+    def __init__(self, message: str, *, function: str | None = None) -> None:
+        super().__init__(message)
+        self.function = function
 
 
 @dataclass(frozen=True)

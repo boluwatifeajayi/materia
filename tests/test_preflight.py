@@ -10,12 +10,7 @@ import shutil
 
 import pytest
 
-from materia.preflight import (
-    PreflightRejected,
-    Reason,
-    _functions_in,
-    preflight,
-)
+from materia.preflight import PreflightRejected, Reason, preflight
 
 # fixture name -> the code the user should see
 REJECTIONS = [
@@ -30,6 +25,7 @@ REJECTIONS = [
     ("unsupported_function_lookalike", "UNSUPPORTED_FUNCTION(LOG10)"),
     ("unsupported_function_nested", "UNSUPPORTED_FUNCTION(SQRT)"),
     ("defined_name", "DEFINED_NAME"),
+    ("unparseable_formula", "UNPARSEABLE_FORMULA"),
 ]
 
 
@@ -167,22 +163,36 @@ def test_missing_file_raises_file_not_found(tmp_path):
         preflight(tmp_path / "nope.xlsx")
 
 
-class TestFunctionScanning:
-    """The function scanner decides what gets rejected, so it is tested directly."""
+class TestParserIntegration:
+    """Preflight runs the real parser, so acceptance means the pipeline can
+    read the workbook. These check that a parse failure maps to the right
+    reason rather than to a single catch all."""
 
-    def test_finds_nested_calls(self):
-        assert _functions_in("=IF(A1>0,ROUND(B1,2),0)") == ["IF", "ROUND"]
+    def test_an_unsupported_function_is_named(self, workbooks):
+        with pytest.raises(PreflightRejected) as raised:
+            preflight(workbooks["unsupported_function"])
+        assert raised.value.code == "UNSUPPORTED_FUNCTION(VLOOKUP)"
 
-    def test_ignores_text_inside_string_literals(self):
-        """A paren in a label must not read as a function call."""
-        assert _functions_in('=IF(A1>0,"up (good)","down")') == ["IF"]
+    def test_a_malformed_formula_is_not_reported_as_an_unsupported_function(
+        self, workbooks
+    ):
+        """=A1+ has no function in it. Reporting one would be misleading."""
+        with pytest.raises(PreflightRejected) as raised:
+            preflight(workbooks["unparseable_formula"])
+        assert raised.value.reason is Reason.UNPARSEABLE_FORMULA
+        assert raised.value.function is None
+        assert "A2" in raised.value.location
 
-    def test_ignores_cell_and_sheet_references(self):
-        assert _functions_in("='My Sheet'!A1+Sheet2!$B$2") == []
+    def test_every_formula_in_an_accepted_workbook_parses(self, workbooks):
+        """The invariant the parse step exists to provide.
 
-    def test_reads_a_reference_shaped_name_as_a_function(self):
-        """LOG10 is a valid cell reference and a function name."""
-        assert _functions_in("=LOG10(A1)") == ["LOG10"]
+        Previously this held by test on a few fixtures. Now preflight parses
+        every formula itself, so acceptance guarantees it.
+        """
+        from materia.formula import parse_formula
+        from materia.parse import read_formulas
 
-    def test_does_not_confuse_sum_and_sumif(self):
-        assert _functions_in('=SUMIF(A1:A4,">2")') == ["SUMIF"]
+        for name in ("clean", "copied_formulas", "deep_chain", "print_area_only"):
+            preflight(workbooks[name])
+            for cell in read_formulas(workbooks[name]):
+                parse_formula(cell.formula)

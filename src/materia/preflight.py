@@ -20,7 +20,7 @@ import networkx as nx
 import openpyxl
 from openpyxl.worksheet.formula import ArrayFormula
 
-from materia.formula import SUPPORTED_FUNCTIONS
+from materia.formula import UnsupportedFormula, parse_formula
 from materia.parse import REFERENCE, parse_reference, strip_string_literals
 
 class Reason(str, Enum):
@@ -32,6 +32,7 @@ class Reason(str, Enum):
     CIRCULAR_REFERENCE = "CIRCULAR_REFERENCE"
     UNSUPPORTED_FUNCTION = "UNSUPPORTED_FUNCTION"
     DEFINED_NAME = "DEFINED_NAME"
+    UNPARSEABLE_FORMULA = "UNPARSEABLE_FORMULA"
 
 
 class PreflightRejected(Exception):
@@ -82,21 +83,15 @@ class PreflightReport:
 
 # --- formula scanning helpers ---------------------------------------------
 #
-# What a reference looks like is defined once, in materia.parse, and imported
-# here. Only the function grammar is preflight's own concern.
-
-# An identifier immediately followed by "(" is a function call. The name may
-# carry Excel's _xlfn. prefix, which marks a function newer than the file
-# format and is therefore never in our grammar.
-_FUNCTION_CALL = re.compile(r"(?<![A-Za-z0-9_.])([A-Za-z_][A-Za-z0-9_.]*)\s*\(")
+# What a reference looks like is defined once, in materia.parse. The grammar
+# itself lives in materia.formula. Preflight owns neither: it runs the real
+# parser over every formula, so a workbook that passes preflight is one the
+# rest of the pipeline can actually read.
 
 # A reference into another workbook: [1]Sheet1!A1, '[1]Sheet 1'!A1, or a
-# reference carrying a full path.
+# reference carrying a full path. Checked before parsing so the user gets
+# EXTERNAL_LINK rather than a syntax error.
 _EXTERNAL_REFERENCE = re.compile(r"(?:'[^']*\[[^\]]+\][^']*'|\[[^\]]+\])")
-
-
-def _functions_in(formula: str) -> list[str]:
-    return _FUNCTION_CALL.findall(strip_string_literals(formula))
 
 
 # --- individual checks -----------------------------------------------------
@@ -208,16 +203,24 @@ def _check_formulas(
                         location=location,
                     )
 
-                for name in _functions_in(formula):
-                    bare = name.split(".")[-1].upper()
-                    if bare not in SUPPORTED_FUNCTIONS:
+                try:
+                    parse_formula(formula)
+                except UnsupportedFormula as unsupported:
+                    if unsupported.function is not None:
+                        bare = unsupported.function.split(".")[-1].upper()
                         raise PreflightRejected(
                             Reason.UNSUPPORTED_FUNCTION,
                             f"{formula} uses {bare}, which is outside the "
                             "supported grammar in README section 6.",
                             location=location,
                             function=bare,
-                        )
+                        ) from unsupported
+                    raise PreflightRejected(
+                        Reason.UNPARSEABLE_FORMULA,
+                        f"{formula} cannot be read as a formula in the "
+                        f"supported grammar: {unsupported}",
+                        location=location,
+                    ) from unsupported
 
                 formulas[location] = formula
 
