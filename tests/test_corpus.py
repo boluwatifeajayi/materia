@@ -492,3 +492,48 @@ class TestManifest:
         mutate(broken)
         with pytest.raises(InvalidManifest, match=expected):
             validate_manifest(broken)
+
+
+class TestCachedValues:
+    """Every formula cell carries the value a spreadsheet would have cached.
+
+    This is load bearing for the evaluation, not a nicety. An agent auditing a
+    workbook can check its own arithmetic against what the file says the
+    answers already are, and a corpus without cached values would deny the
+    baseline a check that a real Excel saved file gives it for free. The
+    baseline run on C03 reached for exactly this and reached for it wrongly,
+    passing `True` positionally to `load_workbook`, where the second parameter
+    is `read_only` rather than `data_only`. The values were there.
+    """
+
+    def test_data_only_returns_numbers_not_formulas(self):
+        import openpyxl
+
+        workbook = openpyxl.load_workbook("corpus/C03.xlsx", data_only=True)
+        assert workbook["P&L"]["AA15"].value == 14816742.0
+        assert workbook["Valuation"]["B7"].value == 143535444.0
+
+    @pytest.mark.parametrize("identifier", [f"C{n:02d}" for n in range(1, 13)])
+    def test_every_formula_in_every_workbook_has_one(self, identifier):
+        import re
+        import zipfile
+
+        with zipfile.ZipFile(f"corpus/{identifier}.xlsx") as archive:
+            for name in archive.namelist():
+                if not name.startswith("xl/worksheets/sheet"):
+                    continue
+                xml = archive.read(name).decode()
+                formulas = len(re.findall(r"<f[ >]", xml))
+                cached = len(re.findall(r"</f><v>", xml))
+                assert cached == formulas, f"{identifier} {name}: {cached} of {formulas}"
+
+    def test_they_agree_with_the_recompute_engine(self):
+        """The cached values are written from the engine, so a disagreement
+        means the corpus on disk is stale rather than that Excel differs."""
+        import openpyxl
+
+        cached = openpyxl.load_workbook("corpus/C03.xlsx", data_only=True)
+        model = Model.load("corpus/C03.xlsx", outputs=list(DECLARED_OUTPUTS))
+        for output in DECLARED_OUTPUTS:
+            sheet, cell = output.split("!")
+            assert cached[sheet][cell].value == model.value(output)

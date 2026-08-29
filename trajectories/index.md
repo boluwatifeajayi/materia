@@ -40,6 +40,8 @@ The harness exists as of T18 and there is a completed baseline run against `C03`
 
 On `C03` the baseline found both seeded mutations and proposed the right formula for each. Having no way to make another program recalculate the workbook, it wrote its own evaluator in Python. Three of the four impact figures it then reported are right. The fourth says `Revenue!H5` moves total EBITDA by 20,785,882 where the measured figure is 8,704,573, and moves enterprise value by 134,475,619 where the measured figure is 92,752,830. Neither number corresponds to any quantity in the workbook. Both are reported at high confidence, wrapped in a paragraph of correct reasoning about why the cell is wrong.
 
+It had a check available. At step 33 it went looking for the values cached in the workbook, which would have caught the error at once, and wrote `load_workbook(path, True)`. The second positional argument of that function is `read_only`, not `data_only`, so it got formula strings back where numbers were expected. Nothing stopped.
+
 That is the estimated impact half of this entry, on the first workbook, unprompted. What is still missing is the other half, a baseline reporting findings on a workbook with nothing wrong in it, and that has not been run. A seeded workbook cannot show it however the run goes. It needs `C09` or `C10`, which the scored run in T19 covers.
 
 The equivalent measurement does exist without an agent: the detectors alone report twenty one findings on `C09` and twenty five on `C10`, both of which contain no errors at all. That is in the changelog as Iteration 1. It is not this trajectory.
