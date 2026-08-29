@@ -16,15 +16,13 @@ all: verify corpus baseline solution eval
 verify:
 	$(PYTHON) -m pytest
 
-## Generate the 12 workbook corpus from seed. T08.
+## Generate the 12 workbook corpus from seed.
 corpus:
-	@echo "make corpus: not implemented (T07, T08)" >&2
-	@exit 1
+	$(PYTHON) -m materia corpus build
 
-## Compare corpus checksums against corpus/checksums.txt. T08.
+## Compare corpus checksums against corpus/checksums.txt.
 corpus-check:
-	@echo "make corpus-check: not implemented (T08)" >&2
-	@exit 1
+	$(PYTHON) -m materia corpus check
 
 ## Baseline agent over the corpus. T18, T19.
 baseline:

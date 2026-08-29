@@ -36,6 +36,7 @@ from datetime import datetime
 from pathlib import Path
 
 import openpyxl
+from openpyxl.comments import Comment
 from openpyxl.workbook.workbook import Workbook
 
 from materia.corpus.layout import (
@@ -64,6 +65,70 @@ FIXED_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
 FIXED_DATETIME = datetime(*FIXED_TIMESTAMP)
 
 
+@dataclass(frozen=True)
+class LegitimateBreak:
+    """A cell that differs from its peers on purpose.
+
+    Real models are full of these and they are the reason a structural
+    detector alone is not useful. They are recorded in the manifest so the
+    evaluator can check that a system reported none of them, which is the
+    behaviour the whole project claims.
+    """
+
+    kind: str
+    cells: tuple[str, ...]
+    why: str
+
+
+def legitimate_breaks_for(values: ModelValues) -> tuple[
+    list[LegitimateBreak], dict[str, float], dict[str, str]
+]:
+    """The three breaks C10 carries, plus the cells that implement them.
+
+    Returns the breaks to record, the cells to hardcode, and the comments to
+    attach. See docs/EVALUATION.md section 2: C10 is the workbook that breaks
+    naive tools, and every one of these is correct model building.
+    """
+    actuals = tuple(
+        f"{REVENUE_SHEET}!{month_column(month)}{REVENUE_ROWS['revenue']}"
+        for month in (1, 2, 3)
+    )
+    first_period = (
+        f"{REVENUE_SHEET}!{month_column(1)}{REVENUE_ROWS['opening_customers']}",
+        f"{REVENUE_SHEET}!{month_column(1)}{REVENUE_ROWS['arpu']}",
+        f"{COSTS_SHEET}!{month_column(1)}{COST_ROWS['headcount']}",
+    )
+    override_cell = f"{COSTS_SHEET}!{month_column(7)}{COST_ROWS['overhead']}"
+    override_note = (
+        "One off office move approved by the board in month 7. Held at this "
+        "figure on purpose, do not restore the inflation formula."
+    )
+
+    breaks = [
+        LegitimateBreak(
+            kind="hardcoded_actuals",
+            cells=actuals,
+            why="Months 1 to 3 are reported actuals, not forecast, so they are "
+            "entered rather than calculated.",
+        ),
+        LegitimateBreak(
+            kind="first_period",
+            cells=first_period,
+            why="Month 1 has no prior period to roll forward from, so it reads "
+            "an assumption where later months read the month before.",
+        ),
+        LegitimateBreak(
+            kind="manual_override",
+            cells=(override_cell,),
+            why=override_note,
+        ),
+    ]
+
+    hardcoded = {cell: values.cells[cell] for cell in actuals}
+    hardcoded[override_cell] = excel_round(values.cells[override_cell] * 1.4, 0)
+    return breaks, hardcoded, {override_cell: override_note}
+
+
 class MissingComputedValue(Exception):
     """A formula cell was written with no value from the Python calculation."""
 
@@ -90,20 +155,40 @@ class Assumptions:
 
     @classmethod
     def from_seed(cls, seed: int) -> "Assumptions":
+        """Draw a set of drivers.
+
+        Headcount and overhead are scaled to the size of the business rather
+        than drawn independently. Independent draws let a small customer base
+        get a large salary bill, which produced loss making forecasts on some
+        seeds. That is not how a company is staffed, and a workbook nobody
+        would put a multiple on cannot test a materiality gate: with a
+        negative enterprise value, a percentage change in it means very little.
+        """
         source = random.Random(seed)
+
+        opening_customers = source.randrange(6_000, 12_000, 100)
+        opening_arpu = round(source.uniform(60, 120), 2)
+        monthly_revenue = opening_customers * opening_arpu
+
         return cls(
-            opening_customers=source.randrange(4_000, 12_000, 100),
+            opening_customers=opening_customers,
             new_customer_rate=round(source.uniform(0.03, 0.09), 4),
             churn_rate=round(source.uniform(0.010, 0.030), 4),
-            opening_arpu=round(source.uniform(40, 120), 2),
+            opening_arpu=opening_arpu,
             arpu_uplift=round(source.uniform(0.002, 0.010), 4),
-            cogs_rate=round(source.uniform(0.18, 0.32), 4),
-            opening_headcount=source.randint(8, 25),
+            cogs_rate=round(source.uniform(0.18, 0.28), 4),
+            # Roughly one person per 25k to 45k of monthly revenue.
+            opening_headcount=max(
+                8, round(monthly_revenue / source.uniform(25_000, 45_000))
+            ),
             hires_per_month=source.randint(1, 3),
-            average_salary=source.randrange(55_000, 95_000, 500),
+            average_salary=source.randrange(55_000, 85_000, 500),
             payroll_tax_rate=round(source.uniform(0.10, 0.16), 4),
-            marketing_rate=round(source.uniform(0.08, 0.18), 4),
-            monthly_overhead=source.randrange(15_000, 45_000, 500),
+            marketing_rate=round(source.uniform(0.08, 0.14), 4),
+            # Three to six percent of monthly revenue, to the nearest 500.
+            monthly_overhead=round(
+                monthly_revenue * source.uniform(0.03, 0.06) / 500
+            ) * 500,
             overhead_inflation=round(source.uniform(0.002, 0.008), 4),
             ebitda_multiple=round(source.uniform(6, 14), 1),
             net_debt=source.randrange(0, 5_000_000, 50_000),
@@ -112,16 +197,28 @@ class Assumptions:
 
 @dataclass
 class ModelValues:
-    """The independently computed result, by address."""
+    """The independently computed result, by address.
 
+    `overrides` are cells whose value is fixed rather than computed, which is
+    how C10 carries a hardcoded actuals row and a manual override. `set`
+    returns the value that was actually stored, so a caller that feeds a
+    result into the next month picks the override up rather than the value it
+    would otherwise have computed.
+    """
+
+    overrides: dict[str, float] = field(default_factory=dict)
     cells: dict[str, float] = field(default_factory=dict)
 
     def set(self, sheet: str, coordinate: str, value: float) -> float:
-        self.cells[f"{sheet}!{coordinate}"] = float(value)
-        return float(value)
+        address = f"{sheet}!{coordinate}"
+        stored = float(self.overrides.get(address, value))
+        self.cells[address] = stored
+        return stored
 
 
-def compute_values(assumptions: Assumptions) -> ModelValues:
+def compute_values(
+    assumptions: Assumptions, overrides: dict[str, float] | None = None
+) -> ModelValues:
     """Compute the whole model again, in plain Python.
 
     A month by month loop with no AST and no evaluator. This is the
@@ -129,7 +226,7 @@ def compute_values(assumptions: Assumptions) -> ModelValues:
     it deliberately does not reuse anything from the formula writer beyond the
     layout constants and the rounding rule.
     """
-    values = ModelValues()
+    values = ModelValues(overrides=dict(overrides or {}))
     a = assumptions
 
     opening = [0.0] * (MONTHS + 1)
@@ -156,14 +253,22 @@ def compute_values(assumptions: Assumptions) -> ModelValues:
         revenue[month] = excel_round(average_customers * arpu[month], 0)
         cumulative_revenue += revenue[month]
 
-        values.set(REVENUE_SHEET, f"{column}{REVENUE_ROWS['opening_customers']}", opening[month])
+        opening[month] = values.set(
+            REVENUE_SHEET, f"{column}{REVENUE_ROWS['opening_customers']}", opening[month]
+        )
         values.set(REVENUE_SHEET, f"{column}{REVENUE_ROWS['new_customers']}", new)
         values.set(REVENUE_SHEET, f"{column}{REVENUE_ROWS['churned_customers']}", churned)
-        values.set(REVENUE_SHEET, f"{column}{REVENUE_ROWS['closing_customers']}", closing[month])
-        values.set(REVENUE_SHEET, f"{column}{REVENUE_ROWS['arpu']}", arpu[month])
+        closing[month] = values.set(
+            REVENUE_SHEET, f"{column}{REVENUE_ROWS['closing_customers']}", closing[month]
+        )
+        arpu[month] = values.set(REVENUE_SHEET, f"{column}{REVENUE_ROWS['arpu']}", arpu[month])
         values.set(REVENUE_SHEET, f"{column}{REVENUE_ROWS['average_customers']}", average_customers)
-        values.set(REVENUE_SHEET, f"{column}{REVENUE_ROWS['revenue']}", revenue[month])
-        values.set(REVENUE_SHEET, f"{column}{REVENUE_ROWS['cumulative_revenue']}", cumulative_revenue)
+        revenue[month] = values.set(
+            REVENUE_SHEET, f"{column}{REVENUE_ROWS['revenue']}", revenue[month]
+        )
+        cumulative_revenue = values.set(
+            REVENUE_SHEET, f"{column}{REVENUE_ROWS['cumulative_revenue']}", cumulative_revenue
+        )
 
     headcount = 0.0
     overhead = 0.0
@@ -186,16 +291,20 @@ def compute_values(assumptions: Assumptions) -> ModelValues:
             if month == 1
             else excel_round(overhead * (1 + a.overhead_inflation), 0)
         )
-        total_costs = staff_total + cogs + marketing + overhead
-
-        values.set(COSTS_SHEET, f"{column}{COST_ROWS['headcount']}", headcount)
-        values.set(COSTS_SHEET, f"{column}{COST_ROWS['salary']}", salary)
-        values.set(COSTS_SHEET, f"{column}{COST_ROWS['payroll_tax']}", payroll_tax)
-        values.set(COSTS_SHEET, f"{column}{COST_ROWS['staff_total']}", staff_total)
-        values.set(COSTS_SHEET, f"{column}{COST_ROWS['cogs']}", cogs)
-        values.set(COSTS_SHEET, f"{column}{COST_ROWS['marketing']}", marketing)
-        values.set(COSTS_SHEET, f"{column}{COST_ROWS['overhead']}", overhead)
-        values.set(COSTS_SHEET, f"{column}{COST_ROWS['total_costs']}", total_costs)
+        headcount = values.set(COSTS_SHEET, f"{column}{COST_ROWS['headcount']}", headcount)
+        salary = values.set(COSTS_SHEET, f"{column}{COST_ROWS['salary']}", salary)
+        payroll_tax = values.set(COSTS_SHEET, f"{column}{COST_ROWS['payroll_tax']}", payroll_tax)
+        staff_total = values.set(
+            COSTS_SHEET, f"{column}{COST_ROWS['staff_total']}", salary + payroll_tax
+        )
+        cogs = values.set(COSTS_SHEET, f"{column}{COST_ROWS['cogs']}", cogs)
+        marketing = values.set(COSTS_SHEET, f"{column}{COST_ROWS['marketing']}", marketing)
+        overhead = values.set(COSTS_SHEET, f"{column}{COST_ROWS['overhead']}", overhead)
+        total_costs = values.set(
+            COSTS_SHEET,
+            f"{column}{COST_ROWS['total_costs']}",
+            staff_total + cogs + marketing + overhead,
+        )
 
         # P&L: costs are shown negative
         pl_revenue = revenue[month]
@@ -225,9 +334,13 @@ def compute_values(assumptions: Assumptions) -> ModelValues:
             PL_ROWS["cumulative_ebitda"]: cumulative_ebitda,
         }
         for row, value in row_values.items():
-            values.set(PL_SHEET, f"{column}{row}", value)
+            stored = values.set(PL_SHEET, f"{column}{row}", value)
+            if row == PL_ROWS["ebitda"]:
+                ebitda[month] = stored
+            if row == PL_ROWS["cumulative_ebitda"]:
+                cumulative_ebitda = stored
             if row in totals:
-                totals[row] += value
+                totals[row] += stored
 
     for row, total in totals.items():
         values.set(PL_SHEET, f"{TOTAL}{row}", total)
@@ -512,7 +625,34 @@ def _write_valuation(sheet) -> None:
     )
 
 
-def build_workbook(assumptions: Assumptions) -> Workbook:
+def _apply_breaks(
+    workbook: Workbook, hardcoded: dict[str, float], comments: dict[str, str]
+) -> None:
+    """Replace formulas with entered values, and attach the notes explaining why.
+
+    Applied after the formulas are written rather than woven into the writers,
+    so the ordinary model stays readable and the breaks are visible in one
+    place.
+    """
+    for address, value in hardcoded.items():
+        sheet, coordinate = address.split("!", 1)
+        workbook[sheet][coordinate] = value
+    for address, text in comments.items():
+        sheet, coordinate = address.split("!", 1)
+        workbook[sheet][coordinate].comment = Comment(text, "Finance")
+
+    if hardcoded:
+        revenue = workbook[REVENUE_SHEET]
+        revenue["A2"] = "Status"
+        for month in range(1, MONTHS + 1):
+            revenue[f"{month_column(month)}2"] = "Actual" if month <= 3 else "Forecast"
+
+
+def build_workbook(
+    assumptions: Assumptions,
+    hardcoded: dict[str, float] | None = None,
+    comments: dict[str, str] | None = None,
+) -> Workbook:
     """The workbook with formulas in it, before values are cached."""
     workbook = openpyxl.Workbook()
 
@@ -526,6 +666,8 @@ def build_workbook(assumptions: Assumptions) -> Workbook:
 
     # Document properties carry a timestamp by default, which would make two
     # runs of the same seed differ.
+    _apply_breaks(workbook, hardcoded or {}, comments or {})
+
     workbook.properties.creator = "materia"
     workbook.properties.lastModifiedBy = "materia"
     workbook.properties.created = FIXED_DATETIME
@@ -622,8 +764,23 @@ def save(workbook: Workbook, path: Path, values: ModelValues) -> Path:
     return path
 
 
-def generate(path: str | Path, seed: int) -> Path:
-    """Generate one corpus workbook. Same seed, byte identical file."""
+def generate(
+    path: str | Path, seed: int, legitimate_breaks: bool = False
+) -> tuple[Path, list[LegitimateBreak]]:
+    """Generate one corpus workbook. Same seed, byte identical file.
+
+    With `legitimate_breaks`, the workbook gains the three deliberate pattern
+    breaks C10 needs. It stays a clean control: nothing in it is an error.
+    """
     assumptions = Assumptions.from_seed(seed)
-    workbook = build_workbook(assumptions)
-    return save(workbook, Path(path), compute_values(assumptions))
+
+    baseline = compute_values(assumptions)
+    breaks: list[LegitimateBreak] = []
+    hardcoded: dict[str, float] = {}
+    comments: dict[str, str] = {}
+    if legitimate_breaks:
+        breaks, hardcoded, comments = legitimate_breaks_for(baseline)
+
+    values = compute_values(assumptions, hardcoded)
+    workbook = build_workbook(assumptions, hardcoded, comments)
+    return save(workbook, Path(path), values), breaks

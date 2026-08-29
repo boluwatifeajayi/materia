@@ -15,6 +15,30 @@ def workbooks(tmp_path_factory) -> dict[str, Path]:
     return build_all(tmp_path_factory.mktemp("workbooks"))
 
 
+@pytest.fixture(scope="session")
+def corpus(tmp_path_factory):
+    """The full twelve workbook corpus, built once.
+
+    Building it takes a couple of seconds, so the tests that only read it
+    share one build and the ones that damage it copy this into tmp_path.
+    """
+    from materia.corpus.build import build_corpus
+
+    directory = tmp_path_factory.mktemp("corpus") / "corpus"
+    return directory, build_corpus(directory)
+
+
+@pytest.fixture
+def corpus_copy(corpus, tmp_path):
+    """A throwaway copy, for tests that edit or delete workbooks."""
+    import shutil
+
+    directory, _ = corpus
+    target = tmp_path / "corpus"
+    shutil.copytree(directory, target)
+    return target
+
+
 def pytest_sessionfinish(session, exitstatus):
     """Treat an empty suite as a pass, but only while the suite is empty.
 
