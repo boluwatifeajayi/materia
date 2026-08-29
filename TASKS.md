@@ -30,7 +30,7 @@ Status values: `TODO`, `IN PROGRESS`, `DONE`, `CUT`.
 | ID | Task | Status | Acceptance |
 | --- | --- | --- | --- |
 | T06 | Dependency graph | DONE | `networkx` DiGraph, cell nodes, precedent to dependent edges, cross sheet edges. Can return the path from any cell to a declared output. Tested on a known workbook. |
-| T07 | Corpus generator, one workbook | TODO | Generates one realistic three statement model per `docs/EVALUATION.md` section 2. Assumptions, revenue build, cost build, P&L to EBITDA, valuation. Deterministic from seed. Passes preflight. |
+| T07 | Corpus generator, one workbook | DONE | Generates one realistic three statement model per `docs/EVALUATION.md` section 2. Assumptions, revenue build, cost build, P&L to EBITDA, valuation. Deterministic from seed. Passes preflight. |
 | T08 | Corpus generator, all twelve | TODO | `C01` to `C12` per the table in `docs/EVALUATION.md` section 2, including the two clean controls and the two hard cases. `corpus/manifest.json` with declared output cells. `corpus/checksums.txt`. `make corpus` and `make corpus-check` work. |
 | T09 | Mutation injector | TODO | Five in taxonomy families plus two out of taxonomy, per `docs/EVALUATION.md` section 3. Injected programmatically. **True materiality per mutation computed via the recompute engine and stored in the manifest.** Tested: injecting and reverting returns the original workbook. |
 
@@ -104,7 +104,7 @@ If behind, cut in this order. Do not improvise cuts.
 | --- | --- | --- |
 | 0 Foundation | T01 to T03 | 3/3 |
 | 1 Engine | T04 to T05 | 2/2 |
-| 2 Graph and corpus | T06 to T09 | 1/4 |
+| 2 Graph and corpus | T06 to T09 | 2/4 |
 | 3 Detection | T10 to T11 | 0/2 |
 | 4 Agent layer | T12 to T17 | 0/6 |
 | 5 Baseline | T18 to T20 | 0/3 |

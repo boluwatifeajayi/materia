@@ -75,7 +75,9 @@ Generated programmatically by `src/materia/corpus/generate.py` so the corpus is 
 
 Between 400 and 1,500 formulas each. Small enough to run fast, structured enough that peer group reasoning is meaningful.
 
-**Declared output cells** (what materiality is measured against) are recorded per workbook in `corpus/manifest.json`: EBITDA total and enterprise value. Two outputs, both produced by the sheets the generator builds. In production this would be a user input. For evaluation it is fixed and published.
+Each workbook is built twice. `_write_formulas` writes the Excel formulas; `compute_values` computes the same model again as a plain Python month loop, touching neither the parser nor the evaluator, and that second result is written into the file as each formula's cached value. This is what makes the engine testable against the corpus: a generated workbook contains no Excel written values, so checking the engine against a file it produced itself would prove nothing. Two independent implementations of the same model agreeing is a real signal, and a formula cell left without a computed value raises rather than being skipped, because a skipped cell would make the cross check pass by comparing nothing.
+
+**Declared output cells** (what materiality is measured against) are recorded per workbook in `corpus/manifest.json`: EBITDA total (`P&L!AA15`, the total column of the EBITDA row) and enterprise value (`Valuation!B7`). Two outputs, both produced by the sheets the generator builds. In production this would be a user input. For evaluation it is fixed and published.
 
 ---
 
