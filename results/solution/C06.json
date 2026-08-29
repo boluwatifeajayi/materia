@@ -1,0 +1,101 @@
+{
+  "adjudicated": 23,
+  "candidates": 23,
+  "findings": [
+    {
+      "address": "Costs!C5",
+      "confidence": "high",
+      "corrected": false,
+      "detector": "D2",
+      "evidence": [
+        "Costs!C5 is the first forecast-period headcount and currently references Assumptions!$B$13, labelled \u201cNew hires per month.\u201d",
+        "Costs!D5 through Costs!Z5 each add Assumptions!$B$13 to the preceding period, establishing that B13 is the monthly increment rather than the opening balance.",
+        "Assumptions!B12 is explicitly labelled \u201cOpening headcount\u201d and is 21, whereas Assumptions!B13 is 1.",
+        "Costs!C6 uses Costs!C5 as the basis for first-period salary cost, so C5 is the opening headcount input to this schedule."
+      ],
+      "impact": {
+        "P&L!AA15": -3747480.0,
+        "Valuation!B7": -15552042.0
+      },
+      "proposed_formula": "=Assumptions!$B$12",
+      "relative": {
+        "P&L!AA15": 0.34934727411187244,
+        "Valuation!B7": 0.32550942810019107
+      }
+    },
+    {
+      "address": "Revenue!I9",
+      "confidence": "high",
+      "corrected": false,
+      "detector": "D2",
+      "evidence": [
+        "Revenue!I9 uses =H5+I6+I7, uniquely taking opening customers from the prior column.",
+        "Revenue!F9, Revenue!G9, Revenue!H9, Revenue!J9, Revenue!K9, and Revenue!L9 each sum rows 5, 6, and 7 within their own column.",
+        "Revenue!I5 is the opening-customer balance for period I, while Revenue!H5 is the prior period's balance."
+      ],
+      "impact": {
+        "P&L!AA15": 269824.0,
+        "Valuation!B7": 1599468.0
+      },
+      "proposed_formula": "=I5+I6+I7",
+      "relative": {
+        "P&L!AA15": 0.025153510863289964,
+        "Valuation!B7": 0.03347739891292452
+      }
+    },
+    {
+      "address": "P&L!K7",
+      "confidence": "high",
+      "corrected": false,
+      "detector": "D2",
+      "evidence": [
+        "P&L!K7 uses =K5-K6 although cost of sales at P&L!K6 is already negative (-177870.0).",
+        "P&L!C7 through P&L!J7 and P&L!L7 through P&L!Y7 consistently use the same-period addition pattern (=column5+column6); specifically P&L!J7 is =J5+J6 and P&L!L7 is =L5+L6.",
+        "P&L!K8 gross margin is 1.2305, whereas adjacent P&L!J8 and P&L!L8 are both 0.7695 under their addition formulas.",
+        "P&L!K15 is =K7+K13 and P&L!AA15 is =SUM(C15:Z15), so the corrected K7 flows to the declared P&L output."
+      ],
+      "impact": {
+        "P&L!AA15": -355740.0,
+        "Valuation!B7": 0.0
+      },
+      "proposed_formula": "=K5+K6",
+      "relative": {
+        "P&L!AA15": 0.03316276518955605,
+        "Valuation!B7": 0.0
+      }
+    }
+  ],
+  "formulas": 739,
+  "inconclusive": [],
+  "intentional": [
+    "Costs!C12",
+    "P&L!AA10",
+    "P&L!AA11",
+    "P&L!AA12",
+    "P&L!AA13",
+    "P&L!AA15",
+    "P&L!AA3",
+    "P&L!AA5",
+    "P&L!AA6",
+    "P&L!AA7",
+    "P&L!C18",
+    "Revenue!C11",
+    "Revenue!C17",
+    "Revenue!C3",
+    "Revenue!C5",
+    "Valuation!B11",
+    "Valuation!B12",
+    "Valuation!B13",
+    "Valuation!B14",
+    "Valuation!B5"
+  ],
+  "model": "gpt-5.6-terra",
+  "provider": "openai",
+  "stopped": null,
+  "tokens": {
+    "in": 241316,
+    "out": 10109
+  },
+  "violations": [],
+  "workbook": "C06.xlsx"
+}

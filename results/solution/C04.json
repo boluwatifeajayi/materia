@@ -1,0 +1,60 @@
+{
+  "adjudicated": 22,
+  "candidates": 22,
+  "findings": [
+    {
+      "address": "Revenue!I5",
+      "confidence": "high",
+      "corrected": false,
+      "detector": "D2",
+      "evidence": [
+        "Revenue!D5 through Revenue!H5 each link opening customers to the immediately preceding period's ending customers (for example, Revenue!H5 =G9).",
+        "Revenue!I5 is =G9, duplicating the two-period-prior ending balance, whereas Revenue!J5 =I9 and Revenue!K5 =J9 resume the immediately-prior-period pattern.",
+        "Revenue!I9 is the immediately preceding period's ending customers balance and is 8973.0, while Revenue!I5 currently references Revenue!G9 (8650.0)."
+      ],
+      "impact": {
+        "P&L!AA15": 383211.0,
+        "Valuation!B7": 3560100.0
+      },
+      "proposed_formula": "=H9",
+      "relative": {
+        "P&L!AA15": 0.05607898832428588,
+        "Valuation!B7": 0.07063792088279047
+      }
+    }
+  ],
+  "formulas": 739,
+  "inconclusive": [],
+  "intentional": [
+    "Costs!C12",
+    "Costs!C5",
+    "P&L!AA10",
+    "P&L!AA11",
+    "P&L!AA12",
+    "P&L!AA13",
+    "P&L!AA15",
+    "P&L!AA3",
+    "P&L!AA5",
+    "P&L!AA6",
+    "P&L!AA7",
+    "P&L!C18",
+    "Revenue!C11",
+    "Revenue!C17",
+    "Revenue!C3",
+    "Revenue!C5",
+    "Valuation!B11",
+    "Valuation!B12",
+    "Valuation!B13",
+    "Valuation!B14",
+    "Valuation!B5"
+  ],
+  "model": "gpt-5.6-terra",
+  "provider": "openai",
+  "stopped": null,
+  "tokens": {
+    "in": 226538,
+    "out": 10028
+  },
+  "violations": [],
+  "workbook": "C04.xlsx"
+}

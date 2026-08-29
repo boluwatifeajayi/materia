@@ -1,0 +1,60 @@
+{
+  "adjudicated": 21,
+  "candidates": 21,
+  "findings": [
+    {
+      "address": "P&L!AA15",
+      "confidence": "high",
+      "corrected": false,
+      "detector": "D2",
+      "evidence": [
+        "P&L!AA3 is labelled \"Total\", while P&L!C3:Z3 represent months 1 through 24.",
+        "P&L!AA5, P&L!AA6, P&L!AA7, P&L!AA10, P&L!AA11, P&L!AA12, and P&L!AA13 each sum their corresponding row from column C through Z.",
+        "P&L!Z15 is the month-24 net profit formula =Z7+Z13 with value 826276.0, but P&L!AA15 currently sums only C15:Y15.",
+        "P&L!C15:Z15 consistently use the monthly net-profit formula pattern, including P&L!Z15 =Z7+Z13."
+      ],
+      "impact": {
+        "P&L!AA15": 826276.0,
+        "Valuation!B7": 0.0
+      },
+      "proposed_formula": "=SUM(C15:Z15)",
+      "relative": {
+        "P&L!AA15": 0.06479413013843432,
+        "Valuation!B7": 0.0
+      }
+    }
+  ],
+  "formulas": 739,
+  "inconclusive": [],
+  "intentional": [
+    "Costs!C12",
+    "Costs!C5",
+    "P&L!AA10",
+    "P&L!AA11",
+    "P&L!AA12",
+    "P&L!AA13",
+    "P&L!AA3",
+    "P&L!AA5",
+    "P&L!AA6",
+    "P&L!AA7",
+    "P&L!C18",
+    "Revenue!C11",
+    "Revenue!C17",
+    "Revenue!C3",
+    "Revenue!C5",
+    "Valuation!B11",
+    "Valuation!B12",
+    "Valuation!B13",
+    "Valuation!B14",
+    "Valuation!B5"
+  ],
+  "model": "gpt-5.6-terra",
+  "provider": "openai",
+  "stopped": null,
+  "tokens": {
+    "in": 217965,
+    "out": 8912
+  },
+  "violations": [],
+  "workbook": "C07.xlsx"
+}

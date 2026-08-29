@@ -1,0 +1,82 @@
+{
+  "adjudicated": 23,
+  "candidates": 23,
+  "findings": [
+    {
+      "address": "Revenue!J5",
+      "confidence": "high",
+      "corrected": false,
+      "detector": "D2",
+      "evidence": [
+        "Revenue!J5 is =H9, skipping its immediately preceding period's closing-customer value.",
+        "Revenue!I5 is a hardcoded 7900, but Revenue!K5 is =J9 and Revenue!L5 is =K9, continuing the standard immediately-prior-period linkage.",
+        "Revenue!D5 is =C9, Revenue!E5 is =D9, Revenue!F5 is =E9; together with Revenue!K5 and Revenue!L5 these siblings imply Revenue!J5 should be =I9.",
+        "Revenue!I9 is the closing-customer formula =I5+I6+I7, so =I9 supplies the proper prior-period closing balance."
+      ],
+      "impact": {
+        "P&L!AA15": -2098586.0,
+        "Valuation!B7": -21141692.0
+      },
+      "proposed_formula": "=I9",
+      "relative": {
+        "P&L!AA15": 0.307847734496354,
+        "Valuation!B7": 0.4200332765294057
+      }
+    },
+    {
+      "address": "Revenue!I5",
+      "confidence": "high",
+      "corrected": false,
+      "detector": "D1",
+      "evidence": [
+        "Revenue!I5 is a hardcoded 7900 despite the continuing opening-customer roll-forward sequence.",
+        "Revenue!D5 through Revenue!H5 roll opening customers from the preceding period's closing customers (=C9 through =G9), and Revenue!J5 resumes this sequence with =H9; therefore Revenue!I5 should be =H9.",
+        "Revenue!I13 is 8037, anomalously matching Revenue!C13, because it incorporates the reset hardcode in Revenue!I5; adjacent Revenue!H13 and Revenue!J13 are 9533 and 9863.",
+        "Assumptions!B4 contains 7900 and is appropriately referenced only by initial-period Revenue!C5."
+      ],
+      "impact": {
+        "P&L!AA15": 101717.0,
+        "Valuation!B7": 0.0
+      },
+      "proposed_formula": "=H9",
+      "relative": {
+        "P&L!AA15": 0.014921165017666964,
+        "Valuation!B7": 0.0
+      }
+    }
+  ],
+  "formulas": 738,
+  "inconclusive": [],
+  "intentional": [
+    "Costs!C12",
+    "Costs!C5",
+    "P&L!AA10",
+    "P&L!AA11",
+    "P&L!AA12",
+    "P&L!AA13",
+    "P&L!AA15",
+    "P&L!AA3",
+    "P&L!AA5",
+    "P&L!AA6",
+    "P&L!AA7",
+    "P&L!C18",
+    "Revenue!C11",
+    "Revenue!C17",
+    "Revenue!C3",
+    "Revenue!C5",
+    "Valuation!B11",
+    "Valuation!B12",
+    "Valuation!B13",
+    "Valuation!B14",
+    "Valuation!B5"
+  ],
+  "model": "gpt-5.6-terra",
+  "provider": "openai",
+  "stopped": null,
+  "tokens": {
+    "in": 214228,
+    "out": 10482
+  },
+  "violations": [],
+  "workbook": "C08.xlsx"
+}

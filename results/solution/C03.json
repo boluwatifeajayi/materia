@@ -1,0 +1,79 @@
+{
+  "adjudicated": 22,
+  "candidates": 22,
+  "findings": [
+    {
+      "address": "Revenue!H5",
+      "confidence": "high",
+      "corrected": false,
+      "detector": "D1",
+      "evidence": [
+        "Revenue!F5 is =E9, Revenue!G5 is =F9, and Revenue!I5 is =H9, establishing the one-period closing-customer carryforward pattern across the row.",
+        "Revenue!H5 is a hardcoded 7200 while its immediate prior-period source Revenue!G9 is 10014; Revenue!H6, Revenue!H7, Revenue!H9, Revenue!H13, and Revenue!H15 reset to values matching month 1, consistent with that broken carryforward.",
+        "Revenue!C5 is the distinct first-period initialization formula =Assumptions!$B$4; H5 is not a first-period column and has no comment or adjacent structural indicator supporting a reset."
+      ],
+      "impact": {
+        "P&L!AA15": 8704573.0,
+        "Valuation!B7": 92752830.0
+      },
+      "proposed_formula": "=G9",
+      "relative": {
+        "P&L!AA15": 0.5874822548708751,
+        "Valuation!B7": 0.6462015751315054
+      }
+    },
+    {
+      "address": "P&L!AA15",
+      "confidence": "high",
+      "corrected": false,
+      "detector": "D2",
+      "evidence": [
+        "P&L!AA3 is labelled \"Total\", and AA5 and AA6 use =SUM(C5:Z5), establishing that the Total column sums all monthly columns C:Z.",
+        "P&L!AA13 uses =SUM(C13:Z13), while P&L!AA15 instead uses =SUM(C15:Y15), omitting Z15.",
+        "P&L!Z15 is the final monthly EBITDA and equals 1550882.0; P&L!Y18, the cumulative EBITDA through month 23, equals the current AA15 value of 14816742.0, confirming AA15 currently excludes month 24."
+      ],
+      "impact": {
+        "P&L!AA15": 1550882.0,
+        "Valuation!B7": 0.0
+      },
+      "proposed_formula": "=SUM(C15:Z15)",
+      "relative": {
+        "P&L!AA15": 0.10467091888351704,
+        "Valuation!B7": 0.0
+      }
+    }
+  ],
+  "formulas": 738,
+  "inconclusive": [],
+  "intentional": [
+    "Costs!C12",
+    "Costs!C5",
+    "P&L!AA10",
+    "P&L!AA11",
+    "P&L!AA12",
+    "P&L!AA13",
+    "P&L!AA3",
+    "P&L!AA5",
+    "P&L!AA6",
+    "P&L!AA7",
+    "P&L!C18",
+    "Revenue!C11",
+    "Revenue!C17",
+    "Revenue!C3",
+    "Revenue!C5",
+    "Valuation!B11",
+    "Valuation!B12",
+    "Valuation!B13",
+    "Valuation!B14",
+    "Valuation!B5"
+  ],
+  "model": "gpt-5.6-terra",
+  "provider": "openai",
+  "stopped": null,
+  "tokens": {
+    "in": 247503,
+    "out": 9915
+  },
+  "violations": [],
+  "workbook": "C03.xlsx"
+}

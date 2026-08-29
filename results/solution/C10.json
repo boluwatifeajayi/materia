@@ -1,0 +1,43 @@
+{
+  "adjudicated": 25,
+  "candidates": 25,
+  "findings": [],
+  "formulas": 735,
+  "inconclusive": [],
+  "intentional": [
+    "Costs!C12",
+    "Costs!C5",
+    "Costs!I12",
+    "P&L!AA10",
+    "P&L!AA11",
+    "P&L!AA12",
+    "P&L!AA13",
+    "P&L!AA15",
+    "P&L!AA3",
+    "P&L!AA5",
+    "P&L!AA6",
+    "P&L!AA7",
+    "P&L!C18",
+    "Revenue!C11",
+    "Revenue!C15",
+    "Revenue!C17",
+    "Revenue!C3",
+    "Revenue!C5",
+    "Revenue!D15",
+    "Revenue!E15",
+    "Valuation!B11",
+    "Valuation!B12",
+    "Valuation!B13",
+    "Valuation!B14",
+    "Valuation!B5"
+  ],
+  "model": "gpt-5.6-terra",
+  "provider": "openai",
+  "stopped": null,
+  "tokens": {
+    "in": 194855,
+    "out": 10268
+  },
+  "violations": [],
+  "workbook": "C10.xlsx"
+}

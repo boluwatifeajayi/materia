@@ -9,7 +9,13 @@ from pathlib import Path
 
 import pytest
 
-from materia.audit import Audit, audit, outputs_for, write_result
+from materia.audit import (
+    Audit,
+    audit,
+    from_trajectories,
+    outputs_for,
+    write_result,
+)
 from materia.corpus.layout import DECLARED_OUTPUTS
 from materia.llm import AgentResponse, ToolCall, Usage
 from materia.preflight import PreflightRejected
@@ -384,3 +390,42 @@ class TestRenderingFromTrajectories:
         from materia.audit import from_trajectories
 
         assert from_trajectories("corpus/C03.xlsx", tmp_path).verdicts == ()
+
+
+class TestRebuildingFromASweep:
+    """A sweep puts every workbook's trajectories in one directory.
+
+    `from_trajectories` globbed all of them, so rebuilding one workbook picked
+    up the whole corpus's verdicts and reported them as that workbook's. The
+    `report` command reads the same way, so a re-rendered report after a sweep
+    would have mixed twelve workbooks into one.
+    """
+
+    DIRECTORY = "trajectories/solution_scored"
+
+    def test_it_takes_only_the_workbook_it_was_asked_for(self):
+        rebuilt = from_trajectories("corpus/C10.xlsx", self.DIRECTORY)
+        assert rebuilt.verdicts, "no verdicts rebuilt at all"
+        for verdict in rebuilt.verdicts:
+            assert "C10" in verdict.trace_path
+
+    def test_two_workbooks_do_not_share_verdicts(self):
+        first = {v.address for v in from_trajectories("corpus/C09.xlsx", self.DIRECTORY).verdicts}
+        second = {v.address for v in from_trajectories("corpus/C10.xlsx", self.DIRECTORY).verdicts}
+        assert first != second
+
+    def test_the_rebuilt_result_carries_what_the_run_spent(self):
+        """Otherwise results/ reports a cost of zero for a run that cost money."""
+        rebuilt = from_trajectories("corpus/C10.xlsx", self.DIRECTORY)
+        assert rebuilt.as_dict()["tokens"]["in"] > 0
+        assert rebuilt.as_dict()["tokens"]["out"] > 0
+
+    def test_it_matches_what_the_run_itself_wrote(self):
+        import json
+
+        rebuilt = from_trajectories("corpus/C06.xlsx", self.DIRECTORY).as_dict()
+        written = json.loads(Path("results/solution/C06.json").read_text())
+        assert rebuilt["candidates"] == written["candidates"]
+        assert [f["address"] for f in rebuilt["findings"]] == [
+            f["address"] for f in written["findings"]
+        ]

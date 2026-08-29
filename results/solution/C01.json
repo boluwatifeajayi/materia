@@ -1,0 +1,60 @@
+{
+  "adjudicated": 22,
+  "candidates": 22,
+  "findings": [
+    {
+      "address": "Revenue!K5",
+      "confidence": "high",
+      "corrected": false,
+      "detector": "D1",
+      "evidence": [
+        "Revenue!J5 is =I9 and Revenue!L5 is =K9, establishing the consistent monthly roll-forward pattern around Revenue!K5.",
+        "Revenue!C5 is the sole opening-period initialization formula (=Assumptions!$B$4), while Revenue!D5:J5 and Revenue!L5:Z5 each reference the immediately preceding period's closing-customers cell.",
+        "Revenue!K5 is a hardcoded 9800 even though its immediate predecessor Revenue!J9 is 16367 and its immediate successor Revenue!L5 is =K9."
+      ],
+      "impact": {
+        "P&L!AA15": 12401007.0,
+        "Valuation!B7": 99880777.0
+      },
+      "proposed_formula": "=J9",
+      "relative": {
+        "P&L!AA15": 0.8006556449871244,
+        "Valuation!B7": 1.0496044478502495
+      }
+    }
+  ],
+  "formulas": 738,
+  "inconclusive": [],
+  "intentional": [
+    "Costs!C12",
+    "Costs!C5",
+    "P&L!AA10",
+    "P&L!AA11",
+    "P&L!AA12",
+    "P&L!AA13",
+    "P&L!AA15",
+    "P&L!AA3",
+    "P&L!AA5",
+    "P&L!AA6",
+    "P&L!AA7",
+    "P&L!C18",
+    "Revenue!C11",
+    "Revenue!C17",
+    "Revenue!C3",
+    "Revenue!C5",
+    "Valuation!B11",
+    "Valuation!B12",
+    "Valuation!B13",
+    "Valuation!B14",
+    "Valuation!B5"
+  ],
+  "model": "gpt-5.6-terra",
+  "provider": "openai",
+  "stopped": null,
+  "tokens": {
+    "in": 205350,
+    "out": 9537
+  },
+  "violations": [],
+  "workbook": "C01.xlsx"
+}

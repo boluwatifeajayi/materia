@@ -1,0 +1,60 @@
+{
+  "adjudicated": 22,
+  "candidates": 22,
+  "findings": [
+    {
+      "address": "Revenue!H9",
+      "confidence": "high",
+      "corrected": false,
+      "detector": "D2",
+      "evidence": [
+        "Revenue!H9 is =G5+H6+H7, while Revenue!F9 is =F5+F6+F7, Revenue!G9 is =G5+G6+G7, Revenue!I9 is =I5+I6+I7, and Revenue!J9 is =J5+J6+J7.",
+        "Revenue!H5 is 7462 and is the opening-customers input for the H column; Revenue!I5 is =H9, confirming H9 should close the H-period customer roll-forward.",
+        "Revenue!H9 has no cell comment or adjacent structural exception; the row label Revenue!A9 is Closing customers."
+      ],
+      "impact": {
+        "P&L!AA15": 593032.0,
+        "Valuation!B7": 5931449.0
+      },
+      "proposed_formula": "=H5+H6+H7",
+      "relative": {
+        "P&L!AA15": 0.04464031594906401,
+        "Valuation!B7": 0.052743679271709656
+      }
+    }
+  ],
+  "formulas": 739,
+  "inconclusive": [],
+  "intentional": [
+    "Costs!C12",
+    "Costs!C5",
+    "P&L!AA10",
+    "P&L!AA11",
+    "P&L!AA12",
+    "P&L!AA13",
+    "P&L!AA15",
+    "P&L!AA3",
+    "P&L!AA5",
+    "P&L!AA6",
+    "P&L!AA7",
+    "P&L!C18",
+    "Revenue!C11",
+    "Revenue!C17",
+    "Revenue!C3",
+    "Revenue!C5",
+    "Valuation!B11",
+    "Valuation!B12",
+    "Valuation!B13",
+    "Valuation!B14",
+    "Valuation!B5"
+  ],
+  "model": "gpt-5.6-terra",
+  "provider": "openai",
+  "stopped": null,
+  "tokens": {
+    "in": 216320,
+    "out": 9896
+  },
+  "violations": [],
+  "workbook": "C02.xlsx"
+}

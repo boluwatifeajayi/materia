@@ -51,6 +51,12 @@ class Audit:
             "workbook": self.workbook,
             "provider": self.provider,
             "model": self.model,
+            # What the run spent, so results/ can say what it cost without
+            # anyone reading it back out of the trajectories by hand.
+            "tokens": {
+                "in": sum(v.tokens.get("in", 0) for v in self.verdicts),
+                "out": sum(v.tokens.get("out", 0) for v in self.verdicts),
+            },
             "formulas": self.preflight.formula_count,
             "candidates": len(self.candidates),
             "adjudicated": len(self.verdicts),
@@ -184,7 +190,7 @@ def from_trajectories(
     re-render: the figures come from the same `tool_result` records the
     original report was checked against.
     """
-    from materia.trace import read
+    from materia.trace import read, total_tokens
 
     path = Path(path)
     report = preflight(path)
@@ -204,6 +210,11 @@ def from_trajectories(
         if entry is None:
             continue
         start = records[0]
+        # A sweep puts every workbook's trajectories in one directory. Without
+        # this, rebuilding C10 picked up all twelve workbooks' verdicts and
+        # reported them as C10's.
+        if start.content.get("workbook") not in (None, path.stem):
+            continue
         provider = provider or start.content.get("provider", "")
         model = model or start.content.get("model", "")
         verdicts.append(
@@ -216,6 +227,9 @@ def from_trajectories(
                 evidence=tuple(entry.content.get("evidence") or ()),
                 reasoning=entry.content.get("reasoning", ""),
                 measured_deltas=entry.content.get("measured_deltas") or {},
+                tokens=total_tokens(records),
+                turns=len([r for r in records if r.type == "model_message"]),
+                tool_calls=len([r for r in records if r.type == "tool_call"]),
                 trace_path=str(trace),
             )
         )

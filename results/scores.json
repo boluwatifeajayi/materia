@@ -262,5 +262,137 @@
     "repair_accuracy": 0.9166666666666666,
     "reported": 12,
     "system": "Baseline agent"
+  },
+  {
+    "false_positives_per_clean_workbook": 0.0,
+    "localisation_accuracy": 1.0,
+    "material_precision": 0.9285714285714286,
+    "material_recall": 0.9285714285714286,
+    "per_workbook": [
+      {
+        "false_positives": 0,
+        "found_material": 1,
+        "found_total": 1,
+        "id": "C01",
+        "reported": 1,
+        "role": "seeded",
+        "seeded_material": 1,
+        "seeded_total": 1
+      },
+      {
+        "false_positives": 0,
+        "found_material": 1,
+        "found_total": 1,
+        "id": "C02",
+        "reported": 1,
+        "role": "seeded",
+        "seeded_material": 1,
+        "seeded_total": 1
+      },
+      {
+        "false_positives": 0,
+        "found_material": 2,
+        "found_total": 2,
+        "id": "C03",
+        "reported": 2,
+        "role": "seeded",
+        "seeded_material": 2,
+        "seeded_total": 2
+      },
+      {
+        "false_positives": 0,
+        "found_material": 1,
+        "found_total": 1,
+        "id": "C04",
+        "reported": 1,
+        "role": "seeded",
+        "seeded_material": 1,
+        "seeded_total": 1
+      },
+      {
+        "false_positives": 0,
+        "found_material": 1,
+        "found_total": 1,
+        "id": "C05",
+        "reported": 1,
+        "role": "seeded",
+        "seeded_material": 1,
+        "seeded_total": 1
+      },
+      {
+        "false_positives": 0,
+        "found_material": 3,
+        "found_total": 3,
+        "id": "C06",
+        "reported": 3,
+        "role": "seeded",
+        "seeded_material": 3,
+        "seeded_total": 3
+      },
+      {
+        "false_positives": 0,
+        "found_material": 1,
+        "found_total": 1,
+        "id": "C07",
+        "reported": 1,
+        "role": "seeded",
+        "seeded_material": 1,
+        "seeded_total": 1
+      },
+      {
+        "false_positives": 0,
+        "found_material": 2,
+        "found_total": 2,
+        "id": "C08",
+        "reported": 2,
+        "role": "seeded",
+        "seeded_material": 2,
+        "seeded_total": 2
+      },
+      {
+        "false_positives": 0,
+        "found_material": 0,
+        "found_total": 0,
+        "id": "C09",
+        "reported": 0,
+        "role": "clean_control",
+        "seeded_material": 0,
+        "seeded_total": 0
+      },
+      {
+        "false_positives": 0,
+        "found_material": 0,
+        "found_total": 0,
+        "id": "C10",
+        "reported": 0,
+        "role": "clean_control",
+        "seeded_material": 0,
+        "seeded_total": 0
+      },
+      {
+        "false_positives": 0,
+        "found_material": 0,
+        "found_total": 1,
+        "id": "C11",
+        "reported": 1,
+        "role": "hard_case",
+        "seeded_material": 0,
+        "seeded_total": 1
+      },
+      {
+        "false_positives": 0,
+        "found_material": 1,
+        "found_total": 1,
+        "id": "C12",
+        "reported": 1,
+        "role": "hard_case",
+        "seeded_material": 2,
+        "seeded_total": 2
+      }
+    ],
+    "raw_anomaly_recall": 0.9333333333333333,
+    "repair_accuracy": 1.0,
+    "reported": 14,
+    "system": "Materia"
   }
 ]

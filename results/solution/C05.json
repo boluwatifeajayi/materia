@@ -1,0 +1,60 @@
+{
+  "adjudicated": 22,
+  "candidates": 22,
+  "findings": [
+    {
+      "address": "P&L!J7",
+      "confidence": "high",
+      "corrected": false,
+      "detector": "D2",
+      "evidence": [
+        "P&L!J7 is =J5-J6, while immediate siblings P&L!I7 and P&L!K7 are =I5+I6 and =K5+K6; all displayed monthly cells P&L!C7:I7 and P&L!K7:Z7 use the same addition pattern.",
+        "P&L!J6 is =-Costs!J10 with value -193066.0, consistent with P&L!C6:K6 being negative cost-of-sales inputs; subtracting this negative value in P&L!J7 reverses the sign treatment.",
+        "P&L!J7 has no cell comment or adjacent structural indication of an override."
+      ],
+      "impact": {
+        "P&L!AA15": -386132.0,
+        "Valuation!B7": 0.0
+      },
+      "proposed_formula": "=J5+J6",
+      "relative": {
+        "P&L!AA15": 0.02650306094938026,
+        "Valuation!B7": 0.0
+      }
+    }
+  ],
+  "formulas": 739,
+  "inconclusive": [],
+  "intentional": [
+    "Costs!C12",
+    "Costs!C5",
+    "P&L!AA10",
+    "P&L!AA11",
+    "P&L!AA12",
+    "P&L!AA13",
+    "P&L!AA15",
+    "P&L!AA3",
+    "P&L!AA5",
+    "P&L!AA6",
+    "P&L!AA7",
+    "P&L!C18",
+    "Revenue!C11",
+    "Revenue!C17",
+    "Revenue!C3",
+    "Revenue!C5",
+    "Valuation!B11",
+    "Valuation!B12",
+    "Valuation!B13",
+    "Valuation!B14",
+    "Valuation!B5"
+  ],
+  "model": "gpt-5.6-terra",
+  "provider": "openai",
+  "stopped": null,
+  "tokens": {
+    "in": 193093,
+    "out": 8959
+  },
+  "violations": [],
+  "workbook": "C05.xlsx"
+}
