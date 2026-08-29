@@ -3,28 +3,27 @@
   "candidates": 22,
   "findings": [
     {
-      "address": "Revenue!M9",
+      "address": "Revenue!I5",
       "confidence": "high",
       "corrected": false,
       "detector": "D2",
       "evidence": [
-        "Revenue!M9 is =L5+M6+M7, uniquely referencing the prior-period opening-customer cell.",
-        "Revenue!C9 through Revenue!L9 each sum their same-column cells 5, 6, and 7; Revenue!N9 and Revenue!O9 continue this same-column pattern.",
-        "Revenue!M5 is the opening-customers value for period M, while Revenue!L5 is the prior-period opening-customers value."
+        "Revenue!D5 through Revenue!H5 each link opening customers to the immediately preceding period's ending customers (for example, Revenue!H5 =G9).",
+        "Revenue!I5 is =G9, duplicating the two-period-prior ending balance, whereas Revenue!J5 =I9 and Revenue!K5 =J9 resume the immediately-prior-period pattern.",
+        "Revenue!I9 is the immediately preceding period's ending customers balance and is 8973.0, while Revenue!I5 currently references Revenue!G9 (8650.0)."
       ],
       "impact": {
-        "P&L!AA15": 749467.0,
-        "Valuation!B7": 8830912.0
+        "P&L!AA15": 383211.0,
+        "Valuation!B7": 3560100.0
       },
-      "proposed_formula": "=M5+M6+M7",
+      "proposed_formula": "=H9",
       "relative": {
-        "P&L!AA15": 0.04861781793366149,
-        "Valuation!B7": 0.06862106952803293
+        "P&L!AA15": 0.05607898832428588,
+        "Valuation!B7": 0.07063792088279047
       }
     }
   ],
   "formulas": 739,
-  "immaterial": [],
   "inconclusive": [],
   "intentional": [
     "Costs!C12",
@@ -53,9 +52,9 @@
   "provider": "openai",
   "stopped": null,
   "tokens": {
-    "in": 191837,
-    "out": 9211
+    "in": 226538,
+    "out": 10028
   },
   "violations": [],
-  "workbook": "C12.xlsx"
+  "workbook": "C04.xlsx"
 }

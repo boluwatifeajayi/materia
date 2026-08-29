@@ -3,28 +3,27 @@
   "candidates": 22,
   "findings": [
     {
-      "address": "Revenue!M9",
+      "address": "Revenue!H9",
       "confidence": "high",
       "corrected": false,
       "detector": "D2",
       "evidence": [
-        "Revenue!M9 is =L5+M6+M7, uniquely referencing the prior-period opening-customer cell.",
-        "Revenue!C9 through Revenue!L9 each sum their same-column cells 5, 6, and 7; Revenue!N9 and Revenue!O9 continue this same-column pattern.",
-        "Revenue!M5 is the opening-customers value for period M, while Revenue!L5 is the prior-period opening-customers value."
+        "Revenue!H9 is =G5+H6+H7, while Revenue!F9 is =F5+F6+F7, Revenue!G9 is =G5+G6+G7, Revenue!I9 is =I5+I6+I7, and Revenue!J9 is =J5+J6+J7.",
+        "Revenue!H5 is 7462 and is the opening-customers input for the H column; Revenue!I5 is =H9, confirming H9 should close the H-period customer roll-forward.",
+        "Revenue!H9 has no cell comment or adjacent structural exception; the row label Revenue!A9 is Closing customers."
       ],
       "impact": {
-        "P&L!AA15": 749467.0,
-        "Valuation!B7": 8830912.0
+        "P&L!AA15": 593032.0,
+        "Valuation!B7": 5931449.0
       },
-      "proposed_formula": "=M5+M6+M7",
+      "proposed_formula": "=H5+H6+H7",
       "relative": {
-        "P&L!AA15": 0.04861781793366149,
-        "Valuation!B7": 0.06862106952803293
+        "P&L!AA15": 0.04464031594906401,
+        "Valuation!B7": 0.052743679271709656
       }
     }
   ],
   "formulas": 739,
-  "immaterial": [],
   "inconclusive": [],
   "intentional": [
     "Costs!C12",
@@ -53,9 +52,9 @@
   "provider": "openai",
   "stopped": null,
   "tokens": {
-    "in": 191837,
-    "out": 9211
+    "in": 216320,
+    "out": 9896
   },
   "violations": [],
-  "workbook": "C12.xlsx"
+  "workbook": "C02.xlsx"
 }

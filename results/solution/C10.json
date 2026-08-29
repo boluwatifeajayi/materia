@@ -3,6 +3,7 @@
   "candidates": 25,
   "findings": [],
   "formulas": 735,
+  "immaterial": [],
   "inconclusive": [],
   "intentional": [
     "Costs!C12",

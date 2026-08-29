@@ -21,8 +21,41 @@ from materia.detect import Candidate, detect, load
 from materia.graph import DependencyGraph
 from materia.llm import LLMClient, get_client, write_provenance
 from materia.preflight import PreflightReport, preflight
-from materia.report import CrossCheck, Funnel, cross_check, render
+from materia.report import (
+    CrossCheck,
+    Funnel,
+    apply_materiality,
+    cross_check,
+    render,
+)
 from materia.tools import Toolbox
+
+
+class BucketsDoNotSum(AssertionError):
+    """The report's buckets do not account for every candidate examined.
+
+    Raised rather than logged. The buckets are the only thing telling a user
+    what happened to each anomaly, so a candidate that fell out of all of them
+    is one the report silently lost, and silent loss is the failure this
+    project exists to prevent.
+    """
+
+
+def check_buckets(result: CrossCheck, adjudicated: int) -> None:
+    """Every candidate that was examined is in exactly one bucket.
+
+    docs/ARCHITECTURE.md data flow constraints. Checked here, on every audit
+    and every rebuild, because an invariant that only holds on fixtures is not
+    an invariant.
+    """
+    if result.accounted != adjudicated:
+        raise BucketsDoNotSum(
+            f"{adjudicated} candidates were adjudicated but "
+            f"{result.accounted} are accounted for: "
+            f"{len(result.findings)} findings, {len(result.immaterial)} immaterial, "
+            f"{len(result.intentional)} intentional, "
+            f"{len(result.inconclusive)} inconclusive, {result.dropped} unverifiable."
+        )
 
 
 @dataclass(frozen=True)
@@ -74,6 +107,15 @@ class Audit:
                 }
                 for finding in self.result.findings
             ],
+            "immaterial": [
+                {
+                    "address": f.address,
+                    "impact": f.deltas,
+                    "relative": f.relative,
+                    "proposed_formula": f.proposed_formula,
+                }
+                for f in self.result.immaterial
+            ],
             "intentional": [v.address for v in self.result.intentional],
             "inconclusive": [v.address for v in self.result.inconclusive],
             "violations": [str(v) for v in self.result.violations],
@@ -106,6 +148,7 @@ def audit(
     trace_directory: str | Path = "trajectories/solution",
     max_candidates: int | None = None,
     corpus: str | Path = "corpus",
+    threshold: float | None = None,
 ) -> Audit:
     """Run the pipeline over one workbook."""
     path = Path(path)
@@ -138,6 +181,9 @@ def audit(
         stopped = cut_short.reason
 
     result = cross_check(verdicts, tools.model, graph, candidates)
+    survived = len(result.findings)
+    result = apply_materiality(result, threshold)
+    check_buckets(result, len(verdicts))
 
     return Audit(
         workbook=path.name,
@@ -151,11 +197,11 @@ def audit(
             # Survived hypothesis testing means the agent concluded the cell
             # was wrong and the impact was verifiable. An INTENTIONAL verdict
             # was dismissed and an INCONCLUSIVE one established nothing, so
-            # neither survived. Until the gate lands in T21 this equals the
-            # finding count, and that is the honest reading: with no
-            # materiality filter, everything that survives is reported.
-            survived=len(result.findings),
+            # neither survived. The gate runs after this point, so `survived`
+            # counts what reached it and `findings` counts what came out.
+            survived=survived,
             findings=len(result.findings),
+            suppressed=len(result.immaterial),
             adjudicated=len(verdicts),
         ),
         provider=client.provider,
@@ -182,6 +228,7 @@ def from_trajectories(
     trace_directory: str | Path,
     outputs: list[str] | None = None,
     corpus: str | Path = "corpus",
+    threshold: float | None = None,
 ) -> Audit:
     """Rebuild an audit from trajectories already on disk.
 
@@ -235,6 +282,10 @@ def from_trajectories(
         )
 
     result = cross_check(verdicts, tools.model, graph, candidates)
+    survived = len(result.findings)
+    result = apply_materiality(result, threshold)
+    check_buckets(result, len(verdicts))
+
     return Audit(
         workbook=path.name,
         preflight=report,
@@ -244,8 +295,9 @@ def from_trajectories(
         funnel=Funnel(
             formulas=report.formula_count,
             candidates=len(candidates),
-            survived=len(result.findings),
+            survived=survived,
             findings=len(result.findings),
+            suppressed=len(result.immaterial),
             adjudicated=len(verdicts),
         ),
         provider=provider,

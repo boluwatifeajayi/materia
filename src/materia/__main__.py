@@ -93,12 +93,16 @@ def _evaluate(arguments: argparse.Namespace) -> int:
     # The baseline column appears once there is a run to fill it, and not
     # before. docs/EVALUATION.md section 5 shows it as [TBD] until then rather
     # than as a zero, because a system that has not run has no score.
-    from materia.evaluate import solution_results
+    from materia.evaluate import solution_results, suppressed_count
 
     expected = {entry["id"] for entry in manifest["workbooks"]}
     baseline_directory = arguments.results / "baseline"
     for directory, system, load in (
         (baseline_directory, "Baseline agent", baseline_results),
+        # Iteration 2 and Iteration 3 are the same pipeline with the gate off
+        # and on. Both are kept so the changelog can show what the gate did
+        # rather than asserting it.
+        (arguments.results / "solution_nogate", "Materia, no gate", solution_results),
         (arguments.results / "solution", "Materia", solution_results),
     ):
         if not directory.is_dir():
@@ -106,7 +110,7 @@ def _evaluate(arguments: argparse.Namespace) -> int:
         found = load(directory)
         if not found:
             continue
-        scores.append(score(system, found, manifest))
+        scores.append(score(system, found, manifest, suppressed_count(directory)))
         missing = sorted(expected - set(found))
         if missing:
             print(
@@ -134,6 +138,7 @@ def _evaluate(arguments: argparse.Namespace) -> int:
                 continue
             sources = {
                 "Baseline agent": baseline_directory,
+                "Materia, no gate": arguments.results / "solution_nogate",
                 "Materia": arguments.results / "solution",
             }
             extras = (
@@ -151,7 +156,8 @@ def _evaluate(arguments: argparse.Namespace) -> int:
         stages = {
             "Detectors only": "Iteration 1",
             "Baseline agent": "Baseline",
-            "Materia": "Iteration 2",
+            "Materia, no gate": "Iteration 2",
+            "Materia": "Iteration 3",
         }
         for item in scores:
             stage = stages.get(item.system)
@@ -235,6 +241,7 @@ def _audit_one(workbook, outputs, client, arguments):
             client=client,
             trace_directory=arguments.traces,
             max_candidates=arguments.max_candidates,
+            threshold=arguments.materiality,
         )
     except PreflightRejected as rejection:
         print(f"{workbook} was not audited.", file=sys.stderr)
@@ -567,6 +574,11 @@ def build_parser() -> argparse.ArgumentParser:
         help='declared output cells, comma separated, for example "P&L!AA15,Valuation!B7"',
     )
     audit_command.add_argument("--provider", default=None, choices=["groq", "openai"])
+    audit_command.add_argument(
+        "--materiality", type=float, default=None,
+        help="fraction of a declared output a correction must move to be "
+             "shown. Defaults to the threshold in config.yaml.",
+    )
     audit_command.add_argument("--traces", type=Path, default=Path("trajectories/solution"))
     audit_command.add_argument("--results", type=Path, default=None)
     audit_command.add_argument(

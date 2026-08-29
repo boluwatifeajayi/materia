@@ -164,10 +164,13 @@ This is a restriction on capability, so it is worth being precise about what it 
 | False positives per clean workbook | 23.00 | 0.00 | 0.00 |
 | Localisation accuracy | 100% | 100% | 100% |
 | Repair accuracy | n/a | n/a | 100% |
+| Suppressed as immaterial | 0 | 0 | 0 |
 | Human time per workbook | not measured | not measured | not measured |
 | Cost per workbook | none, no model involved | not measured | not measured |
 
 Repair accuracy is not applicable for the detector only run rather than zero: the detectors propose nothing, so there is nothing for them to be right or wrong about. Reporting zero would imply they tried.
+
+**Read the raw anomaly recall row together with the suppressed row.** Materia's raw anomaly recall is 87% against the ungated 93%, and that fall is the gate working rather than a regression. The mutation it stopped reporting is `Costs!Z12` in `C11`, which is real and moves the largest declared output by 0.03%. Raw anomaly recall counts every seeded mutation whether or not it matters, so a suppressed one scores the same as a missed one. They are opposite outcomes, and the suppressed count is the row that tells them apart. Material recall, which is the figure the product is about, is unchanged at 93%.
 
 ### What the solution run showed
 
@@ -179,9 +182,21 @@ Iteration 2 is the agent loop with the recompute tool and no materiality gate, o
 
 **The buckets sum.** 14 findings plus 253 intentional plus 0 inconclusive is 267, which is the candidate count. The invariant in the data flow constraints holds on real data rather than in principle.
 
-**Where the remaining error is.** One miss, `M6` in `C12`, which nothing structural can see. One precision cost, `Costs!Z12` in `C11`, a real mutation that moves a declared output by a third of a basis point and is reported because there is no gate yet. Those are the two the design predicted, and they are the only two.
+**Where the remaining error is.** One miss, `M6` in `C12`, which nothing structural can see. One precision cost, `Costs!Z12` in `C11`, a real mutation that moves a declared output by three basis points and is reported because there is no gate yet. Those are the two the design predicted, and they are the only two.
 
 Cost: $6.42 for the corpus at published rates, $0.54 per workbook, against $0.41 for the baseline. Materia spends about 30% more per workbook and reports two more findings, one of which is the immaterial one it should be suppressing.
+
+### What the gate changed, and how Iteration 3 was produced
+
+Iteration 3 is Iteration 2 with the materiality gate switched on. It moves material precision from 93% to 100% and changes nothing else that the product is measured on.
+
+It changed exactly one thing on the corpus: `Costs!Z12` in `C11` moved from the findings list to the suppressed count. No other finding in the twelve workbooks is within two orders of magnitude of the threshold, so no other candidate was close to the line.
+
+**Iteration 3 was derived from Iteration 2's trajectories rather than run again, and that is worth stating plainly.** A rerun was attempted on `gpt-5.6-terra` and stopped part way through `C06` when the OpenAI account ran out of credits, after about $2.62. What is reported here instead is the same 267 adjudications re-scored with the gate applied, using `from_trajectories`, which reads the verdicts and the `recompute_with_patch` results out of the committed trajectory files.
+
+That is sound for this particular change and it is worth saying why rather than presenting it as equivalent to a fresh run. The gate is deterministic post processing over verified deltas: it makes no model call, sees no new evidence, and can only move a finding between two buckets. Deriving it this way also isolates its contribution exactly, because Iteration 2 and Iteration 3 differ by the gate and nothing else, where a rerun would have mixed the gate's effect with sampling variance.
+
+What it is not is an independent confirmation that the pipeline reproduces. `docs/REPRODUCTION.md` section 9 already reports agent runs as non deterministic, and that limitation is unchanged.
 
 ### What the baseline run showed, including the part that cuts against us
 
@@ -207,9 +222,9 @@ Materia reports nothing. All 25 candidates come back `INTENTIONAL`, including `C
 
 That is a design choice worth stating plainly rather than dressing up as agency: the system does not rely on the model choosing to investigate. It puts the evidence for intent where the model cannot miss it, and the model's job is the judgement rather than the retrieval.
 
-**`C11` (real but immaterial mutation):** The baseline reports it, as an error, with a correct impact of -4,165 on total EBITDA against a base of about 14 million. That is the right detection and the wrong conclusion, because a third of a basis point is not something to put in front of a user. The baseline has no notion of materiality to apply.
+**`C11` (real but immaterial mutation):** The baseline reports it, as an error, with a correct impact of -4,165 on total EBITDA against a base of about 14 million. That is the right detection and the wrong conclusion, because three basis points is not something to put in front of a user. The baseline has no notion of materiality to apply.
 
-Materia, at Iteration 2, does the same thing, and this is the one finding that costs it precision. It detects the mutation, verifies the impact correctly, and reports it, because the materiality gate does not exist yet. Detecting and suppressing is the outcome that matters and the distinction is the whole product. That is T21, and the 93% precision figure above is what it has to improve on.
+Materia at Iteration 2 does the same thing, and it is the one finding that costs it precision. At Iteration 3 the gate suppresses it. `Costs!Z12` moves `Valuation!B7` by 0.02999%, which is 3.0 basis points, against a threshold of 1%. It appears in the funnel as one suppressed as immaterial, is named in the report with its measured impact and the formula it would have been given, and does not appear in the findings list. Detected and suppressed, rather than reported or missed, is the outcome the product is for, and it is the difference between 93% and 100% material precision.
 
 **`C12` (out of taxonomy):** Both systems report the in taxonomy mutation and both miss `M6`, the assumption that should be 1.2% and says 12%. It is the only material mutation in the corpus Materia does not find. As predicted: the cell is structurally perfect, no peer signal exists, and nothing structural can see it. This is now measured on both systems rather than asserted.
 

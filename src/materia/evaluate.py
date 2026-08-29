@@ -66,6 +66,11 @@ class Scores:
     reported: int
     per_workbook: tuple[WorkbookScore, ...]
 
+    # Real errors the gate held back. Carried into the table because a
+    # suppressed mutation and a missed one look identical in a recall figure,
+    # and they are opposite outcomes. docs/ARCHITECTURE.md section 7.
+    suppressed: int = 0
+
 
 def _ratio(numerator: int, denominator: int) -> float | None:
     """None rather than zero when there is nothing to divide by."""
@@ -76,8 +81,18 @@ def _mutations(entry: dict) -> dict[str, dict]:
     return {normalise_address(m["address"]): m for m in entry["mutations"]}
 
 
-def score(system: str, results: ResultSet, manifest: dict) -> Scores:
-    """Score one system's findings against the manifest."""
+def score(
+    system: str,
+    results: ResultSet,
+    manifest: dict,
+    suppressed: int = 0,
+) -> Scores:
+    """Score one system's findings against the manifest.
+
+    `suppressed` is passed in rather than derived: only the system that has a
+    materiality gate has anything to report there, and the scorer sees
+    findings rather than the pipeline that produced them.
+    """
     per_workbook: list[WorkbookScore] = []
 
     reported = 0
@@ -156,6 +171,7 @@ def score(system: str, results: ResultSet, manifest: dict) -> Scores:
         repair_accuracy=_ratio(repairs_correct, repairs_offered),
         reported=reported,
         per_workbook=tuple(per_workbook),
+        suppressed=suppressed,
     )
 
 
@@ -200,6 +216,11 @@ def headline_table(scores: list[Scores]) -> str:
     lines.append(
         "| Findings reported | " + " | ".join(str(item.reported) for item in scores) + " |"
     )
+    if any(item.suppressed for item in scores):
+        lines.append(
+            "| Suppressed as immaterial | "
+            + " | ".join(str(item.suppressed) for item in scores) + " |"
+        )
     return "\n".join(lines) + "\n"
 
 
@@ -379,6 +400,17 @@ def solution_results(directory: str | Path) -> ResultSet:
     return results
 
 
+def suppressed_count(directory: str | Path) -> int:
+    """How many real errors the gate held back, across a result directory."""
+    directory = Path(directory)
+    total = 0
+    for path in sorted(directory.glob("*.json")):
+        if path.name == "provider.json":
+            continue
+        total += len(json.loads(path.read_text()).get("immaterial") or [])
+    return total
+
+
 # --- changelog -------------------------------------------------------------
 
 CHANGELOG_MARKER = "| **{stage}** |"
@@ -438,6 +470,7 @@ _DOC_ROWS = {
     "Repair accuracy": lambda i, e: _percent(i.repair_accuracy),
     "Human time per workbook": lambda i, e: "not measured",
     "Cost per workbook": lambda i, e: e.get("cost", "not measured"),
+    "Suppressed as immaterial": lambda i, e: str(i.suppressed),
 }
 
 

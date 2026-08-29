@@ -1,11 +1,17 @@
 {
   "adjudicated": 22,
   "candidates": 22,
-  "findings": [],
-  "formulas": 738,
-  "immaterial": [
+  "findings": [
     {
       "address": "Costs!Z12",
+      "confidence": "high",
+      "corrected": false,
+      "detector": "D1",
+      "evidence": [
+        "Costs!Z12 is a hardcoded value of 21192.2, while the immediately preceding overhead cells Costs!W12, Costs!X12, and Costs!Y12 each apply the same prior-period inflation formula.",
+        "Costs!C12 initializes overhead from Assumptions!$B$17, and Costs!D12 through Costs!Y12 form an uninterrupted monthly roll-forward using Assumptions!$B$18; copying Costs!Y12's formula one column right gives the proposed formula.",
+        "Assumptions!B18 is labeled \"Monthly overhead inflation\" and has value 0.0072."
+      ],
       "impact": {
         "P&L!AA15": -4164.8,
         "Valuation!B7": -28321.0
@@ -17,6 +23,7 @@
       }
     }
   ],
+  "formulas": 738,
   "inconclusive": [],
   "intentional": [
     "Costs!C12",

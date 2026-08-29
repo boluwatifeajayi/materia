@@ -19,7 +19,7 @@ it, not why they opened the report.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -77,10 +77,24 @@ class CrossCheck:
     intentional: tuple[Verdict, ...]
     inconclusive: tuple[Verdict, ...]
 
+    # Errors that are real and too small to matter. Held rather than
+    # discarded: suppression the user cannot see is indistinguishable from a
+    # bug, so the report states the count and the gate that produced it.
+    immaterial: tuple[Finding, ...] = ()
+
     @property
     def dropped(self) -> int:
         return len({violation.address for violation in self.violations
                     if violation.kind == "unverifiable impact"})
+
+    @property
+    def accounted(self) -> int:
+        """Every candidate that reached a conclusion, in exactly one bucket."""
+        return (
+            len(self.findings) + len(self.immaterial)
+            + len(self.intentional) + len(self.inconclusive)
+            + self.dropped
+        )
 
 
 def _measured_deltas(records: list[Record], cell: str, formula: str) -> dict | None:
@@ -124,6 +138,51 @@ def _agree(claimed: dict, measured: dict) -> bool:
         except (TypeError, ValueError):
             return False
     return True
+
+
+DEFAULT_THRESHOLD = 0.01
+
+
+def load_threshold(path: str | Path = "config.yaml") -> float:
+    """The threshold is a published config value, not a constant in here.
+
+    docs/EVALUATION.md section 6 lists choosing it as a threat to validity,
+    which is only answerable if a reader can change it and re run.
+    """
+    try:
+        import yaml
+
+        return float(yaml.safe_load(Path(path).read_text())["materiality"]["threshold"])
+    except Exception:  # noqa: BLE001 - a missing config falls back, not crashes
+        return DEFAULT_THRESHOLD
+
+
+def apply_materiality(result: CrossCheck, threshold: float | None = None) -> CrossCheck:
+    """Reclassify findings that move nothing enough to matter.
+
+    docs/ARCHITECTURE.md section 7. A finding is shown only if its verified
+    delta on at least one declared output exceeds the threshold as a fraction
+    of that output's value.
+
+    This is the only place `IMMATERIAL` is assigned. The adjudicator judges
+    correctness from evidence; consequence is a threshold against a measured
+    number, so it is settled here in code, after the fact, where it can be
+    audited and re run at a different threshold without another model call.
+
+    `INTENTIONAL` and `INCONCLUSIVE` never reach this function: a candidate
+    the model did not call an error has no delta to weigh.
+    """
+    threshold = load_threshold() if threshold is None else threshold
+
+    material, immaterial = [], []
+    for finding in result.findings:
+        (material if finding.largest_relative > threshold else immaterial).append(finding)
+
+    return replace(
+        result,
+        findings=tuple(material),
+        immaterial=tuple(result.immaterial) + tuple(immaterial),
+    )
 
 
 def cross_check(
@@ -492,6 +551,21 @@ def render(
     width = max(len(str(count)) for count, _ in aside)
     for count, label in aside:
         blocks.append(f"  {count:>{width + 4}}  {label}")
+
+    if result.immaterial:
+        blocks.append("")
+        blocks.append("  Real, and too small to matter")
+        for finding in result.immaterial:
+            largest = max(
+                ((abs(v), k) for k, v in finding.relative.items() if v is not None),
+                default=(0.0, ""),
+            )
+            blocks.append(
+                f"    {finding.address}  moves {largest[1]} by "
+                f"{_share(largest[0])}, below the {_share(load_threshold())} threshold"
+            )
+            if finding.proposed_formula:
+                blocks.append(f"      would be {finding.proposed_formula}")
 
     if show_suppressed and result.intentional:
         blocks.append("")

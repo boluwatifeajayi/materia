@@ -229,13 +229,13 @@ What holds today:
 - `make corpus-check` reports 12 workbooks matching the committed checksums. That is the reproducibility claim: byte identical inputs to ours, from a seed, on your machine.
 - `make eval` reproduces the Iteration 1 table above exactly. It is deterministic and involves no model.
 - The detectors alone report 21 findings on `C09` and 25 on `C10`, both of which contain nothing wrong at all. That is the precision problem the project is about, in one number.
-- `make solution` on C03 finds both seeded mutations and declines the legitimate pattern breaks. The report prints a `Schema violations` section where the model reported figures that did not match its own tool results. That section firing is the safety mechanism working, not a defect.
+- `make solution` over the corpus reports 13 findings from 267 candidates, declines 253 as deliberate, and suppresses one as immaterial. It reports nothing on either clean control, where the detectors that feed it report 46 findings between them.
+- `Costs!Z12` in `C11` is a real error worth 3.0 basis points. It appears in the suppressed count with its measured impact, not in the findings and not missing.
 
-What needs the tasks that are not done:
+Known limits, reported rather than worked around:
 
-- The baseline column in the headline table needs the scored sweep, T19. The harness runs today, on one workbook.
-- The `C11` suppressed count needs the materiality gate, T21. Today its mutation is detected and reported rather than suppressed, because there is no gate to suppress it.
-- Both systems missing the `M6` mutation in `C12` needs a full corpus run, T20.
+- Both systems miss the `M6` mutation in `C12`. Nothing structural can see a number that is semantically wrong and structurally perfect.
+- Agent runs are not deterministic. See section 9.
 
 ## 9. Determinism
 
@@ -274,7 +274,7 @@ python -m materia audit path/to/your_model.xlsx \
 
 `--outputs` declares the cells that matter, and is required for any workbook outside the corpus. There is no default: guessing which cells a decision rests on is the one judgement this tool must not make on its own.
 
-`--materiality` arrives with the gate in T21. Today every verified finding is reported.
+`--materiality` sets the fraction of a declared output a correction must move to be shown, and defaults to the threshold in `config.yaml`, currently 1%. Findings below it are counted and named in the report as suppressed rather than dropped.
 
 Materia never writes to the input file. `--repair` asks about each finding, defaults to no, and writes approved changes to a copy at a new path:
 

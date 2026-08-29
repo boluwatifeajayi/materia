@@ -1,22 +1,8 @@
 {
-  "adjudicated": 22,
-  "candidates": 22,
+  "adjudicated": 21,
+  "candidates": 21,
   "findings": [],
-  "formulas": 738,
-  "immaterial": [
-    {
-      "address": "Costs!Z12",
-      "impact": {
-        "P&L!AA15": -4164.8,
-        "Valuation!B7": -28321.0
-      },
-      "proposed_formula": "=ROUND(Y12*(1+Assumptions!$B$18),0)",
-      "relative": {
-        "P&L!AA15": 0.00021655186925267008,
-        "Valuation!B7": 0.00029991391863739176
-      }
-    }
-  ],
+  "formulas": 739,
   "inconclusive": [],
   "intentional": [
     "Costs!C12",
@@ -45,9 +31,9 @@
   "provider": "openai",
   "stopped": null,
   "tokens": {
-    "in": 205919,
-    "out": 8956
+    "in": 168737,
+    "out": 8260
   },
   "violations": [],
-  "workbook": "C11.xlsx"
+  "workbook": "C09.xlsx"
 }
