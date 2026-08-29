@@ -52,7 +52,7 @@ Two purposes: make sure nothing required is missing, and make sure every rubric 
 | Criterion | Points | Where it is earned | Check |
 | --- | --- | --- | --- |
 | Problem & User Value | 15 | README 1 to 3. Named user, specific bottleneck, asymmetric cost of the miss. | [ ] |
-| Agent Solution & Engineering | 30 | Two tools, four verdict schema, `INTENTIONAL` as first class, recompute gate enforced in code, materiality gate. `docs/ARCHITECTURE.md` explains why each choice exists. **Largest block, weight the write up accordingly.** | [ ] |
+| Agent Solution & Engineering | 30 | Two tools, three verdict schema with four report buckets, `INTENTIONAL` as first class, recompute gate enforced in code, materiality gate. `docs/ARCHITECTURE.md` explains why each choice exists. **Largest block, weight the write up accordingly.** | [ ] |
 | End to End Quality | 20 | A real report a person would sign their name to. Consequence first ordering, evidence cards, suppressed count shown, repairs on a copy behind approval. Nothing reads as an AI draft. | [ ] |
 | Measured Improvement | 15 | `EVALUATION.md` 5 with generated numbers. Changelog isolates each contribution against the same corpus and metric. | [ ] |
 | Reproducibility | 15 | `REPRODUCTION.md`, no Excel dependency, seeded corpus, committed checksums, `make all`. | [ ] |

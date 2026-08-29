@@ -68,16 +68,17 @@ It has exactly two tools:
 | `recompute_with_patch` | `(cell, proposed_formula) -> {output: delta}` | Test a hypothesis and get the true impact |
 | `inspect_range` | `(sheet, range) -> cells with formulas` | Pull more surrounding context |
 
-It must return one of four verdicts:
+It must return exactly one of three verdicts:
 
 - `ERROR` with a proposed formula and a verified delta
 - `INTENTIONAL` with the evidence that suggests the difference is deliberate
 - `INCONCLUSIVE`
-- `IMMATERIAL` (may also be assigned by the gate)
+
+**The adjudicator never returns `IMMATERIAL`.** That verdict exists, but only the materiality gate assigns it (section 7). The model judges correctness. The gate judges consequence. Splitting them this way is what keeps the four report buckets mutually exclusive, so they sum exactly to the detector candidate count. If the model could also call something immaterial, a candidate could be counted twice or fall between the two, and the invariant in the data flow constraints below would not be checkable.
 
 **`INTENTIONAL` is a first class success state.** This is the single most important detail in the design. If the only way to complete the task is to produce a finding, the model produces findings, including for the hardcoded actuals row in `C10`. Giving "this is fine, and here is why" the same status as a finding is what makes declining possible.
 
-**The model cannot state an impact it has not measured.** Any number in a report comes from `recompute_with_patch`, not from the model's text. This constraint is enforced in the reporter, which drops any finding whose delta does not have a matching tool result in the trajectory.
+**The model cannot state an impact it has not measured.** Any number in a report comes from `recompute_with_patch`, not from the model's text. This constraint is enforced in the renderer, which drops any finding whose delta does not have a matching tool result in the trajectory.
 
 ## 6. Recompute engine
 
@@ -94,9 +95,15 @@ The engine is the load bearing component of the whole submission. Every impact n
 
 A finding is shown only if its verified delta on at least one declared output exceeds the threshold (default 1% of that output's value).
 
+The gate is the only component that assigns `IMMATERIAL`. It takes the candidates the adjudicator returned as `ERROR`, checks each verified delta against the threshold, and reclassifies the ones that fall below it from `ERROR` to `IMMATERIAL`. `INTENTIONAL` and `INCONCLUSIVE` candidates never reach the gate, because a candidate the model did not call an error has no delta to weigh.
+
+That ordering is deliberate. Correctness is a question about the workbook and the model can answer it from evidence. Consequence is a question about a threshold and a measured number, so it is settled in code, after the fact, where it can be audited and re-run at a different threshold without another model call.
+
 Everything below the threshold is counted and summarised, never silently dropped. The report always states how many anomalies were detected, how many survived hypothesis testing, and how many were suppressed as immaterial. Suppression the user cannot see is indistinguishable from a bug.
 
 ## 8. Reporter and repair
+
+Two things share the name "reporter" and they are different components. The **renderer** is deterministic code: it builds the evidence cards and runs the trace cross check. The **report writer agent** is an LLM call that turns those verified findings into prose (`docs/AGENT_INSTRUCTIONS.md` section 2). The renderer runs first and constrains what the agent is given, so the cross check applies to both.
 
 Evidence card per finding: cell, current formula, expected formula, peer evidence, dependency path, verified delta per output, confidence, proposed repair.
 
@@ -116,11 +123,11 @@ Two implementations, used for different purposes and never mixed within one scor
 | Provider | Role | Why |
 | --- | --- | --- |
 | **Groq** | Dev-loop iteration | Fast inference, generous free tier, OpenAI-compatible tool-calling schema, so it is the cheapest place to debug the adjudicator's tool call sequence repeatedly against the corpus |
-| **Anthropic (`claude-sonnet-4-6`)** | Final scored run | Required by `EVALUATION.md`: solution and baseline must run on the same model, so the headline table isolates the workflow's contribution rather than a difference in raw model capability |
+| **Anthropic (`claude-sonnet-5`)** | Final scored run | Required by `EVALUATION.md`: solution and baseline must run on the same model, so the headline table isolates the workflow's contribution rather than a difference in raw model capability |
 
 Selected by `MATERIA_PROVIDER` env var (`groq` or `anthropic`), read once at startup. `config.yaml` records which provider produced any given `results/` directory, so a stray dev-loop run can never be mistaken for the scored one.
 
-Each provider gets a thin adapter translating `recompute_with_patch` and `inspect_range` into that provider's native tool schema, and normalising the response back into `AgentResponse`. This is the only provider-specific code in the system; the adjudicator, reporter, gate, and reporter logic are provider agnostic.
+Each provider gets a thin adapter translating `recompute_with_patch` and `inspect_range` into that provider's native tool schema, and normalising the response back into `AgentResponse`. This is the only provider-specific code in the system; the adjudicator, the report writer agent, the gate and the renderer are provider agnostic.
 
 **What this abstraction is not for:** it is not a claim of multi-provider robustness as a feature. It exists purely so development iteration is fast and free, while the number that ships in `EVALUATION.md` comes from one accountable model. Only the Anthropic run is ever cited as a result.
 
@@ -133,5 +140,5 @@ Each provider gets a thin adapter translating `recompute_with_patch` and `inspec
 Three invariants, each enforced in code and each testable:
 
 1. **The input workbook is never mutated.** Opened read only. Repairs go to a new path.
-2. **Every reported number traces to a tool result.** Enforced in the reporter, verifiable in the trajectory.
-3. **Nothing is dropped silently.** Every detected candidate appears in the report in one of four buckets: finding, intentional, inconclusive, immaterial. The buckets sum to the detector count.
+2. **Every reported number traces to a tool result.** Enforced in the renderer, verifiable in the trajectory.
+3. **Nothing is dropped silently.** Every detected candidate appears in the report in exactly one of four buckets: finding, intentional, inconclusive, immaterial. The first three come from the adjudicator's three verdicts, the fourth is assigned only by the gate reclassifying an `ERROR` that fell below threshold. The buckets are mutually exclusive and sum to the detector count.

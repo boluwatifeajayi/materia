@@ -4,6 +4,8 @@ Written for someone starting from a clean machine with nothing installed. Follow
 
 Total wall clock: about 25 minutes, of which roughly 20 is the two agent runs. Total API cost: approximately `[TBD]` USD.
 
+> **Every runtime and cost figure in this guide is an estimate written before the pipeline existed.** T25 runs `make all` from a fresh clone and replaces each one with a measured value. Until then, treat them as rough expectations, not results.
+
 ---
 
 ## 1. Requirements

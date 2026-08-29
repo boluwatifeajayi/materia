@@ -44,7 +44,7 @@ Afternoon, goal: baseline measured, agent loop working.
 - [ ] **Run the baseline over all 12. Record it. This is your comparison and it is done before your solution exists, which removes any suspicion you tuned it.**
 - [ ] Trace capture
 - [ ] Adjudicator agent, `recompute_with_patch` and `inspect_range` tools
-- [ ] Four verdict schema with `INTENTIONAL` as first class
+- [ ] Three verdict schema with `INTENTIONAL` as first class, `IMMATERIAL` owned by the gate
 - [ ] Reporter with the tool result cross check that drops unbacked figures
 
 **Cutoff 22:00.** Agent loop runs end to end on one workbook. Not polished, just working.
@@ -100,8 +100,8 @@ If you fall behind, cut from the top:
 Paste this at the start of the first session. Point it at this repo with all docs present.
 
 ```
-Read README.md, docs/ARCHITECTURE.md, EVALUATION.md and REPRODUCTION.md
-before writing any code. They specify what we are building and how it is
+Read README.md, docs/ARCHITECTURE.md, docs/EVALUATION.md and
+docs/REPRODUCTION.md before writing any code. They specify what we are building and how it is
 evaluated. Treat them as the spec.
 
 Build in this order, and do not skip ahead:

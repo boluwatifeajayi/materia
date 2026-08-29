@@ -8,7 +8,7 @@ These are the live strings. They are loaded from `src/materia/prompts/` at runti
 
 ## 1. Adjudicator agent (solution)
 
-Called once per candidate. Model: `claude-sonnet-4-6`. Tools: `recompute_with_patch`, `inspect_range`.
+Called once per candidate. Model: `claude-sonnet-5`. Tools: `recompute_with_patch`, `inspect_range`.
 
 ### System prompt
 
@@ -29,15 +29,18 @@ You have two tools:
       Returns the formulas in a range. Use it when the peer group you were
       given is not enough context.
 
-You must return exactly one verdict:
+You must return exactly one of these three verdicts:
 
   ERROR         The cell is wrong. Requires a proposed formula AND a delta
                 that you obtained from recompute_with_patch.
   INTENTIONAL   The cell differs from its peers on purpose. Requires the
                 specific evidence that indicates intent.
   INCONCLUSIVE  The evidence does not support a confident verdict.
-  IMMATERIAL    The cell is wrong but correcting it does not meaningfully
-                change any declared output.
+
+Decide whether the cell is wrong. Do not decide whether it matters enough to
+report. A separate deterministic gate compares your measured delta against a
+threshold afterwards, so a real error with a small delta is still ERROR. Say
+what is true about the formula and let the gate size it.
 
 INTENTIONAL is a correct and valuable answer, not a failure to find something.
 Financial models are full of deliberate pattern breaks: hardcoded actuals rows,
@@ -86,7 +89,7 @@ Declared output cells and current values:
 
 ```json
 {
-  "verdict": "ERROR | INTENTIONAL | INCONCLUSIVE | IMMATERIAL",
+  "verdict": "ERROR | INTENTIONAL | INCONCLUSIVE",
   "confidence": "high | medium | low",
   "proposed_formula": "string or null",
   "evidence": ["specific observation with a cell reference", "..."],
@@ -95,13 +98,15 @@ Declared output cells and current values:
 }
 ```
 
-`measured_deltas` is cross checked against the trajectory by the reporter. Any figure without a matching `recompute_with_patch` result causes the finding to be dropped and logged as a schema violation. This is the enforcement mechanism for rule 1, and it is a code check rather than a request.
+There is no `IMMATERIAL` verdict here on purpose. The materiality gate assigns it, by reclassifying an `ERROR` whose verified delta falls below the threshold. See `docs/ARCHITECTURE.md` sections 5 and 7.
+
+`measured_deltas` is cross checked against the trajectory by the renderer. Any figure without a matching `recompute_with_patch` result causes the finding to be dropped and logged as a schema violation. This is the enforcement mechanism for rule 1, and it is a code check rather than a request.
 
 ---
 
 ## 2. Report writer agent (solution)
 
-Called once per workbook, after adjudication. Model: `claude-sonnet-4-6`. No tools.
+Called once per workbook, after adjudication. Model: `claude-sonnet-5`. No tools.
 
 ### System prompt
 
@@ -133,7 +138,7 @@ Write plainly. This is a document a person signs their name to.
 
 ## 3. Baseline agent
 
-Given the same task, the same file, and freedom to write its own code. Model: `claude-sonnet-4-6`, same as the solution. Tools: `bash`, `read_file`, `write_file` in a sandboxed working directory with the workbook copied in.
+Given the same task, the same file, and freedom to write its own code. Model: `claude-sonnet-5`, same as the solution. Tools: `bash`, `read_file`, `write_file` in a sandboxed working directory with the workbook copied in.
 
 Turn cap and token budget are set equal to the solution's per workbook average. See `config.yaml`.
 

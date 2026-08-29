@@ -58,14 +58,14 @@ Measured, not estimated. For each of three workbooks, a reviewer starts a timer,
 | `C01` to `C08` | Seeded | 1 to 3 mutations each, drawn from the taxonomy below |
 | `C09` | Clean control | No mutations |
 | `C10` | Clean control | No mutations, but contains three *legitimate* pattern breaks (hardcoded actuals row, first period column, deliberate manual override with a comment) |
-| `C11` | Hard case | Contains a real mutation that is genuinely immaterial (changes an output by 0.02%). Correct behaviour is to detect and suppress it. |
+| `C11` | Hard case | Contains a real mutation that is genuinely immaterial. Generator target: moves a declared output by less than 0.1%. Actual delta `[TBD]`, measured by the recompute engine at injection time and recorded in the manifest. Correct behaviour is to detect and suppress it. |
 | `C12` | Hard case | Contains one in taxonomy mutation and one out of taxonomy mutation |
 
 `C10` is the workbook that breaks naive tools, and `C11` is the one that tests the actual thesis. Both are discussed explicitly in the write up.
 
 ### Workbook construction
 
-Generated programmatically by `src/corpus/generate.py` so the corpus is reproducible from a seed rather than shipped as opaque binaries. Each is a small but realistic three statement forecast:
+Generated programmatically by `src/materia/corpus/generate.py` so the corpus is reproducible from a seed rather than shipped as opaque binaries. Each is a small but realistic three statement forecast:
 
 - Assumptions sheet (growth rates, margins, headcount)
 - Revenue build, 24 monthly columns
@@ -75,7 +75,7 @@ Generated programmatically by `src/corpus/generate.py` so the corpus is reproduc
 
 Between 400 and 1,500 formulas each. Small enough to run fast, structured enough that peer group reasoning is meaningful.
 
-**Declared output cells** (what materiality is measured against) are recorded per workbook in `corpus/manifest.json`: EBITDA total, enterprise value, closing cash. In production this would be a user input. For evaluation it is fixed and published.
+**Declared output cells** (what materiality is measured against) are recorded per workbook in `corpus/manifest.json`: EBITDA total and enterprise value. Two outputs, both produced by the sheets the generator builds. In production this would be a user input. For evaluation it is fixed and published.
 
 ---
 
@@ -83,7 +83,7 @@ Between 400 and 1,500 formulas each. Small enough to run fast, structured enough
 
 Grounded in the published spreadsheet error classifications (Panko's taxonomy, EuSpRIG error categories) rather than invented, so the corpus reflects errors that occur in the wild.
 
-Mutations are injected programmatically by `src/corpus/mutate.py`. The agent never sees the manifest. Each mutation records: cell, original formula, mutated formula, family, and the true delta on each declared output cell (computed by the recompute engine, so materiality is known ground truth).
+Mutations are injected programmatically by `src/materia/corpus/mutate.py`. The agent never sees the manifest. Each mutation records: cell, original formula, mutated formula, family, and the true delta on each declared output cell (computed by the recompute engine, so materiality is known ground truth).
 
 ### In taxonomy: the detectors target these
 

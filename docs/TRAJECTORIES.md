@@ -51,6 +51,8 @@ Produces a readable markdown transcript with tool calls, responses, and the deci
 
 Four, chosen to show the system working, the system declining, the system correcting itself, and the baseline failing. Each has a short written preamble explaining what to watch for.
 
+> The file names and cell references in this table are illustrative. The real ones are whatever the scored runs produce, and T24 fills them in. If one of the four situations does not occur in an actual run, it is reported as absent rather than manufactured.
+
 | # | File | Agent | Shows |
 | --- | --- | --- | --- |
 | 1 | `solution/C03_adjudicator_H42` | Adjudicator | The clean win. Detector fires on a formula replaced by a constant, model hypothesises the intended `SUM`, calls `recompute_with_patch`, gets a large verified delta, returns `ERROR`. The impact figure in the final report is visible in the tool response. |

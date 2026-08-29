@@ -36,7 +36,7 @@ The tooling that exists does not solve it either. Deterministic spreadsheet lint
 
 Because the cost of the miss is asymmetric and large. Spreadsheet error research (Panko, EuSpRIG) has documented significant error rates in operational workbooks for over twenty years, and the published horror stories are financial rather than cosmetic. A single reference error in a forecast row propagates through gross profit, EBITDA and any multiple applied to it.
 
-The value of a tool here is not "finds errors". It is **finds the two that matter and proves it, so that checking them takes four minutes instead of four hours.**
+The value of a tool here is not "finds errors". It is **finds the few that matter and proves it, so that checking the model takes minutes instead of hours.** That is a claim to be measured rather than asserted: the human time protocol is in `docs/EVALUATION.md` section 1 and the result is `[TBD]` until the timed trials run.
 
 ## 4. What we are building
 
@@ -51,13 +51,15 @@ Materia takes an `.xlsx` model and returns a small number of evidence backed fin
 
 And critically, the count of anomalies it **suppressed** and why.
 
-```
-MODEL HEALTH                      acme_forecast_v11.xlsx
+> **Layout only. Every figure below is a `[TBD]` placeholder.** Nothing in this block has been measured. `make eval` fills it from `results/`, and until it does, no number here may be quoted anywhere.
 
-  14,283  formulas parsed
-      37  structural anomalies detected
-       6  survived hypothesis testing
-       2  material findings              <-- what the user reads
+```
+MODEL HEALTH                      <workbook>.xlsx
+
+  [TBD]  formulas parsed
+  [TBD]  structural anomalies detected
+  [TBD]  survived hypothesis testing
+  [TBD]  material findings               <-- what the user reads
 ```
 
 That funnel is the product. Everything above the last line is what existing tools already give you. The last line is what makes anyone use it twice.
@@ -144,7 +146,7 @@ This is a deliberate choice, not a gap we are hiding. A tool that silently mis-e
 
 ## 7. Improvement changelog
 
-Full evaluation methodology in `EVALUATION.md`. Every row below is scored on the **same 12 case corpus** with the **same metric**.
+Full evaluation methodology in `docs/EVALUATION.md`. Every row below is scored on the **same 12 case corpus** with the **same metric**.
 
 > Fill `[TBD]` as each experiment completes. Do not reconstruct this at the end. An entry written after the fact is not evidence.
 
@@ -186,14 +188,17 @@ What we would build differently next time: design the verification tool before w
 
 ```
 README.md                     this file
-REPRODUCTION.md               clean environment to reproduced result
-EVALUATION.md                 corpus, mutation taxonomy, metrics, results
-BUILD_PLAN.md                 72 hour sprint plan (working doc, not a deliverable)
-SUBMISSION_CHECKLIST.md       rubric line to artifact map
-VIDEO_SCRIPT.md               5 minute solution video script
+CLAUDE.md                     working agreement for the build
+TASKS.md                      task list and status
+PROMPTS.md                    the prompt for each task
+docs/REPRODUCTION.md          clean environment to reproduced result
+docs/EVALUATION.md            corpus, mutation taxonomy, metrics, results
 docs/ARCHITECTURE.md          component design and the decisions behind it
 docs/AGENT_INSTRUCTIONS.md    the instructions that shape each agent
 docs/TRAJECTORIES.md          trajectory capture format and index
+docs/SUBMISSION_CHECKLIST.md  rubric line to artifact map
+docs/VIDEO_SCRIPT.md          5 minute solution video script
+docs/BUILD_PLAN.md            72 hour sprint plan (working doc, not a deliverable)
 src/                          implementation
 corpus/                       generated workbooks and mutation manifests
 results/                      evaluation output, committed
