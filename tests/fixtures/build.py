@@ -184,6 +184,58 @@ def deep_chain(path: Path) -> Path:
     return path
 
 
+def copied_formulas(path: Path) -> Path:
+    """Rows of copied formulas, one of them filled from the wrong origin.
+
+    Every row here is a block that should normalise to a single R1C1 token.
+    Model!F17 is the planted break: it was dragged from D17 instead of E17,
+    which is the fill handle error that motivates the whole normaliser.
+
+    Row 17 sits twelve rows below the growth assumptions in row 5, so the
+    correct token is the one in docs/ARCHITECTURE.md section 2.
+    """
+    workbook = openpyxl.Workbook()
+
+    assumptions = workbook.active
+    assumptions.title = "Assumptions"
+    assumptions["B2"] = 0.35
+
+    model = workbook.create_sheet("Model")
+    model["B2"] = 0.4
+    for column in "BCDEFGH":
+        model[f"{column}5"] = 0.03
+
+    # Horizontal copy, relative references. F17 is the planted break.
+    model["B17"] = 1000
+    for column, previous in zip("CDEFGH", "BCDEFG"):
+        model[f"{column}17"] = f"={previous}17*(1+{previous}5)"
+    model["F17"] = "=D17*(1+E5)"
+
+    # Absolute reference, unchanged by the copy.
+    for column in "CDEFGH":
+        model[f"{column}19"] = f"={column}17*$B$2"
+
+    # Mixed, locked row.
+    for column in "CDEFGH":
+        model[f"{column}21"] = f"={column}17*{column}$5"
+
+    # Mixed, locked column.
+    for column in "CDEFGH":
+        model[f"{column}23"] = f"=$B17*{column}17"
+
+    # Cross sheet, which keeps its qualifier through normalisation.
+    for column in "CDEFGH":
+        model[f"{column}25"] = f"=Assumptions!$B$2*{column}17"
+
+    # Vertical copy, to prove the same holds down a column.
+    for row in range(10, 15):
+        model[f"I{row}"] = row
+        model[f"J{row}"] = f"=I{row}*2"
+
+    workbook.save(path)
+    return path
+
+
 def unsupported_function(path: Path) -> Path:
     """A workbook using a function outside the grammar."""
     workbook = openpyxl.Workbook()
@@ -229,6 +281,7 @@ BUILDERS = {
     "circular_via_range": circular_via_range,
     "circular_cross_sheet": circular_cross_sheet,
     "deep_chain": deep_chain,
+    "copied_formulas": copied_formulas,
     "unsupported_function": unsupported_function,
     "unsupported_function_lookalike": unsupported_function_lookalike,
     "unsupported_function_nested": unsupported_function_nested,

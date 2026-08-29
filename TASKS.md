@@ -15,7 +15,7 @@ Status values: `TODO`, `IN PROGRESS`, `DONE`, `CUT`.
 | --- | --- | --- | --- |
 | T01 | Repo scaffold | DONE | `pyproject.toml`, package layout, `Makefile` with all targets from `docs/REPRODUCTION.md` stubbed, `.gitignore`, `.env.example`, `pytest` runs and finds zero tests without erroring |
 | T02 | Preflight validator | DONE | Rejects VBA, external links, array formulas, circular refs, unsupported functions, each with a named reason. Unit tested against a fixture workbook per rejection type. |
-| T03 | Parser and R1C1 normaliser | TODO | Reads formulas via `openpyxl`, normalises A1 to R1C1. Tested: a row of copied formulas all normalise to one identical token, and a broken one does not. |
+| T03 | Parser and R1C1 normaliser | DONE | Reads formulas via `openpyxl`, normalises A1 to R1C1. Tested: a row of copied formulas all normalise to one identical token, and a broken one does not. |
 
 ## Phase 1: The engine
 > The load bearing part. Everything downstream depends on these numbers being right.
@@ -102,7 +102,7 @@ If behind, cut in this order. Do not improvise cuts.
 
 | Phase | Tasks | Done |
 | --- | --- | --- |
-| 0 Foundation | T01 to T03 | 2/3 |
+| 0 Foundation | T01 to T03 | 3/3 |
 | 1 Engine | T04 to T05 | 0/2 |
 | 2 Graph and corpus | T06 to T09 | 0/4 |
 | 3 Detection | T10 to T11 | 0/2 |

@@ -18,9 +18,9 @@ from pathlib import Path
 
 import networkx as nx
 import openpyxl
-from openpyxl.utils import get_column_letter
-from openpyxl.utils.cell import range_boundaries
 from openpyxl.worksheet.formula import ArrayFormula
+
+from materia.parse import REFERENCE, parse_reference, strip_string_literals
 
 # README.md section 6. Do not extend without changing that section and the
 # recompute engine in the same commit: every function here has to be
@@ -87,45 +87,22 @@ class PreflightReport:
 
 
 # --- formula scanning helpers ---------------------------------------------
-
-# Excel escapes a double quote inside a string literal by doubling it.
-_STRING_LITERAL = re.compile(r'"(?:[^"]|"")*"')
+#
+# What a reference looks like is defined once, in materia.parse, and imported
+# here. Only the function grammar is preflight's own concern.
 
 # An identifier immediately followed by "(" is a function call. The name may
 # carry Excel's _xlfn. prefix, which marks a function newer than the file
 # format and is therefore never in our grammar.
 _FUNCTION_CALL = re.compile(r"(?<![A-Za-z0-9_.])([A-Za-z_][A-Za-z0-9_.]*)\s*\(")
 
-_SHEET_QUALIFIER = r"(?:(?:'[^']+'|[A-Za-z_][A-Za-z0-9_.]*)!)?"
-_CELL = r"\$?[A-Za-z]{1,3}\$?[0-9]{1,7}"
-
-# A cell or range reference. The lookbehind stops it matching the tail of an
-# identifier, and the lookahead stops it swallowing a function name that is
-# also a valid cell reference, such as LOG10( .
-_REFERENCE = re.compile(
-    rf"(?<![A-Za-z0-9_.]){_SHEET_QUALIFIER}{_CELL}(?::{_SHEET_QUALIFIER}?{_CELL})?(?!\s*\()"
-)
-
 # A reference into another workbook: [1]Sheet1!A1, '[1]Sheet 1'!A1, or a
 # reference carrying a full path.
 _EXTERNAL_REFERENCE = re.compile(r"(?:'[^']*\[[^\]]+\][^']*'|\[[^\]]+\])")
 
 
-def _strip_string_literals(formula: str) -> str:
-    """Blank out string literals so their contents are never scanned."""
-    return _STRING_LITERAL.sub('""', formula)
-
-
 def _functions_in(formula: str) -> list[str]:
-    return _FUNCTION_CALL.findall(_strip_string_literals(formula))
-
-
-def _split_reference(ref: str) -> tuple[str | None, str]:
-    """Split "Sheet1!A1" into ("Sheet1", "A1"). Unqualified gives (None, ref)."""
-    if "!" not in ref:
-        return None, ref.replace("$", "")
-    sheet, _, cell = ref.rpartition("!")
-    return sheet.strip("'"), cell.replace("$", "")
+    return _FUNCTION_CALL.findall(strip_string_literals(formula))
 
 
 # --- individual checks -----------------------------------------------------
@@ -198,7 +175,7 @@ def _check_formulas(
                     continue
 
                 formula = value
-                scannable = _strip_string_literals(formula)
+                scannable = strip_string_literals(formula)
 
                 if _EXTERNAL_REFERENCE.search(scannable):
                     raise PreflightRejected(
@@ -242,29 +219,27 @@ def _check_circular(formulas: dict[str, str], sheet_names: list[str]) -> None:
     by_sheet: dict[str, list[tuple[int, int, str]]] = {name: [] for name in sheet_names}
     for address in formulas:
         sheet, coordinate = address.split("!", 1)
-        min_col, min_row, _, _ = range_boundaries(coordinate)
-        by_sheet.setdefault(sheet, []).append((min_row, min_col, address))
+        cell = parse_reference(coordinate)
+        by_sheet.setdefault(sheet, []).append((cell.row, cell.column, address))
 
     graph = nx.DiGraph()
     graph.add_nodes_from(formulas)
 
     for address, formula in formulas.items():
         own_sheet = address.split("!", 1)[0]
-        scannable = _strip_string_literals(formula)
+        scannable = strip_string_literals(formula)
 
-        for match in _REFERENCE.finditer(scannable):
-            reference = match.group(0)
-            start, _, end = reference.partition(":")
-            sheet, first = _split_reference(start)
-            sheet = sheet or own_sheet
+        for match in REFERENCE.finditer(scannable):
+            start_text, _, end_text = match.group(0).partition(":")
+            first = parse_reference(start_text)
+            last = parse_reference(end_text) if end_text else first
+
+            sheet = (first.sheet or own_sheet).strip("'")
             if sheet not in by_sheet:
                 continue
 
-            last = _split_reference(end)[1] if end else first
-            try:
-                min_col, min_row, max_col, max_row = range_boundaries(f"{first}:{last}")
-            except ValueError:
-                continue
+            min_row, max_row = sorted((first.row, last.row))
+            min_col, max_col = sorted((first.column, last.column))
 
             for row, col, precedent in by_sheet[sheet]:
                 if min_row <= row <= max_row and min_col <= col <= max_col:

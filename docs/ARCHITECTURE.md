@@ -46,6 +46,10 @@ Preflight runs before the dependency graph exists, so it cannot use it. Cycle de
 
 `G17 = F17*(1+F5)` and `H17 = G17*(1+G5)` both normalise to `RC[-1]*(1+R[-12]C[-1])`. A cell in that row that does not normalise to the same token is the signal every detector is built on.
 
+Absolute and mixed references are the part worth care. `$B$5` becomes a fixed `R5C2` and `B5` becomes an offset, so the four forms of one address produce four different tokens. Treating the dollar sign as decoration would collapse them into one and silently destroy the signal, which is why each form has its own test.
+
+`src/materia/parse.py` owns the definition of what a reference looks like. Preflight imports it rather than carrying a second copy, so the grammar cannot drift between the component that rejects formulas and the component that reads them.
+
 ## 3. Dependency graph
 
 `networkx` DiGraph, one node per non empty cell, edges from precedent to dependent, cross sheet edges included.
