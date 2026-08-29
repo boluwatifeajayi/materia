@@ -39,7 +39,7 @@ Status values: `TODO`, `IN PROGRESS`, `DONE`, `CUT`.
 
 | ID | Task | Status | Acceptance |
 | --- | --- | --- | --- |
-| T10 | Five detectors | TODO | One per in taxonomy family. Emit candidates with a structural reason and peer group evidence. Tuned for recall. Tested: each detector fires on its own mutation family in the corpus. |
+| T10 | Five detectors | DONE | One per in taxonomy family. Emit candidates with a structural reason and peer group evidence. Tuned for recall. Tested: each detector fires on its own mutation family in the corpus. |
 | T11 | Evaluator and Iteration 1 run | TODO | Scores a result set against the manifest. Produces `results/headline.md` and `results/per_workbook.md`. **Then: run detectors alone over the corpus and record the result as changelog Iteration 1 in `README.md`.** This is the number that answers "doesn't Macabacus already do this". |
 
 > **Checkpoint.** If detector-only precision comes back high, the thesis is wrong. Stop and tell me before continuing.
@@ -105,7 +105,7 @@ If behind, cut in this order. Do not improvise cuts.
 | 0 Foundation | T01 to T03 | 3/3 |
 | 1 Engine | T04 to T05 | 2/2 |
 | 2 Graph and corpus | T06 to T09 | 4/4 |
-| 3 Detection | T10 to T11 | 0/2 |
+| 3 Detection | T10 to T11 | 1/2 |
 | 4 Agent layer | T12 to T17 | 0/6 |
 | 5 Baseline | T18 to T20 | 0/3 |
 | 6 Thesis | T21 to T22 | 0/2 |
