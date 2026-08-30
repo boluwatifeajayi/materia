@@ -2,7 +2,6 @@
 
 **An agent that finds silent errors in financial models, proves what they cost, and throws away the ones that do not matter.**
 
-Submission for the micro1 Frontier Engineering Challenge 2026 (Agentic Workflows Hackathon), 28 to 31 August 2026.
 
 > Name is swappable. It is used consistently across code and docs, so a find and replace on `materia` / `Materia` renames the whole project.
 
@@ -183,7 +182,9 @@ This was predicted as "the agent rationalises", which turned out to be half righ
 
 **Our own code did the same thing.** `from_trajectories` rebuilt a workbook's audit by globbing every `.jsonl` in a directory. That was true while a directory held one workbook. When the corpus sweep put twelve in one place, rebuilding any single workbook silently picked up all 267 verdicts and reported them as that workbook's, and it wrote twelve result files that way before anything noticed. Every trace record carries the workbook name in `run_start`. The function read past it.
 
-The common shape is the same in all three. The information needed to be correct was present and reachable. Nothing compared the output against it. That the third case is ordinary Python and no model is involved is the useful part: this is not a property of language models, it is a property of unverified assertions, and a codebase built to distrust a model's numbers has no excuse for trusting its own.
+**And a fourth, found while auditing this list.** The results table in `docs/EVALUATION.md` reported the baseline at 100% precision and 7% recall for six commits. `results/headline.md`, written by the same command in the same run, said 83% and 71%. A test was passing `--results` to a temporary directory while leaving `--document` pointing at the real file, so every `make verify` quietly overwrote the doc with a one finding fixture's scores. It was found only because the audit re-derived every published figure from `results/` instead of reading the file and believing it. This one is worth the most of the four: the wrong numbers were in the submission, they were wrong in our favour, and the tooling built to stop exactly this had been pointed at the model and never at itself.
+
+The common shape is the same in all four. The information needed to be correct was present and reachable. Nothing compared the output against it. That the last two cases are ordinary Python with no model involved is the useful part: this is not a property of language models, it is a property of unverified assertions, and a codebase built to distrust a model's numbers has no excuse for trusting its own.
 
 Each fix is the same move, a mechanical check that reads the source of truth and compares:
 

@@ -71,14 +71,14 @@ Worked top to bottom in T28. `[x]` means verified, with the check named. `[~]` m
 - [x] Data is synthetic. Twelve workbooks generated from seed 20260828, no external data of any kind.
 - [x] No credentials in the submission. Every blob in all 45 commits scanned for `sk-`, `gsk_` and `sk-ant-` shaped strings: none. `.env` was never committed. Keys are read from `os.environ` only, and provider errors are scrubbed of the account id before they reach a trajectory.
 - [x] Every claim about results tied to submitted evidence. The results table, all four changelog rows, the video script comparison and the impact figures quoted in prose are asserted against `results/scores.json` and `corpus/manifest.json` by test.
-- [ ] Judges have enough access to run it and reproduce the main result. **The repository is private.** See the final pass.
+- [x] Judges have enough access to run it and reproduce the main result. The repository is public. The deterministic half of `make all` needs no key; the agent half needs the reader's own API key, which `docs/REPRODUCTION.md` section 2 states.
 
 ## Final pass
 
 - [x] No `[TBD]` markers left in README, EVALUATION or REPRODUCTION. Enforced by `tests/test_evaluate.py::TestTheDocsCarryNoUnfilledPlaceholders`, which covers VIDEO_SCRIPT too.
 - [x] Every number in every doc regenerated from `results/`, none hand typed. This audit found the opposite was true: the results table in `docs/EVALUATION.md` had read 100% and 7% for the baseline for six commits, against 83% and 71% in `results/headline.md`. Cause was a CLI test that passed `--results` to a temp directory but left `--document` defaulting to the real file, so every `make verify` overwrote the doc with a one finding fixture's scores. Fixed, and both the leak and the agreement are now asserted by test.
 - [ ] `make all` run once more from a clean clone. Blocked: `make all` includes `baseline` and `solution`, which need API credit.
-- [ ] Repo public or judge access granted. **`gh repo view` reports PRIVATE.** Nothing else on this list matters until this changes.
+- [x] Repo public or judge access granted. `gh repo view` reports PUBLIC and an unauthenticated fetch of the API returns 200, which is how a judge reaches it.
 - [ ] Video uploaded, link works in an incognito window. Not recorded.
 - [ ] Submitted with buffer before 18:00 UTC Sunday
 
