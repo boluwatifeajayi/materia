@@ -81,20 +81,33 @@ Status values: `TODO`, `IN PROGRESS`, `DONE`, `CUT`.
 | T25 | Clean clone reproduction | TODO | **Fresh clone, fresh venv, `make all` start to finish.** Fix whatever breaks. This is 15 rubric points and the only way to know is to actually do it. |
 | T26 | Variance and sensitivity | CUT (needs API credits; cut list item 1 and 3) | `make eval-repeat N=3` producing `results/variance.md`. Sensitivity at three materiality thresholds to `results/sensitivity.md`. Cuttable if behind. |
 | T27 | Docs finalisation | DONE | Every `[TBD]` filled from `results/`. Changelog complete including the removed experiment. Failure mode section written from what actually happened, not from the prediction currently in the doc. |
-| T28 | Submission audit | DONE (2 blockers open: repo is private, video not recorded) | Work `docs/SUBMISSION_CHECKLIST.md` top to bottom. Repo public. No keys committed. No `[TBD]` anywhere. Answer the six self check questions. |
+| T28 | Submission audit | DONE | Work `docs/SUBMISSION_CHECKLIST.md` top to bottom. Repo public. No keys committed. No `[TBD]` anywhere. Answer the six self check questions. |
 | T29 | HTML report view | TODO (optional) | Only if time remains after T28. Static HTML report of the findings. This is the one task where Playwright testing applies. **Do not start this before T28 is done.** |
 
 ---
+
+## Phase 8: Stretch, web interface
+> **Hard gate: do not start any of this until T28 is DONE.** Everything here is optional and sits outside the scored reproduction path. The engine is finished and measured; this phase wraps it and must never reach back into it.
+>
+> **Cut the whole phase if** any task in it threatens submission readiness, or if the engine would need a change to accommodate the web layer. The dependency runs one way. If the wrapper is awkward, the wrapper is wrong.
+
+| ID | Task | Status | Acceptance |
+| --- | --- | --- | --- |
+| T30 | FastAPI wrapper, no engine changes | TODO | A thin `src/materia/web/app.py` that imports and calls the existing `audit()` pipeline directly. No duplication of detector, recompute, graph or agent logic. One endpoint, `POST /audit`, accepting an uploaded `.xlsx` and returning an audit id or a preflight rejection reason. Engine code under `src/materia/` untouched. Tested with `curl` against a real workbook. |
+| T31 | Live progress streaming | TODO | `GET /audit/{id}/stream` as server sent events, sourced from the existing T13 trace hooks and the record types in `docs/TRAJECTORIES.md`, not a second logging system. Tested with `curl --no-buffer`, confirming records arrive incrementally rather than in one block at the end. |
+| T32 | Frontend | TODO | A single page: upload a workbook, watch the funnel and evidence cards populate live from the event stream. Design direction is in `PROMPTS.md` and is not optional. Monospace for every number, cell reference and formula; sans serif for prose and labels only; near black background; one muted accent used sparingly; sharp corners; dense and information forward. The funnel is the centrepiece, styled as a data structure populating live rather than a progress bar. Evidence cards read as an audit report, not a chat bubble. Ground the look in real products before finalising it and note what came from where. Verify with Playwright at 1080p if available. |
+| T33 | Reproduction boundary check | TODO | A short `README.md` section describing the interface as optional and outside the scored reproduction path. Then, as a literal test, move `src/materia/web/` out of the tree, run `make all`, confirm it passes with zero errors, and put the directory back. Report that specific result explicitly. |
 
 ## Cut list
 
 If behind, cut in this order. Do not improvise cuts.
 
-1. T29 HTML report
-2. T26 variance and sensitivity
-3. Detectors `M4` and `M5` in T10, and the corresponding corpus mutations. Reduce and say so in the docs.
-4. The report writer agent in T22, render from the T16 deterministic template instead
-5. Human time measurement in T27, report as not measured rather than estimated
+1. All of Phase 8, T30 to T33. It is stretch work outside the scored path.
+2. T29 HTML report
+3. T26 variance and sensitivity
+4. Detectors `M4` and `M5` in T10, and the corresponding corpus mutations. Reduce and say so in the docs.
+5. The report writer agent in T22, render from the T16 deterministic template instead
+6. Human time measurement in T27, report as not measured rather than estimated
 
 **Never cut:** the two clean control workbooks, the out of taxonomy mutations, T19 baseline run, the recompute cross check in T16, T25 clean clone test.
 
@@ -110,3 +123,4 @@ If behind, cut in this order. Do not improvise cuts.
 | 5 Baseline | T18 to T20 | 3/3 |
 | 6 Thesis | T21 to T22 | 2/2 |
 | 7 Deliverables | T23 to T29 | 4/7 |
+| 8 Stretch, web | T30 to T33 | 0/4 |

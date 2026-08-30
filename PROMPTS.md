@@ -720,3 +720,125 @@ No new dependencies beyond what is already in pyproject.toml if avoidable.
 
 Show me a screenshot. Then commit, push, update TASKS.md, and stop.
 ```
+
+## T30 FastAPI wrapper
+
+```
+TASK T30: FastAPI wrapper. No engine changes.
+
+HARD GATE: T28 must be DONE. Phase 8 is stretch work outside the scored
+reproduction path.
+
+Build src/materia/web/app.py. It imports and calls the existing audit()
+pipeline. It does not reimplement or copy any part of the detector, the
+recompute engine, the graph, or the agent loop. If you find yourself
+needing to, stop and tell me, because that means the wrapper is wrong.
+
+One endpoint: POST /audit, accepting an uploaded .xlsx. It returns an audit
+id, or a preflight rejection with the reason named, using the reason codes
+preflight already produces.
+
+Nothing under src/materia/ outside the new web/ directory may change. If
+the web layer needs something the engine does not expose, stop and ask
+rather than adding it.
+
+FastAPI and uvicorn go in an optional extra in pyproject.toml, not in the
+base dependencies. make verify must still pass for someone who installed
+without the extra.
+
+Test with curl against a real corpus workbook, and against something that
+preflight rejects. Show me both responses.
+
+Then commit, push, update TASKS.md, and stop.
+```
+
+## T31 Live progress streaming
+
+```
+TASK T31: Live progress streaming.
+
+GET /audit/{id}/stream, server sent events.
+
+The events come from the trace hooks that already exist from T13. The
+record types are in docs/TRAJECTORIES.md. Do not build a second logging
+system alongside the trace: if the UI needs something, it needs a trace
+record, and that record is already being written.
+
+Do not buffer. The whole point is that a run takes minutes and the user
+watches it happen.
+
+Test with curl --no-buffer and show me that records arrive incrementally
+rather than in one block at the end. Timestamps in the output, so the
+incremental arrival is visible rather than asserted.
+
+Then commit, push, update TASKS.md, and stop.
+```
+
+## T32 Frontend
+
+```
+TASK T32: Frontend. One page.
+
+Upload a workbook, watch the funnel and the evidence cards populate live
+from the T31 event stream.
+
+DESIGN DIRECTION, NOT OPTIONAL.
+
+Do not produce something that looks like generic AI output. Specifically
+avoid: purple or violet gradient backgrounds, glowing blob shapes, Inter
+as the default with no alternative considered, everything in identical
+rounded-2xl cards with soft drop shadows, an excess of pastel colour,
+emoji as decoration rather than information, and marketing page hero
+spacing.
+
+Take cues from serious data and developer tooling: Linear's density and
+restraint, Vercel's dashboard typography, Stripe dashboard clarity, and a
+Bloomberg terminal adjacent feel, which suits the subject matter.
+
+Concretely:
+  - Monospace for all numbers, cell references, formulas and code like
+    content. JetBrains Mono, IBM Plex Mono or similar.
+  - A conventional sans serif for prose and labels only.
+  - Dark near black background, not pure black. One muted accent colour,
+    used sparingly rather than everywhere.
+  - Sharp or minimally rounded corners.
+  - Dense, information forward layout. This is a tool for professionals
+    reading numbers quickly.
+  - The funnel is the visual centrepiece, styled as a real data structure
+    being populated live, not a decorative progress bar.
+  - Evidence cards read as an audit report or clean terminal output, not
+    a chat bubble or a toast.
+  - No illustrations, no decorative icon libraries, no stock imagery.
+
+Before finalising the look, search for current examples from the products
+named above so the aesthetic is grounded in something real rather than a
+guess. Note briefly what you drew from where.
+
+Use Playwright to confirm the page renders and is readable at 1080p, if
+Playwright is available in the environment. Show me a screenshot.
+
+Then commit, push, update TASKS.md, and stop.
+```
+
+## T33 Reproduction boundary check
+
+```
+TASK T33: Reproduction boundary check.
+
+Add a short README section describing the web interface as optional and
+outside the scored reproduction path. It is a demonstration wrapper. The
+measured result does not depend on it.
+
+Then prove that, as a literal test rather than a claim:
+
+  1. Move src/materia/web/ out of the tree entirely.
+  2. Run make all.
+  3. Confirm it passes with zero errors.
+  4. Put the directory back.
+
+Report that specific result explicitly. If make all does not pass with the
+directory removed, the web layer has reached into the engine somewhere and
+that is a defect to fix, not a note to write.
+
+Then commit, push, update TASKS.md, and stop.
+```
