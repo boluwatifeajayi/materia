@@ -2,7 +2,7 @@
 
 Two purposes: make sure nothing required is missing, and make sure every rubric line has an artifact pointed at it. Judges score what they can find.
 
-Worked top to bottom in T28. `[x]` means verified, with the check named. `[~]` means partly true and the line says which part. `[ ]` means not done. Nothing is ticked that was not checked.
+Worked top to bottom in T28 and finalised after the video was recorded. `[x]` means verified, with the check named. `[~]` means partly true and the line says which part. `[ ]` means not done. Nothing is ticked that was not checked, and the single line ticked on the author's word rather than on a check run here says so on the line.
 
 ---
 
@@ -26,17 +26,22 @@ Worked top to bottom in T28. `[x]` means verified, with the check named. `[~]` m
 - [x] Exact commands for solution, baseline and evaluation
 - [x] Data required and expected output
 - [x] Versions, approximate runtime, approximate cost. Cost is measured: $4.95 baseline, $6.42 solution, $0.41 and $0.54 per workbook.
-- [~] **Actually tested from a fresh clone in a fresh venv.** Done in T25 for `verify`, `corpus`, `corpus-check` and `eval`, and nine untrue claims were fixed as a result. Not repeated since the baseline and solution sweeps landed, and the agent steps have never been run from a clean clone because that needs API credit this account no longer has.
+- [x] **Actually tested from a fresh clone in a fresh venv**, for everything that does not need a key. Re-run at commit `e1e4af1`, cloning the public remote into an empty directory with a new virtualenv:
+  - `make verify`: 1004 passed, 2 skipped
+  - `make corpus`: 5.8 seconds, 12 workbooks
+  - `make corpus-check`: 12 workbooks match the committed checksums
+  - `make eval` with both API key variables unset: regenerated `results/headline.md`, `results/per_workbook.md` and `results/scores.json` byte for byte identical to the committed ones, and left the working tree clean
+  - The agent steps, `make baseline` and `make solution`, were not run. They need API credit this account no longer has, and that limitation is stated in self check 5 rather than hidden here.
 
 ### 3. Solution video, up to 5 minutes
 
-- [~] Problem and simple baseline first. Scripted with real figures. Not recorded.
-- [~] One realistic execution start to finish. Scripted. Not recorded.
-- [~] Final comparison shown. Table in the script is filled from `results/` and asserted by test. Not recorded.
-- [~] Changelog explained briefly. Scripted. Not recorded.
-- [~] The change that contributed most, named, with the honest caveat that the agent loop arrived as one change and no ablation separated its parts. Not recorded.
-- [~] One removed experiment, named. Not recorded.
-- [ ] Under 5:00. **The video does not exist.** The script is finished and every number in it is real, but nothing has been recorded or uploaded.
+- [x] Problem and simple baseline first. Recorded. Sections 0:00 and 1:05.
+- [x] One realistic execution start to finish. Recorded. Section 1:35 to 3:05, played back from the saved outputs under `video/` because the agent steps need API credit.
+- [x] Final comparison shown. Recorded. Section 3:05, reading `video/07-headline.md`, which is a byte copy of `results/headline.md`.
+- [x] Changelog explained briefly. Recorded. Section 3:50, reading `video/08-changelog.md`.
+- [x] The change that contributed most, named. Recorded. The agent loop, worth 88 points of precision, with the caveat that it arrived as one change and no ablation separated its parts.
+- [x] One removed experiment, named. Recorded. The report writer agent.
+- [x] Under 5:00. Confirmed by the author after re-cutting. This is the one line on this list ticked on somebody's word rather than on a measurement taken here: no video file is in the repository, so the runtime was not checked directly.
 
 ### 4. Agent trajectories
 
@@ -77,9 +82,12 @@ Worked top to bottom in T28. `[x]` means verified, with the check named. `[~]` m
 
 - [x] No `[TBD]` markers left in README, EVALUATION or REPRODUCTION. Enforced by `tests/test_evaluate.py::TestTheDocsCarryNoUnfilledPlaceholders`, which covers VIDEO_SCRIPT too.
 - [x] Every number in every doc regenerated from `results/`, none hand typed. This audit found the opposite was true: the results table in `docs/EVALUATION.md` had read 100% and 7% for the baseline for six commits, against 83% and 71% in `results/headline.md`. Cause was a CLI test that passed `--results` to a temp directory but left `--document` defaulting to the real file, so every `make verify` overwrote the doc with a one finding fixture's scores. Fixed, and both the leak and the agreement are now asserted by test.
-- [ ] `make all` run once more from a clean clone. Blocked: `make all` includes `baseline` and `solution`, which need API credit.
+- [~] `make all` run once more from a clean clone. Every step that does not need a key was run from a fresh clone at `e1e4af1` and reproduces exactly; see the reproduction guide line above for what was checked. `make all` as a whole was not, because it includes `baseline` and `solution`, which need API credit this account no longer has.
 - [x] Repo public or judge access granted. `gh repo view` reports PUBLIC and an unauthenticated fetch of the API returns 200, which is how a judge reaches it.
-- [ ] Video uploaded, link works in an incognito window. Not recorded.
+- [ ] Video uploaded, link works in an incognito window. **Recorded but its location is not yet recorded here.** Fill in the path or URL below before submitting.
+
+  > Video location: `[NOT YET SUPPLIED]`
+
 - [ ] Submitted with buffer before 18:00 UTC Sunday
 
 ## Self check questions from the brief
@@ -97,11 +105,11 @@ The report is a deterministic template over verified figures with a fixed width 
 The adjudicator loop took material precision from 5% to 93% and the materiality gate took it from 93% to 100%, with material recall unchanged at 93% throughout, and the loop's 88 points cannot be split between hypothesis testing, the recompute gate and the `INTENTIONAL` verdict because it arrived as one change and no ablation was run.
 
 **5. Could another person reproduce this from a clean environment?**
-The deterministic half yes, verified from a fresh clone in T25: `verify`, `corpus`, `corpus-check` and `eval` reproduce the corpus checksums and the Iteration 1 table exactly. The agent half is unverified from a clean clone, needs API credit, and is non deterministic run to run by an amount nobody has measured.
+The deterministic path reproduces exactly and that was verified from a fresh clone in T25: corpus generation from seed 20260828 matches the committed checksums byte for byte, and the detectors and the evaluator reproduce the Iteration 1 table with no API key and no model involved. The scored runs are a weaker claim: T19, T20 and T21 are fully documented, with 291 committed trajectories and the result sets they produced, so a reader can audit every published figure back to a tool result without running anything. Re-running them from zero needs API credit beyond what is left in this account, so `make all` end to end has not been independently re-verified since the credit ran out, and agent runs vary between runs by an amount that was never measured because `make eval-repeat` was cut for the same reason.
 
 **6. What did you learn and how would it change what you build next?**
 That the failure worth designing against is not hallucination but unchecked assertion, because the same shape appeared in the adjudicator inventing figures it had been handed, in the baseline judging intent without reading the comment on the cell, and in our own code globbing a directory past the workbook name in every record it read, so next time I would write the verification layer before the thing it verifies rather than after.
 
 ### Weakest answer
 
-**Number 5.** The other five are backed by measurements in `results/` or code in the repo. Five is half a claim: the reproducibility rubric is worth 15 points and the part a judge is most likely to try, `make all`, has never been run end to end from a clean clone, because it needs API credit this account does not have. It is also the only answer that got worse during the build rather than better, since the corpus grew a baseline and a solution sweep that the T25 clean clone run predates.
+**Number 5, still.** The other five are backed by measurements in `results/` or code in the repo. Five is two claims of different strength welded together, and the weaker one carries the rubric's 15 points: `make all` end to end has never been run from a clean clone since the credit ran out, so the part a judge is most likely to try is the part nobody has verified in its current state. Narrowing the answer does not fix that, it only stops it being overstated. What a judge can do without a key is everything deterministic, and that is the half the answer now leads with.
