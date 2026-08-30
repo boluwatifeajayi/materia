@@ -158,15 +158,15 @@ This is a restriction on capability, so it is worth being precise about what it 
 
 | Metric | Detectors only | Baseline | Materia |
 | --- | --- | --- | --- |
-| Material finding precision | 5% | 100% | 100% |
-| Material recall | 93% | 7% | 7% |
-| Raw anomaly recall | 93% | 7% | 7% |
-| False positives per clean workbook | 23.00 | 0.00 | 0.00 |
+| Material finding precision | 5% | 83% | 100% |
+| Material recall | 93% | 71% | 93% |
+| Raw anomaly recall | 93% | 73% | 87% |
+| False positives per clean workbook | 23.00 | 0.50 | 0.00 |
 | Localisation accuracy | 100% | 100% | 100% |
-| Repair accuracy | n/a | n/a | 100% |
-| Suppressed as immaterial | 0 | 0 | 0 |
+| Repair accuracy | n/a | 92% | 100% |
+| Suppressed as immaterial | 0 | 0 | 1 |
 | Human time per workbook | not measured | not measured | not measured |
-| Cost per workbook | none, no model involved | not measured | not measured |
+| Cost per workbook | none, no model involved | $0.41 on `gpt-5.6-terra` | $0.54 on `gpt-5.6-terra` |
 
 Repair accuracy is not applicable for the detector only run rather than zero: the detectors propose nothing, so there is nothing for them to be right or wrong about. Reporting zero would imply they tried.
 
@@ -239,4 +239,5 @@ Stated rather than left for a judge to find.
 - **We chose the materiality threshold.** A different threshold changes precision and recall. The threshold is a published config value and `results/sensitivity.md` reports the metrics at three thresholds so the result is not a single tuned point.
 - **We wrote both the detectors and the mutations.** Partially mitigated by out of taxonomy mutations and clean controls, but not eliminated. This is the honest limit of a synthetic benchmark and it is why the out of taxonomy families are in there.
 - **Same model on both sides.** Deliberate. It isolates the contribution of the workflow rather than the model.
+- **Run to run variance is not quantified.** `make eval-repeat` was cut when the account ran out of API credit, so every figure in section 5 comes from a single run of each system. Sampling makes agent runs non deterministic and the corpus is twelve workbooks, so a repeat would move some of these numbers. How far is unmeasured, and nothing here should be read as a confidence interval. The one case where the size of the effect is visible: the baseline found both mutations in `C03` in a standalone run and reported nothing on it in the scored sweep, because that run used its whole token budget first.
 - **The recall comparison is not a clean measurement of judgement.** Five of the twelve baseline runs used their entire token budget and stopped. Two of those, `C01` and `C03`, reported nothing at all, so three of the four seeded mutations the baseline missed were missed because it ran out of allowance rather than because it judged them wrong. The budget is identical for both systems by design, and spending it well is a real property of a system rather than an accident, but the consequence is that the recall column measures judgement and budget efficiency together and cannot separate them. Any recall gap between the columns should be read that way. Precision, false positives per clean workbook, and the accuracy of the reported impact figures are not affected, because those are computed over what each system did report.

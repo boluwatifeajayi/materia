@@ -451,3 +451,90 @@ class TestTheChangelogIsComplete:
         text = Path("README.md").read_text()
         assert "| **Removed** |" in text
         assert "report writer" in text
+
+
+class TestEveryDocFigureTracesToResults:
+    """T28. The docs carried a Baseline column reading 100% precision and 7%
+    recall for six commits, while `results/headline.md` from the same runs
+    said 83% and 71%. `make eval` writes both, so nothing caught it. These
+    tests compare the docs against `results/` directly.
+    """
+
+    SCORES = {
+        item["system"]: item
+        for item in json.loads(Path("results/scores.json").read_text())
+    }
+
+    @staticmethod
+    def _table(text: str, header: str) -> dict[str, list[str]]:
+        lines = text.splitlines()
+        start = next(i for i, line in enumerate(lines) if line.startswith(header))
+        rows = {}
+        for line in lines[start + 2:]:
+            if not line.startswith("|"):
+                break
+            cells = [cell.strip() for cell in line.split("|")[1:-1]]
+            rows[cells[0]] = cells[1:]
+        return rows
+
+    @pytest.mark.parametrize("label,key,render", [
+        ("Material finding precision", "material_precision", lambda v: f"{v:.0%}"),
+        ("Material recall", "material_recall", lambda v: f"{v:.0%}"),
+        ("Raw anomaly recall", "raw_anomaly_recall", lambda v: f"{v:.0%}"),
+        ("Localisation accuracy", "localisation_accuracy", lambda v: f"{v:.0%}"),
+        ("False positives per clean workbook",
+         "false_positives_per_clean_workbook", lambda v: f"{v:.2f}"),
+    ])
+    def test_the_evaluation_results_table_matches(self, label, key, render):
+        table = self._table(
+            Path("docs/EVALUATION.md").read_text(),
+            "| Metric | Detectors only | Baseline | Materia |",
+        )
+        want = [
+            render(self.SCORES[system][key])
+            for system in ("Detectors only", "Baseline agent", "Materia")
+        ]
+        assert table[label] == want, label
+
+    @pytest.mark.parametrize("stage,system", [
+        ("Baseline", "Baseline agent"),
+        ("Iteration 1", "Detectors only"),
+        ("Iteration 2", "Materia, no gate"),
+        ("Iteration 3", "Materia"),
+    ])
+    def test_every_changelog_row_matches(self, stage, system):
+        row = next(
+            line for line in Path("README.md").read_text().splitlines()
+            if line.startswith(f"| **{stage}** |")
+        )
+        evidence, item = row.split("|")[3], self.SCORES[system]
+        for expected in (
+            f"{item['material_precision']:.0%} material precision",
+            f"{item['material_recall']:.0%} material recall",
+            f"{item['reported']} findings reported",
+        ):
+            assert expected in evidence, f"{stage}: {expected}"
+
+    @pytest.mark.parametrize("label,key", [
+        ("Material finding precision", "material_precision"),
+        ("Material recall", "material_recall"),
+    ])
+    def test_the_video_script_comparison_matches(self, label, key):
+        table = self._table(
+            Path("docs/VIDEO_SCRIPT.md").read_text(), "| | Baseline | Materia |"
+        )
+        want = [f"{self.SCORES[s][key]:.0%}" for s in ("Baseline agent", "Materia")]
+        assert table[label] == want, label
+
+    @pytest.mark.parametrize("workbook,address,output,quoted", [
+        ("C11", "Costs!Z12", "P&L!AA15", 4165),
+        ("C11", "Costs!Z12", "Valuation!B7", 28321),
+        ("C03", "Revenue!H5", "Valuation!B7", -92752830),
+    ])
+    def test_impact_figures_quoted_in_prose_match_the_manifest(
+        self, workbook, address, output, quoted
+    ):
+        manifest = json.loads(Path("corpus/manifest.json").read_text())
+        entry = next(w for w in manifest["workbooks"] if w["id"] == workbook)
+        mutation = next(m for m in entry["mutations"] if m["address"] == address)
+        assert round(mutation["deltas"][output]) == quoted

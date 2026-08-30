@@ -209,6 +209,7 @@ The same cell appears more than once where it was adjudicated in more than one r
 | `sol-C06-966a` | adjudicator | Valuation!B13 | 10 | 3 | INTENTIONAL | 6,664 | `solution_scored/C06_adjudicator_Valuation_B13_D3.jsonl` |
 | `sol-C06-8865` | adjudicator | Valuation!B14 | 10 | 3 | INTENTIONAL | 6,666 | `solution_scored/C06_adjudicator_Valuation_B14_D3.jsonl` |
 | `sol-C06-29c4` | adjudicator | Valuation!B5 | 30 | 12 | INTENTIONAL | 17,588 | `solution_scored/C06_adjudicator_Valuation_B5_D3.jsonl` |
+| `repair-C06-d420` | repair | - | 5 | 0 | - | 0 | `solution_scored/C06_repair.jsonl` |
 | `sol-C07-9f3b` | adjudicator | Costs!C12 | 12 | 4 | INTENTIONAL | 4,425 | `solution_scored/C07_adjudicator_Costs_C12_D2.jsonl` |
 | `sol-C07-0b72` | adjudicator | Costs!C5 | 12 | 4 | INTENTIONAL | 5,437 | `solution_scored/C07_adjudicator_Costs_C5_D2.jsonl` |
 | `sol-C07-ee59` | adjudicator | P&L!AA10 | 22 | 7 | INTENTIONAL | 42,019 | `solution_scored/C07_adjudicator_P&L_AA10_D2.jsonl` |
@@ -344,4 +345,4 @@ The same cell appears more than once where it was adjudicated in more than one r
 | `sol-C12-37ef` | adjudicator | Valuation!B14 | 10 | 3 | INTENTIONAL | 6,675 | `solution_scored/C12_adjudicator_Valuation_B14_D3.jsonl` |
 | `sol-C12-612f` | adjudicator | Valuation!B5 | 31 | 12 | INTENTIONAL | 23,041 | `solution_scored/C12_adjudicator_Valuation_B5_D3.jsonl` |
 
-297 trajectories.
+298 trajectories.

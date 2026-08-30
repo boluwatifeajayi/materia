@@ -81,7 +81,7 @@ Status values: `TODO`, `IN PROGRESS`, `DONE`, `CUT`.
 | T25 | Clean clone reproduction | TODO | **Fresh clone, fresh venv, `make all` start to finish.** Fix whatever breaks. This is 15 rubric points and the only way to know is to actually do it. |
 | T26 | Variance and sensitivity | CUT (needs API credits; cut list item 1 and 3) | `make eval-repeat N=3` producing `results/variance.md`. Sensitivity at three materiality thresholds to `results/sensitivity.md`. Cuttable if behind. |
 | T27 | Docs finalisation | DONE | Every `[TBD]` filled from `results/`. Changelog complete including the removed experiment. Failure mode section written from what actually happened, not from the prediction currently in the doc. |
-| T28 | Submission audit | TODO | Work `docs/SUBMISSION_CHECKLIST.md` top to bottom. Repo public. No keys committed. No `[TBD]` anywhere. Answer the six self check questions. |
+| T28 | Submission audit | DONE (2 blockers open: repo is private, video not recorded) | Work `docs/SUBMISSION_CHECKLIST.md` top to bottom. Repo public. No keys committed. No `[TBD]` anywhere. Answer the six self check questions. |
 | T29 | HTML report view | TODO (optional) | Only if time remains after T28. Static HTML report of the findings. This is the one task where Playwright testing applies. **Do not start this before T28 is done.** |
 
 ---
@@ -109,4 +109,4 @@ If behind, cut in this order. Do not improvise cuts.
 | 4 Agent layer | T12 to T17 | 6/6 |
 | 5 Baseline | T18 to T20 | 3/3 |
 | 6 Thesis | T21 to T22 | 2/2 |
-| 7 Deliverables | T23 to T29 | 3/7 |
+| 7 Deliverables | T23 to T29 | 4/7 |

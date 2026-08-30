@@ -156,6 +156,10 @@ def _evaluate(arguments: argparse.Namespace) -> int:
         if update_funnel(arguments.changelog, arguments.corpus, arguments.results):
             print(f"changelog: funnel filled in {arguments.changelog}")
 
+    if arguments.changelog and not Path(arguments.changelog).exists():
+        print(f"changelog: {arguments.changelog} does not exist", file=sys.stderr)
+        return 1
+
     if arguments.changelog:
         # Each system fills its own row. Looping every score into one stage
         # wrote the baseline's numbers over the detectors' in Iteration 1.

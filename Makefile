@@ -40,7 +40,9 @@ eval:
 
 ## Repeat runs for the variance table, N=3 by default. T26.
 eval-repeat:
-	@echo "make eval-repeat N=$(N): not implemented (T26)" >&2
+	@echo "make eval-repeat: cut. Repeat runs need API credit this account" >&2
+	@echo "does not have. docs/EVALUATION.md section 6 reports agent runs as" >&2
+	@echo "non deterministic and unquantified rather than estimating a range." >&2
 	@exit 1
 
 ## Render the featured trajectories and generate trajectories/index.md.

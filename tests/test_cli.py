@@ -398,7 +398,8 @@ class TestBaselineScoring:
             "findings": [{"sheet": "Revenue", "cell": "H5", "confidence": "high",
                           "proposed_formula": "=G9", "impact": {"P&L!AA15": 8704573.0}}],
         }))
-        code, out, err = run(capsys, "eval", "--results", str(results))
+        code, out, err = run(capsys, "eval", "--results", str(results),
+                             "--document", str(tmp_path / "E.md"))
         assert code == 0
         headline = (results / "headline.md").read_text()
         assert "Baseline agent" in headline
@@ -407,7 +408,8 @@ class TestBaselineScoring:
         assert "no result for" in err
 
     def test_without_a_baseline_directory_the_column_stays_off(self, capsys, tmp_path):
-        code, _, _ = run(capsys, "eval", "--results", str(tmp_path))
+        code, _, _ = run(capsys, "eval", "--results", str(tmp_path),
+                         "--document", str(tmp_path / "E.md"))
         assert code == 0
         assert "Baseline agent" not in (tmp_path / "headline.md").read_text()
 
@@ -428,7 +430,8 @@ class TestBaselineScoring:
             "workbook": "C03.xlsx",
             "findings": [{"sheet": "Revenue", "cell": "H5", "confidence": "high"}],
         }))
-        run(capsys, "eval", "--results", str(results), "--changelog", str(readme))
+        run(capsys, "eval", "--results", str(results), "--changelog", str(readme),
+            "--document", str(tmp_path / "E.md"))
 
         rows = {
             line.split("|")[1].strip(): line.split("|")[3].strip()
@@ -450,7 +453,8 @@ class TestBaselineScoring:
                           "proposed_formula": "=G9", "impact": {"P&L!AA15": 8704573.0}}],
             "intentional": ["Revenue!C5"], "inconclusive": [], "violations": [],
         }))
-        code, _, _ = run(capsys, "eval", "--results", str(results))
+        code, _, _ = run(capsys, "eval", "--results", str(results),
+                         "--document", str(tmp_path / "E.md"))
         assert code == 0
         assert "Materia" in (results / "headline.md").read_text()
 
@@ -470,3 +474,30 @@ class TestBaselineScoring:
             "inconclusive": ["P&L!AA3"],
         }))
         assert [f.address for f in solution_results(directory)["C03"]] == ["Revenue!H5"]
+
+    def test_eval_does_not_touch_the_repo_docs_when_pointed_elsewhere(
+        self, capsys, tmp_path
+    ):
+        """`--document` and `--changelog` default to the real files. A test
+        that passed `--results tmp` but left those defaults rewrote
+        docs/EVALUATION.md with a one finding fixture's scores, and the wrong
+        table sat in the repo for six commits."""
+        before = Path("docs/EVALUATION.md").read_text()
+        readme_before = Path("README.md").read_text()
+        changelog = tmp_path / "R.md"
+        changelog.write_text("| Stage | What | Evidence | Decision |\n"
+                             "| --- | --- | --- | --- |\n"
+                             "| **Iteration 1** | d | `[TBD]` | y |\n")
+        run(capsys, "eval", "--results", str(tmp_path),
+            "--document", str(tmp_path / "E.md"), "--changelog", str(changelog))
+        assert Path("docs/EVALUATION.md").read_text() == before
+        assert Path("README.md").read_text() == readme_before
+
+    def test_a_missing_changelog_path_reports_rather_than_tracebacks(
+        self, capsys, tmp_path
+    ):
+        code, _, err = run(capsys, "eval", "--results", str(tmp_path),
+                           "--document", str(tmp_path / "E.md"),
+                           "--changelog", str(tmp_path / "nothing.md"))
+        assert code == 1
+        assert "does not exist" in err
