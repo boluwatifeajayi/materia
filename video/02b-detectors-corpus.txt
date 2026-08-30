@@ -1,0 +1,270 @@
+  C01  Costs!C12            D2  Normalises to ROUND(Assumptions!R17C2,0), where 23 of 24 c
+  C01  Costs!C5             D2  Normalises to Assumptions!R12C2, where 23 of 24 cells in C
+  C01  P&L!AA10             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C01  P&L!AA11             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C01  P&L!AA12             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C01  P&L!AA13             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C01  P&L!AA15             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C01  P&L!AA3              D1  Holds a value, but 24 other cells in row 3 of P&L hold for
+  C01  P&L!AA5              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C01  P&L!AA6              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C01  P&L!AA7              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C01  P&L!C18              D2  Normalises to R[-3]C, where 23 of 24 cells in P&L row 18 n
+  C01  Revenue!C11          D2  Normalises to Assumptions!R7C2, where 23 of 24 cells in Re
+  C01  Revenue!C17          D2  Normalises to R[-2]C, where 23 of 24 cells in Revenue row 
+  C01  Revenue!C3           D1  Holds a value, but 23 other cells in row 3 of Revenue hold
+  C01  Revenue!C5           D2  Normalises to Assumptions!R4C2, where 22 of 23 cells in Re
+  C01  Revenue!K5           D1  Holds a value, but 23 other cells in row 5 of Revenue hold
+  C01  Valuation!B11        D3  AVERAGE covers columns C:Z on P&L, but the populated block
+  C01  Valuation!B12        D3  MAX covers columns C:Z on P&L, but the populated block run
+  C01  Valuation!B13        D3  MIN covers columns C:Z on P&L, but the populated block run
+  C01  Valuation!B14        D3  SUMIF covers columns C:Z on P&L, but the populated block r
+  C01  Valuation!B5         D3  SUM covers columns O:Z on P&L, but the populated block run
+  C02  Costs!C12            D2  Normalises to ROUND(Assumptions!R17C2,0), where 23 of 24 c
+  C02  Costs!C5             D2  Normalises to Assumptions!R12C2, where 23 of 24 cells in C
+  C02  P&L!AA10             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C02  P&L!AA11             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C02  P&L!AA12             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C02  P&L!AA13             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C02  P&L!AA15             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C02  P&L!AA3              D1  Holds a value, but 24 other cells in row 3 of P&L hold for
+  C02  P&L!AA5              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C02  P&L!AA6              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C02  P&L!AA7              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C02  P&L!C18              D2  Normalises to R[-3]C, where 23 of 24 cells in P&L row 18 n
+  C02  Revenue!C11          D2  Normalises to Assumptions!R7C2, where 23 of 24 cells in Re
+  C02  Revenue!C17          D2  Normalises to R[-2]C, where 23 of 24 cells in Revenue row 
+  C02  Revenue!C3           D1  Holds a value, but 23 other cells in row 3 of Revenue hold
+  C02  Revenue!C5           D2  Normalises to Assumptions!R4C2, where 23 of 24 cells in Re
+  C02  Revenue!H9           D2  Normalises to R[-4]C[-1]+R[-3]C+R[-2]C, where 23 of 24 cel
+  C02  Valuation!B11        D3  AVERAGE covers columns C:Z on P&L, but the populated block
+  C02  Valuation!B12        D3  MAX covers columns C:Z on P&L, but the populated block run
+  C02  Valuation!B13        D3  MIN covers columns C:Z on P&L, but the populated block run
+  C02  Valuation!B14        D3  SUMIF covers columns C:Z on P&L, but the populated block r
+  C02  Valuation!B5         D3  SUM covers columns O:Z on P&L, but the populated block run
+  C03  Costs!C12            D2  Normalises to ROUND(Assumptions!R17C2,0), where 23 of 24 c
+  C03  Costs!C5             D2  Normalises to Assumptions!R12C2, where 23 of 24 cells in C
+  C03  P&L!AA10             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C03  P&L!AA11             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C03  P&L!AA12             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C03  P&L!AA13             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C03  P&L!AA15             D2  Normalises to SUM(RC[-24]:RC[-2]), where 24 of 25 cells in
+  C03  P&L!AA3              D1  Holds a value, but 24 other cells in row 3 of P&L hold for
+  C03  P&L!AA5              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C03  P&L!AA6              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C03  P&L!AA7              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C03  P&L!C18              D2  Normalises to R[-3]C, where 23 of 24 cells in P&L row 18 n
+  C03  Revenue!C11          D2  Normalises to Assumptions!R7C2, where 23 of 24 cells in Re
+  C03  Revenue!C17          D2  Normalises to R[-2]C, where 23 of 24 cells in Revenue row 
+  C03  Revenue!C3           D1  Holds a value, but 23 other cells in row 3 of Revenue hold
+  C03  Revenue!C5           D2  Normalises to Assumptions!R4C2, where 22 of 23 cells in Re
+  C03  Revenue!H5           D1  Holds a value, but 23 other cells in row 5 of Revenue hold
+  C03  Valuation!B11        D3  AVERAGE covers columns C:Z on P&L, but the populated block
+  C03  Valuation!B12        D3  MAX covers columns C:Z on P&L, but the populated block run
+  C03  Valuation!B13        D3  MIN covers columns C:Z on P&L, but the populated block run
+  C03  Valuation!B14        D3  SUMIF covers columns C:Z on P&L, but the populated block r
+  C03  Valuation!B5         D3  SUM covers columns O:Z on P&L, but the populated block run
+  C04  Costs!C12            D2  Normalises to ROUND(Assumptions!R17C2,0), where 23 of 24 c
+  C04  Costs!C5             D2  Normalises to Assumptions!R12C2, where 23 of 24 cells in C
+  C04  P&L!AA10             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C04  P&L!AA11             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C04  P&L!AA12             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C04  P&L!AA13             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C04  P&L!AA15             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C04  P&L!AA3              D1  Holds a value, but 24 other cells in row 3 of P&L hold for
+  C04  P&L!AA5              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C04  P&L!AA6              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C04  P&L!AA7              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C04  P&L!C18              D2  Normalises to R[-3]C, where 23 of 24 cells in P&L row 18 n
+  C04  Revenue!C11          D2  Normalises to Assumptions!R7C2, where 23 of 24 cells in Re
+  C04  Revenue!C17          D2  Normalises to R[-2]C, where 23 of 24 cells in Revenue row 
+  C04  Revenue!C3           D1  Holds a value, but 23 other cells in row 3 of Revenue hold
+  C04  Revenue!C5           D2  Normalises to Assumptions!R4C2, where 22 of 24 cells in Re
+  C04  Revenue!I5           D2  Normalises to R[4]C[-2], where 22 of 24 cells in Revenue r
+  C04  Valuation!B11        D3  AVERAGE covers columns C:Z on P&L, but the populated block
+  C04  Valuation!B12        D3  MAX covers columns C:Z on P&L, but the populated block run
+  C04  Valuation!B13        D3  MIN covers columns C:Z on P&L, but the populated block run
+  C04  Valuation!B14        D3  SUMIF covers columns C:Z on P&L, but the populated block r
+  C04  Valuation!B5         D3  SUM covers columns O:Z on P&L, but the populated block run
+  C05  Costs!C12            D2  Normalises to ROUND(Assumptions!R17C2,0), where 23 of 24 c
+  C05  Costs!C5             D2  Normalises to Assumptions!R12C2, where 23 of 24 cells in C
+  C05  P&L!AA10             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C05  P&L!AA11             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C05  P&L!AA12             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C05  P&L!AA13             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C05  P&L!AA15             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C05  P&L!AA3              D1  Holds a value, but 24 other cells in row 3 of P&L hold for
+  C05  P&L!AA5              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C05  P&L!AA6              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C05  P&L!AA7              D2  Normalises to SUM(RC[-24]:RC[-1]), where 23 of 25 cells in
+  C05  P&L!C18              D2  Normalises to R[-3]C, where 23 of 24 cells in P&L row 18 n
+  C05  P&L!J7               D2  Normalises to R[-2]C-R[-1]C, where 23 of 25 cells in P&L r
+  C05  Revenue!C11          D2  Normalises to Assumptions!R7C2, where 23 of 24 cells in Re
+  C05  Revenue!C17          D2  Normalises to R[-2]C, where 23 of 24 cells in Revenue row 
+  C05  Revenue!C3           D1  Holds a value, but 23 other cells in row 3 of Revenue hold
+  C05  Revenue!C5           D2  Normalises to Assumptions!R4C2, where 23 of 24 cells in Re
+  C05  Valuation!B11        D3  AVERAGE covers columns C:Z on P&L, but the populated block
+  C05  Valuation!B12        D3  MAX covers columns C:Z on P&L, but the populated block run
+  C05  Valuation!B13        D3  MIN covers columns C:Z on P&L, but the populated block run
+  C05  Valuation!B14        D3  SUMIF covers columns C:Z on P&L, but the populated block r
+  C05  Valuation!B5         D3  SUM covers columns O:Z on P&L, but the populated block run
+  C06  Costs!C12            D2  Normalises to ROUND(Assumptions!R17C2,0), where 23 of 24 c
+  C06  Costs!C5             D2  Normalises to Assumptions!R13C2, where 23 of 24 cells in C
+  C06  P&L!AA10             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C06  P&L!AA11             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C06  P&L!AA12             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C06  P&L!AA13             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C06  P&L!AA15             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C06  P&L!AA3              D1  Holds a value, but 24 other cells in row 3 of P&L hold for
+  C06  P&L!AA5              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C06  P&L!AA6              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C06  P&L!AA7              D2  Normalises to SUM(RC[-24]:RC[-1]), where 23 of 25 cells in
+  C06  P&L!C18              D2  Normalises to R[-3]C, where 23 of 24 cells in P&L row 18 n
+  C06  P&L!K7               D2  Normalises to R[-2]C-R[-1]C, where 23 of 25 cells in P&L r
+  C06  Revenue!C11          D2  Normalises to Assumptions!R7C2, where 23 of 24 cells in Re
+  C06  Revenue!C17          D2  Normalises to R[-2]C, where 23 of 24 cells in Revenue row 
+  C06  Revenue!C3           D1  Holds a value, but 23 other cells in row 3 of Revenue hold
+  C06  Revenue!C5           D2  Normalises to Assumptions!R4C2, where 23 of 24 cells in Re
+  C06  Revenue!I9           D2  Normalises to R[-4]C[-1]+R[-3]C+R[-2]C, where 23 of 24 cel
+  C06  Valuation!B11        D3  AVERAGE covers columns C:Z on P&L, but the populated block
+  C06  Valuation!B12        D3  MAX covers columns C:Z on P&L, but the populated block run
+  C06  Valuation!B13        D3  MIN covers columns C:Z on P&L, but the populated block run
+  C06  Valuation!B14        D3  SUMIF covers columns C:Z on P&L, but the populated block r
+  C06  Valuation!B5         D3  SUM covers columns O:Z on P&L, but the populated block run
+  C07  Costs!C12            D2  Normalises to ROUND(Assumptions!R17C2,0), where 23 of 24 c
+  C07  Costs!C5             D2  Normalises to Assumptions!R12C2, where 23 of 24 cells in C
+  C07  P&L!AA10             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C07  P&L!AA11             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C07  P&L!AA12             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C07  P&L!AA13             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C07  P&L!AA15             D2  Normalises to SUM(RC[-24]:RC[-2]), where 24 of 25 cells in
+  C07  P&L!AA3              D1  Holds a value, but 24 other cells in row 3 of P&L hold for
+  C07  P&L!AA5              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C07  P&L!AA6              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C07  P&L!AA7              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C07  P&L!C18              D2  Normalises to R[-3]C, where 23 of 24 cells in P&L row 18 n
+  C07  Revenue!C11          D2  Normalises to Assumptions!R7C2, where 23 of 24 cells in Re
+  C07  Revenue!C17          D2  Normalises to R[-2]C, where 23 of 24 cells in Revenue row 
+  C07  Revenue!C3           D1  Holds a value, but 23 other cells in row 3 of Revenue hold
+  C07  Revenue!C5           D2  Normalises to Assumptions!R4C2, where 23 of 24 cells in Re
+  C07  Valuation!B11        D3  AVERAGE covers columns C:Z on P&L, but the populated block
+  C07  Valuation!B12        D3  MAX covers columns C:Z on P&L, but the populated block run
+  C07  Valuation!B13        D3  MIN covers columns C:Z on P&L, but the populated block run
+  C07  Valuation!B14        D3  SUMIF covers columns C:Z on P&L, but the populated block r
+  C07  Valuation!B5         D3  SUM covers columns O:Z on P&L, but the populated block run
+  C08  Costs!C12            D2  Normalises to ROUND(Assumptions!R17C2,0), where 23 of 24 c
+  C08  Costs!C5             D2  Normalises to Assumptions!R12C2, where 23 of 24 cells in C
+  C08  P&L!AA10             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C08  P&L!AA11             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C08  P&L!AA12             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C08  P&L!AA13             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C08  P&L!AA15             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C08  P&L!AA3              D1  Holds a value, but 24 other cells in row 3 of P&L hold for
+  C08  P&L!AA5              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C08  P&L!AA6              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C08  P&L!AA7              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C08  P&L!C18              D2  Normalises to R[-3]C, where 23 of 24 cells in P&L row 18 n
+  C08  Revenue!C11          D2  Normalises to Assumptions!R7C2, where 23 of 24 cells in Re
+  C08  Revenue!C17          D2  Normalises to R[-2]C, where 23 of 24 cells in Revenue row 
+  C08  Revenue!C3           D1  Holds a value, but 23 other cells in row 3 of Revenue hold
+  C08  Revenue!C5           D2  Normalises to Assumptions!R4C2, where 21 of 23 cells in Re
+  C08  Revenue!I5           D1  Holds a value, but 23 other cells in row 5 of Revenue hold
+  C08  Revenue!J5           D2  Normalises to R[4]C[-2], where 21 of 23 cells in Revenue r
+  C08  Valuation!B11        D3  AVERAGE covers columns C:Z on P&L, but the populated block
+  C08  Valuation!B12        D3  MAX covers columns C:Z on P&L, but the populated block run
+  C08  Valuation!B13        D3  MIN covers columns C:Z on P&L, but the populated block run
+  C08  Valuation!B14        D3  SUMIF covers columns C:Z on P&L, but the populated block r
+  C08  Valuation!B5         D3  SUM covers columns O:Z on P&L, but the populated block run
+  C09  Costs!C12            D2  Normalises to ROUND(Assumptions!R17C2,0), where 23 of 24 c
+  C09  Costs!C5             D2  Normalises to Assumptions!R12C2, where 23 of 24 cells in C
+  C09  P&L!AA10             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C09  P&L!AA11             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C09  P&L!AA12             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C09  P&L!AA13             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C09  P&L!AA15             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C09  P&L!AA3              D1  Holds a value, but 24 other cells in row 3 of P&L hold for
+  C09  P&L!AA5              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C09  P&L!AA6              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C09  P&L!AA7              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C09  P&L!C18              D2  Normalises to R[-3]C, where 23 of 24 cells in P&L row 18 n
+  C09  Revenue!C11          D2  Normalises to Assumptions!R7C2, where 23 of 24 cells in Re
+  C09  Revenue!C17          D2  Normalises to R[-2]C, where 23 of 24 cells in Revenue row 
+  C09  Revenue!C3           D1  Holds a value, but 23 other cells in row 3 of Revenue hold
+  C09  Revenue!C5           D2  Normalises to Assumptions!R4C2, where 23 of 24 cells in Re
+  C09  Valuation!B11        D3  AVERAGE covers columns C:Z on P&L, but the populated block
+  C09  Valuation!B12        D3  MAX covers columns C:Z on P&L, but the populated block run
+  C09  Valuation!B13        D3  MIN covers columns C:Z on P&L, but the populated block run
+  C09  Valuation!B14        D3  SUMIF covers columns C:Z on P&L, but the populated block r
+  C09  Valuation!B5         D3  SUM covers columns O:Z on P&L, but the populated block run
+  C10  Costs!C12            D2  Normalises to ROUND(Assumptions!R17C2,0), where 22 of 23 c
+  C10  Costs!C5             D2  Normalises to Assumptions!R12C2, where 23 of 24 cells in C
+  C10  Costs!I12            D1  Holds a value, but 23 other cells in row 12 of Costs hold 
+  C10  P&L!AA10             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C10  P&L!AA11             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C10  P&L!AA12             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C10  P&L!AA13             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C10  P&L!AA15             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C10  P&L!AA3              D1  Holds a value, but 24 other cells in row 3 of P&L hold for
+  C10  P&L!AA5              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C10  P&L!AA6              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C10  P&L!AA7              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C10  P&L!C18              D2  Normalises to R[-3]C, where 23 of 24 cells in P&L row 18 n
+  C10  Revenue!C11          D2  Normalises to Assumptions!R7C2, where 23 of 24 cells in Re
+  C10  Revenue!C15          D1  Holds a value, but 21 other cells in row 15 of Revenue hol
+  C10  Revenue!C17          D2  Normalises to R[-2]C, where 23 of 24 cells in Revenue row 
+  C10  Revenue!C3           D1  Holds a value, but 23 other cells in row 3 of Revenue hold
+  C10  Revenue!C5           D2  Normalises to Assumptions!R4C2, where 23 of 24 cells in Re
+  C10  Revenue!D15          D1  Holds a value, but 21 other cells in row 15 of Revenue hol
+  C10  Revenue!E15          D1  Holds a value, but 21 other cells in row 15 of Revenue hol
+  C10  Valuation!B11        D3  AVERAGE covers columns C:Z on P&L, but the populated block
+  C10  Valuation!B12        D3  MAX covers columns C:Z on P&L, but the populated block run
+  C10  Valuation!B13        D3  MIN covers columns C:Z on P&L, but the populated block run
+  C10  Valuation!B14        D3  SUMIF covers columns C:Z on P&L, but the populated block r
+  C10  Valuation!B5         D3  SUM covers columns O:Z on P&L, but the populated block run
+  C11  Costs!C12            D2  Normalises to ROUND(Assumptions!R17C2,0), where 22 of 23 c
+  C11  Costs!C5             D2  Normalises to Assumptions!R12C2, where 23 of 24 cells in C
+  C11  Costs!Z12            D1  Holds a value, but 23 other cells in row 12 of Costs hold 
+  C11  P&L!AA10             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C11  P&L!AA11             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C11  P&L!AA12             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C11  P&L!AA13             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C11  P&L!AA15             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C11  P&L!AA3              D1  Holds a value, but 24 other cells in row 3 of P&L hold for
+  C11  P&L!AA5              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C11  P&L!AA6              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C11  P&L!AA7              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C11  P&L!C18              D2  Normalises to R[-3]C, where 23 of 24 cells in P&L row 18 n
+  C11  Revenue!C11          D2  Normalises to Assumptions!R7C2, where 23 of 24 cells in Re
+  C11  Revenue!C17          D2  Normalises to R[-2]C, where 23 of 24 cells in Revenue row 
+  C11  Revenue!C3           D1  Holds a value, but 23 other cells in row 3 of Revenue hold
+  C11  Revenue!C5           D2  Normalises to Assumptions!R4C2, where 23 of 24 cells in Re
+  C11  Valuation!B11        D3  AVERAGE covers columns C:Z on P&L, but the populated block
+  C11  Valuation!B12        D3  MAX covers columns C:Z on P&L, but the populated block run
+  C11  Valuation!B13        D3  MIN covers columns C:Z on P&L, but the populated block run
+  C11  Valuation!B14        D3  SUMIF covers columns C:Z on P&L, but the populated block r
+  C11  Valuation!B5         D3  SUM covers columns O:Z on P&L, but the populated block run
+  C12  Costs!C12            D2  Normalises to ROUND(Assumptions!R17C2,0), where 23 of 24 c
+  C12  Costs!C5             D2  Normalises to Assumptions!R12C2, where 23 of 24 cells in C
+  C12  P&L!AA10             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C12  P&L!AA11             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C12  P&L!AA12             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C12  P&L!AA13             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C12  P&L!AA15             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C12  P&L!AA3              D1  Holds a value, but 24 other cells in row 3 of P&L hold for
+  C12  P&L!AA5              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C12  P&L!AA6              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C12  P&L!AA7              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in
+  C12  P&L!C18              D2  Normalises to R[-3]C, where 23 of 24 cells in P&L row 18 n
+  C12  Revenue!C11          D2  Normalises to Assumptions!R7C2, where 23 of 24 cells in Re
+  C12  Revenue!C17          D2  Normalises to R[-2]C, where 23 of 24 cells in Revenue row 
+  C12  Revenue!C3           D1  Holds a value, but 23 other cells in row 3 of Revenue hold
+  C12  Revenue!C5           D2  Normalises to Assumptions!R4C2, where 23 of 24 cells in Re
+  C12  Revenue!M9           D2  Normalises to R[-4]C[-1]+R[-3]C+R[-2]C, where 23 of 24 cel
+  C12  Valuation!B11        D3  AVERAGE covers columns C:Z on P&L, but the populated block
+  C12  Valuation!B12        D3  MAX covers columns C:Z on P&L, but the populated block run
+  C12  Valuation!B13        D3  MIN covers columns C:Z on P&L, but the populated block run
+  C12  Valuation!B14        D3  SUMIF covers columns C:Z on P&L, but the populated block r
+  C12  Valuation!B5         D3  SUM covers columns O:Z on P&L, but the populated block run
+
+267 cells flagged across twelve workbooks.
+C09 and C10 contain no errors at all. They account for 46 of these.

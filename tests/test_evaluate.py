@@ -538,3 +538,49 @@ class TestEveryDocFigureTracesToResults:
         entry = next(w for w in manifest["workbooks"] if w["id"] == workbook)
         mutation = next(m for m in entry["mutations"] if m["address"] == address)
         assert round(mutation["deltas"][output]) == quoted
+
+
+class TestTheVideoScriptPointsAtFilesThatExist:
+    """The script is followed under pressure with a camera running. Every path
+    it names has to be there, and every line number it sends the reader to has
+    to still be the right line."""
+
+    SCRIPT = Path("docs/VIDEO_SCRIPT.md").read_text()
+
+    @pytest.mark.parametrize("path", [
+        "video/02-detectors-C03.txt",
+        "video/02b-detectors-corpus.txt",
+        "video/03-baseline-C10.txt",
+        "video/04-audit-C03.txt",
+        "video/05-trajectory-Revenue-H5.md",
+        "video/06-trajectory-C10-intentional.md",
+        "video/07-headline.md",
+        "video/08-changelog.md",
+    ])
+    def test_every_referenced_file_exists_and_is_named(self, path):
+        assert Path(path).exists(), path
+        assert path in self.SCRIPT, f"{path} exists but the script does not name it"
+
+    def test_the_trajectory_line_numbers_still_land_on_the_right_step(self):
+        h5 = Path("video/05-trajectory-Revenue-H5.md").read_text().splitlines()
+        assert h5[725].startswith("### Step 8, tool call")
+        c10 = Path("video/06-trajectory-C10-intentional.md").read_text().splitlines()
+        assert c10[34].startswith("### Step 4, verdict")
+
+    def test_the_saved_report_carries_the_funnel_the_script_quotes(self):
+        report = Path("video/04-audit-C03.txt").read_text()
+        for line in ("738  formulas parsed", "22  structural anomalies detected",
+                     "2  material findings"):
+            assert line in report, line
+
+    def test_the_detector_counts_match_what_is_spoken(self):
+        assert "22 cells flagged" in Path("video/02-detectors-C03.txt").read_text()
+        assert "267 cells flagged" in Path("video/02b-detectors-corpus.txt").read_text()
+
+    def test_no_cell_reference_that_does_not_exist(self):
+        """`H42` was in the first draft as a placeholder and survived T27
+        because it was never marked [TBD]."""
+        assert "H42" not in self.SCRIPT
+
+    def test_the_headline_copy_matches_the_generated_one(self):
+        assert Path("video/07-headline.md").read_text() == Path("results/headline.md").read_text()

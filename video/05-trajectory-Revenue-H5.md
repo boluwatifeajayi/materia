@@ -1,0 +1,798 @@
+# C03 adjudicator, Revenue!H5
+
+- Run `sol-C03-65a8`, agent `adjudicator`
+- Workbook `C03`
+- Cell `Revenue!H5`, flagged by detector `D1`
+- Provider `openai`, model `gpt-5.6-terra`
+- 13 steps, 4 tool calls, 11,793 tokens in and 540 out
+
+> Holds a value, but 23 other cells in row 5 of Revenue hold formulas.
+
+## The run
+
+### Step 2, model message
+
+_1,206 tokens in, 76 out, 1,327 ms_
+
+Asks for `inspect_range`:
+
+```json
+{
+  "range": "A1:L16",
+  "sheet": "Revenue"
+}
+```
+
+Asks for `inspect_range`:
+
+```json
+{
+  "range": "M1:Z6",
+  "sheet": "Revenue"
+}
+```
+
+### Step 3, tool call
+
+Running `inspect_range`.
+
+### Step 4, tool result
+
+`inspect_range` returned:
+
+```json
+{
+  "cells": [
+    {
+      "cell": "Revenue!A1",
+      "value": "Revenue build"
+    },
+    {
+      "cell": "Revenue!A3",
+      "value": "Month"
+    },
+    {
+      "cell": "Revenue!C3",
+      "value": 1
+    },
+    {
+      "cell": "Revenue!D3",
+      "formula": "=C3+1",
+      "value": 2.0
+    },
+    {
+      "cell": "Revenue!E3",
+      "formula": "=D3+1",
+      "value": 3.0
+    },
+    {
+      "cell": "Revenue!F3",
+      "formula": "=E3+1",
+      "value": 4.0
+    },
+    {
+      "cell": "Revenue!G3",
+      "formula": "=F3+1",
+      "value": 5.0
+    },
+    {
+      "cell": "Revenue!H3",
+      "formula": "=G3+1",
+      "value": 6.0
+    },
+    {
+      "cell": "Revenue!I3",
+      "formula": "=H3+1",
+      "value": 7.0
+    },
+    {
+      "cell": "Revenue!J3",
+      "formula": "=I3+1",
+      "value": 8.0
+    },
+    {
+      "cell": "Revenue!K3",
+      "formula": "=J3+1",
+      "value": 9.0
+    },
+    {
+      "cell": "Revenue!L3",
+      "formula": "=K3+1",
+      "value": 10.0
+    },
+    {
+      "cell": "Revenue!A5",
+      "value": "Opening customers"
+    },
+    {
+      "cell": "Revenue!C5",
+      "formula": "=Assumptions!$B$4",
+      "value": 7200.0
+    },
+    {
+      "cell": "Revenue!D5",
+      "formula": "=C9",
+      "value": 7692.0
+    },
+    {
+      "cell": "Revenue!E5",
+      "formula": "=D9",
+      "value": 8217.0
+    },
+    {
+      "cell": "Revenue!F5",
+      "formula": "=E9",
+      "value": 8777.0
+    },
+    {
+      "cell": "Revenue!G5",
+      "formula": "=F9",
+      "value": 9375.0
+    },
+    {
+      "cell": "Revenue!H5",
+      "value": 7200
+    },
+    {
+      "cell": "Revenue!I5",
+      "formula": "=H9",
+      "value": 7692.0
+    },
+    {
+      "cell": "Revenue!J5",
+      "formula": "=I9",
+      "value": 8217.0
+    },
+    {
+      "cell": "Revenue!K5",
+      "formula": "=J9",
+      "value": 8777.0
+    },
+    {
+      "cell": "Revenue!L5",
+      "formula": "=K9",
+      "value": 9375.0
+    },
+    {
+      "cell": "Revenue!A6",
+      "value": "New customers"
+    },
+    {
+      "cell": "Revenue!C6",
+      "formula": "=ROUND(C5*Assumptions!$B$5,0)",
+      "value": 606.0
+    },
+    {
+      "cell": "Revenue!D6",
+      "formula": "=ROUND(D5*Assumptions!$B$5,0)",
+      "value": 647.0
+    },
+    {
+      "cell": "Revenue!E6",
+      "formula": "=ROUND(E5*Assumptions!$B$5,0)",
+      "value": 691.0
+    },
+    {
+      "cell": "Revenue!F6",
+      "formula": "=ROUND(F5*Assumptions!$B$5,0)",
+      "value": 738.0
+    },
+    {
+      "cell": "Revenue!G6",
+      "formula": "=ROUND(G5*Assumptions!$B$5,0)",
+      "value": 788.0
+    },
+    {
+      "cell": "Revenue!H6",
+      "formula": "=ROUND(H5*Assumptions!$B$5,0)",
+      "value": 606.0
+    },
+    {
+      "cell": "Revenue!I6",
+      "formula": "=ROUND(I5*Assumptions!$B$5,0)",
+      "value": 647.0
+    },
+    {
+      "cell": "Revenue!J6",
+      "formula": "=ROUND(J5*Assumptions!$B$5,0)",
+      "value": 691.0
+    },
+    {
+      "cell": "Revenue!K6",
+      "formula": "=ROUND(K5*Assumptions!$B$5,0)",
+      "value": 738.0
+    },
+    {
+      "cell": "Revenue!L6",
+      "formula": "=ROUND(L5*Assumptions!$B$5,0)",
+      "value": 788.0
+    },
+    {
+      "cell": "Revenue!A7",
+      "value": "Churned customers"
+    },
+    {
+      "cell": "Revenue!C7",
+      "formula": "=-ROUND(C5*Assumptions!$B$6,0)",
+      "value": -114.0
+    },
+    {
+      "cell": "Revenue!D7",
+      "formula": "=-ROUND(D5*Assumptions!$B$6,0)",
+      "value": -122.0
+    },
+    {
+      "cell": "Revenue!E7",
+      "formula": "=-ROUND(E5*Assumptions!$B$6,0)",
+      "value": -131.0
+    },
+    {
+      "cell": "Revenue!F7",
+      "formula": "=-ROUND(F5*Assumptions!$B$6,0)",
+      "value": -140.0
+    },
+    {
+      "cell": "Revenue!G7",
+      "formula": "=-ROUND(G5*Assumptions!$B$6,0)",
+      "value": -149.0
+    },
+    {
+      "cell": "Revenue!H7",
+      "formula": "=-ROUND(H5*Assumptions!$B$6,0)",
+      "value": -114.0
+    },
+    {
+      "cell": "Revenue!I7",
+      "formula": "=-ROUND(I5*Assumptions!$B$6,0)",
+      "value": -122.0
+    },
+    {
+      "cell": "Revenue!J7",
+      "formula": "=-ROUND(J5*Assumptions!$B$6,0)",
+      "value": -131.0
+    },
+    {
+      "cell": "Revenue!K7",
+      "formula": "=-ROUND(K5*Assumptions!$B$6,0)",
+      "value": -140.0
+    },
+    {
+      "cell": "Revenue!L7",
+      "formula": "=-ROUND(L5*Assumptions!$B$6,0)",
+      "value": -149.0
+    },
+    {
+      "cell": "Revenue!A9",
+      "value": "Closing customers"
+    },
+    {
+      "cell": "Revenue!C9",
+      "formula": "=C5+C6+C7",
+      "value": 7692.0
+    },
+    {
+      "cell": "Revenue!D9",
+      "formula": "=D5+D6+D7",
+      "value": 8217.0
+    },
+    {
+      "cell": "Revenue!E9",
+      "formula": "=E5+E6+E7",
+      "value": 8777.0
+    },
+    {
+      "cell": "Revenue!F9",
+      "formula": "=F5+F6+F7",
+      "value": 9375.0
+    },
+    {
+      "cell": "Revenue!G9",
+      "formula": "=G5+G6+G7",
+      "value": 10014.0
+    },
+    {
+      "cell": "Revenue!H9",
+      "formula": "=H5+H6+H7",
+      "value": 7692.0
+    },
+    {
+      "cell": "Revenue!I9",
+      "formula": "=I5+I6+I7",
+      "value": 8217.0
+    },
+    {
+      "cell": "Revenue!J9",
+      "formula": "=J5+J6+J7",
+      "value": 8777.0
+    },
+    {
+      "cell": "Revenue!K9",
+      "formula": "=K5+K6+K7",
+      "value": 9375.0
+    },
+    {
+      "cell": "Revenue!L9",
+      "formula": "=L5+L6+L7",
+      "value": 10014.0
+    },
+    {
+      "cell": "Revenue!A11",
+      "value": "ARPU"
+    },
+    {
+      "cell": "Revenue!C11",
+      "formula": "=Assumptions!$B$7",
+      "value": 119.08
+    },
+    {
+      "cell": "Revenue!D11",
+      "formula": "=ROUND(C11*(1+Assumptions!$B$8),2)",
+      "value": 119.96
+    },
+    {
+      "cell": "Revenue!E11",
+      "formula": "=ROUND(D11*(1+Assumptions!$B$8),2)",
+      "value": 120.85
+    },
+    {
+      "cell": "Revenue!F11",
+      "formula": "=ROUND(E11*(1+Assumptions!$B$8),2)",
+      "value": 121.74
+    },
+    {
+      "cell": "Revenue!G11",
+      "formula": "=ROUND(F11*(1+Assumptions!$B$8),2)",
+      "value": 122.64
+    },
+    {
+      "cell": "Revenue!H11",
+      "formula": "=ROUND(G11*(1+Assumptions!$B$8),2)",
+      "value": 123.55
+    },
+    {
+      "cell": "Revenue!I11",
+      "formula": "=ROUND(H11*(1+Assumptions!$B$8),2)",
+      "value": 124.46
+    },
+    {
+      "cell": "Revenue!J11",
+      "formula": "=ROUND(I11*(1+Assumptions!$B$8),2)",
+      "value": 125.38
+    },
+    {
+      "cell": "Revenue!K11",
+      "formula": "=ROUND(J11*(1+Assumptions!$B$8),2)",
+      "value": 126.31
+    },
+    {
+      "cell": "Revenue!L11",
+      "formula": "=ROUND(K11*(1+Assumptions!$B$8),2)",
+      "value": 127.24
+    },
+    {
+      "cell": "Revenue!A13",
+      "value": "Average customers"
+    },
+    {
+      "cell": "Revenue!C13",
+      "formula": "=ROUND((C5+C9)/2,0)",
+      "value": 7446.0
+    },
+    {
+      "cell": "Revenue!D13",
+      "formula": "=ROUND((D5+D9)/2,0)",
+      "value": 7955.0
+    },
+    {
+      "cell": "Revenue!E13",
+      "formula": "=ROUND((E5+E9)/2,0)",
+      "value": 8497.0
+    },
+    {
+      "cell": "Revenue!F13",
+      "formula": "=ROUND((F5+F9)/2,0)",
+      "value": 9076.0
+    },
+    {
+      "cell": "Revenue!G13",
+      "formula": "=ROUND((G5+G9)/2,0)",
+      "value": 9695.0
+    },
+    {
+      "cell": "Revenue!H13",
+      "formula": "=ROUND((H5+H9)/2,0)",
+      "value": 7446.0
+    },
+    {
+      "cell": "Revenue!I13",
+      "formula": "=ROUND((I5+I9)/2,0)",
+      "value": 7955.0
+    },
+    {
+      "cell": "Revenue!J13",
+      "formula": "=ROUND((J5+J9)/2,0)",
+      "value": 8497.0
+    },
+    {
+      "cell": "Revenue!K13",
+      "formula": "=ROUND((K5+K9)/2,0)",
+      "value": 9076.0
+    },
+    {
+      "cell": "Revenue!L13",
+      "formula": "=ROUND((L5+L9)/2,0)",
+      "value": 9695.0
+    },
+    {
+      "cell": "Revenue!A15",
+      "value": "Revenue"
+    },
+    {
+      "cell": "Revenue!C15",
+      "formula": "=ROUND(C13*C11,0)",
+      "value": 886670.0
+    },
+    {
+      "cell": "Revenue!D15",
+      "formula": "=ROUND(D13*D11,0)",
+      "value": 954282.0
+    },
+    {
+      "cell": "Revenue!E15",
+      "formula": "=ROUND(E13*E11,0)",
+      "value": 1026862.0
+    },
+    {
+      "cell": "Revenue!F15",
+      "formula": "=ROUND(F13*F11,0)",
+      "value": 1104912.0
+    },
+    {
+      "cell": "Revenue!G15",
+      "formula": "=ROUND(G13*G11,0)",
+      "value": 1188995.0
+    },
+    {
+      "cell": "Revenue!H15",
+      "formula": "=ROUND(H13*H11,0)",
+      "value": 919953.0
+    },
+    {
+      "cell": "Revenue!I15",
+      "formula": "=ROUND(I13*I11,0)",
+      "value": 990079.0
+    },
+    {
+      "cell": "Revenue!J15",
+      "formula": "=ROUND(J13*J11,0)",
+      "value": 1065354.0
+    },
+    {
+      "cell": "Revenue!K15",
+      "formula": "=ROUND(K13*K11,0)",
+      "value": 1146390.0
+    },
+    {
+      "cell": "Revenue!L15",
+      "formula": "=ROUND(L13*L11,0)",
+      "value": 1233592.0
+    }
+  ],
+  "range": "A1:L16",
+  "sheet": "Revenue"
+}
+```
+
+### Step 5, tool call
+
+Running `inspect_range`.
+
+### Step 6, tool result
+
+`inspect_range` returned:
+
+```json
+{
+  "cells": [
+    {
+      "cell": "Revenue!M3",
+      "formula": "=L3+1",
+      "value": 11.0
+    },
+    {
+      "cell": "Revenue!N3",
+      "formula": "=M3+1",
+      "value": 12.0
+    },
+    {
+      "cell": "Revenue!O3",
+      "formula": "=N3+1",
+      "value": 13.0
+    },
+    {
+      "cell": "Revenue!P3",
+      "formula": "=O3+1",
+      "value": 14.0
+    },
+    {
+      "cell": "Revenue!Q3",
+      "formula": "=P3+1",
+      "value": 15.0
+    },
+    {
+      "cell": "Revenue!R3",
+      "formula": "=Q3+1",
+      "value": 16.0
+    },
+    {
+      "cell": "Revenue!S3",
+      "formula": "=R3+1",
+      "value": 17.0
+    },
+    {
+      "cell": "Revenue!T3",
+      "formula": "=S3+1",
+      "value": 18.0
+    },
+    {
+      "cell": "Revenue!U3",
+      "formula": "=T3+1",
+      "value": 19.0
+    },
+    {
+      "cell": "Revenue!V3",
+      "formula": "=U3+1",
+      "value": 20.0
+    },
+    {
+      "cell": "Revenue!W3",
+      "formula": "=V3+1",
+      "value": 21.0
+    },
+    {
+      "cell": "Revenue!X3",
+      "formula": "=W3+1",
+      "value": 22.0
+    },
+    {
+      "cell": "Revenue!Y3",
+      "formula": "=X3+1",
+      "value": 23.0
+    },
+    {
+      "cell": "Revenue!Z3",
+      "formula": "=Y3+1",
+      "value": 24.0
+    },
+    {
+      "cell": "Revenue!M5",
+      "formula": "=L9",
+      "value": 10014.0
+    },
+    {
+      "cell": "Revenue!N5",
+      "formula": "=M9",
+      "value": 10697.0
+    },
+    {
+      "cell": "Revenue!O5",
+      "formula": "=N9",
+      "value": 11427.0
+    },
+    {
+      "cell": "Revenue!P5",
+      "formula": "=O9",
+      "value": 12206.0
+    },
+    {
+      "cell": "Revenue!Q5",
+      "formula": "=P9",
+      "value": 13039.0
+    },
+    {
+      "cell": "Revenue!R5",
+      "formula": "=Q9",
+      "value": 13929.0
+    },
+    {
+      "cell": "Revenue!S5",
+      "formula": "=R9",
+      "value": 14879.0
+    },
+    {
+      "cell": "Revenue!T5",
+      "formula": "=S9",
+      "value": 15893.0
+    },
+    {
+      "cell": "Revenue!U5",
+      "formula": "=T9",
+      "value": 16977.0
+    },
+    {
+      "cell": "Revenue!V5",
+      "formula": "=U9",
+      "value": 18135.0
+    },
+    {
+      "cell": "Revenue!W5",
+      "formula": "=V9",
+      "value": 19372.0
+    },
+    {
+      "cell": "Revenue!X5",
+      "formula": "=W9",
+      "value": 20693.0
+    },
+    {
+      "cell": "Revenue!Y5",
+      "formula": "=X9",
+      "value": 22104.0
+    },
+    {
+      "cell": "Revenue!Z5",
+      "formula": "=Y9",
+      "value": 23612.0
+    },
+    {
+      "cell": "Revenue!M6",
+      "formula": "=ROUND(M5*Assumptions!$B$5,0)",
+      "value": 842.0
+    },
+    {
+      "cell": "Revenue!N6",
+      "formula": "=ROUND(N5*Assumptions!$B$5,0)",
+      "value": 900.0
+    },
+    {
+      "cell": "Revenue!O6",
+      "formula": "=ROUND(O5*Assumptions!$B$5,0)",
+      "value": 961.0
+    },
+    {
+      "cell": "Revenue!P6",
+      "formula": "=ROUND(P5*Assumptions!$B$5,0)",
+      "value": 1027.0
+    },
+    {
+      "cell": "Revenue!Q6",
+      "formula": "=ROUND(Q5*Assumptions!$B$5,0)",
+      "value": 1097.0
+    },
+    {
+      "cell": "Revenue!R6",
+      "formula": "=ROUND(R5*Assumptions!$B$5,0)",
+      "value": 1171.0
+    },
+    {
+      "cell": "Revenue!S6",
+      "formula": "=ROUND(S5*Assumptions!$B$5,0)",
+      "value": 1251.0
+    },
+    {
+      "cell": "Revenue!T6",
+      "formula": "=ROUND(T5*Assumptions!$B$5,0)",
+      "value": 1337.0
+    },
+    {
+      "cell": "Revenue!U6",
+      "formula": "=ROUND(U5*Assumptions!$B$5,0)",
+      "value": 1428.0
+    },
+    {
+      "cell": "Revenue!V6",
+      "formula": "=ROUND(V5*Assumptions!$B$5,0)",
+      "value": 1525.0
+    },
+    {
+      "cell": "Revenue!W6",
+      "formula": "=ROUND(W5*Assumptions!$B$5,0)",
+      "value": 1629.0
+    },
+    {
+      "cell": "Revenue!X6",
+      "formula": "=ROUND(X5*Assumptions!$B$5,0)",
+      "value": 1740.0
+    },
+    {
+      "cell": "Revenue!Y6",
+      "formula": "=ROUND(Y5*Assumptions!$B$5,0)",
+      "value": 1859.0
+    },
+    {
+      "cell": "Revenue!Z6",
+      "formula": "=ROUND(Z5*Assumptions!$B$5,0)",
+      "value": 1986.0
+    }
+  ],
+  "range": "M1:Z6",
+  "sheet": "Revenue"
+}
+```
+
+### Step 7, model message
+
+_5,257 tokens in, 215 out, 4,603 ms_
+
+Asks for `recompute_with_patch`:
+
+```json
+{
+  "cell": "Revenue!H5",
+  "proposed_formula": "=G9"
+}
+```
+
+### Step 8, tool call
+
+Running `recompute_with_patch`.
+
+### Step 9, tool result
+
+`recompute_with_patch` returned:
+
+```json
+{
+  "P&L!AA15": 8704573.0,
+  "Valuation!B7": 92752830.0
+}
+```
+
+### Step 10, model message
+
+_5,330 tokens in, 249 out, 3,240 ms_
+
+Asks for `submit_verdict`:
+
+```json
+{
+  "confidence": "high",
+  "evidence": [
+    "Revenue!F5 is =E9, Revenue!G5 is =F9, and Revenue!I5 is =H9, establishing the one-period closing-customer carryforward pattern across the row.",
+    "Revenue!H5 is a hardcoded 7200 while its immediate prior-period source Revenue!G9 is 10014; Revenue!H6, Revenue!H7, Revenue!H9, Revenue!H13, and Revenue!H15 reset to values matching month 1, consistent with that broken carryforward.",
+    "Revenue!C5 is the distinct first-period initialization formula =Assumptions!$B$4; H5 is not a first-period column and has no comment or adjacent structural indicator supporting a reset."
+  ],
+  "measured_deltas": {
+    "P&L!AA15": 8704573.0,
+    "Valuation!B7": 92752830.0
+  },
+  "proposed_formula": "=G9",
+  "reasoning": "The intended formula is the direct continuation of the uniform opening-customers roll-forward: =G9. Replacing the hardcode materially changes both declared outputs.",
+  "verdict": "ERROR"
+}
+```
+
+### Step 11, tool call
+
+Running `submit_verdict`.
+
+### Step 12, verdict
+
+**ERROR**, confidence high
+
+Proposed formula: `=G9`
+
+The intended formula is the direct continuation of the uniform opening-customers roll-forward: =G9. Replacing the hardcode materially changes both declared outputs.
+
+Evidence given:
+
+- Revenue!F5 is =E9, Revenue!G5 is =F9, and Revenue!I5 is =H9, establishing the one-period closing-customer carryforward pattern across the row.
+- Revenue!H5 is a hardcoded 7200 while its immediate prior-period source Revenue!G9 is 10014; Revenue!H6, Revenue!H7, Revenue!H9, Revenue!H13, and Revenue!H15 reset to values matching month 1, consistent with that broken carryforward.
+- Revenue!C5 is the distinct first-period initialization formula =Assumptions!$B$4; H5 is not a first-period column and has no comment or adjacent structural indicator supporting a reset.
+
+Impact the model reported:
+
+```json
+{
+  "P&L!AA15": 8704573.0,
+  "Valuation!B7": 92752830.0
+}
+```
+
+### Step 13, run end
+
+Status `ok`. turns 3.
+
+---
+
+Raw trajectory: `trajectories/solution_scored/C03_adjudicator_Revenue_H5_D1.jsonl`

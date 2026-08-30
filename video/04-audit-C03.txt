@@ -1,0 +1,206 @@
+MODEL HEALTH                                                      C03.xlsx
+==========================================================================
+
+      738  formulas parsed
+       22  structural anomalies detected
+        2  survived hypothesis testing
+        2  material findings   <-- what you read
+
+FINDINGS
+--------------------------------------------------------------------------
+
+  1  Valuation!B7 is understated by 92,752,830
+     64.62% of its current value
+
+     Cell         Revenue!H5
+     Currently    a pasted value, not a formula
+     Should be    =G9
+     Confidence   high        Detector  D1
+
+     Its neighbours
+       Revenue!F5      =E9
+       Revenue!G5      =F9
+       Revenue!I5      =H9
+
+     How it reaches Valuation!B7, 21 steps
+       Revenue!H5 -> Revenue!H9 -> Revenue!I5 -> ... -> Valuation!B7
+
+     Evidence
+       Revenue!F5 is =E9, Revenue!G5 is =F9, and Revenue!I5 is =H9,
+       establishing the one-period closing-customer carryforward pattern
+       across the row.
+       Revenue!H5 is a hardcoded 7200 while its immediate prior-period
+       source Revenue!G9 is 10014; Revenue!H6, Revenue!H7, Revenue!H9,
+       Revenue!H13, and Revenue!H15 reset to values matching month 1,
+       consistent with that broken carryforward.
+       Revenue!C5 is the distinct first-period initialization formula
+       =Assumptions!$B$4; H5 is not a first-period column and has no
+       comment or adjacent structural indicator supporting a reset.
+
+     Measured impact
+       Valuation!B7           92,752,830   64.62%
+       P&L!AA15                8,704,573   58.75%
+
+  2  P&L!AA15 is understated by 1,550,882
+     10.47% of its current value
+
+     Cell         P&L!AA15
+     Currently    =SUM(C15:Y15)
+     Should be    =SUM(C15:Z15)
+     Confidence   high        Detector  D2
+
+     Its neighbours
+       P&L!C15         =C7+C13
+       P&L!D15         =D7+D13
+       P&L!E15         =E7+E13
+
+     Evidence
+       P&L!AA3 is labelled "Total", and AA5 and AA6 use =SUM(C5:Z5),
+       establishing that the Total column sums all monthly columns C:Z.
+       P&L!AA13 uses =SUM(C13:Z13), while P&L!AA15 instead uses
+       =SUM(C15:Y15), omitting Z15.
+       P&L!Z15 is the final monthly EBITDA and equals 1550882.0; P&L!Y18,
+       the cumulative EBITDA through month 23, equals the current AA15
+       value of 14816742.0, confirming AA15 currently excludes month 24.
+
+     Measured impact
+       P&L!AA15                1,550,882   10.47%
+       Valuation!B7            no change
+
+WHAT WAS SET ASIDE
+--------------------------------------------------------------------------
+
+      20  deliberate, and the evidence says so
+       0  not enough evidence to say
+
+  Judged deliberate
+    Costs!C12
+      Costs!C12 is an intentional first-period initialization from the
+      monthly-overhead assumption, while subsequent months compound from
+      the prior month. The different formula is therefore structurally
+      required by the available prior-period reference.
+    Costs!C5
+      The formula break at Costs!C5 is an intentional opening-balance
+      initialization. Subsequent cells roll that opening headcount forward
+      using the separately labeled monthly hiring assumption.
+    P&L!AA10
+      AA10 is intentionally a total-column aggregation, not a missing
+      continuation of the monthly cross-sheet-link pattern.
+    P&L!AA11
+      AA11 is a deliberate total-column aggregation rather than a monthly
+      peer formula. Its formula is consistent with the adjacent total
+      cells in column AA.
+    P&L!AA12
+      AA12 is a deliberately different total-column formula, not a break
+      in the monthly link-to-Costs pattern.
+    P&L!AA13
+      The divergent formula is the consistent aggregation formula for the
+      explicitly labelled Total column. The row-peer formula applies to
+      monthly columns only.
+    P&L!AA3
+      AA3 is intentionally a hardcoded total-column label, not a missing
+      continuation of the month-link formulas.
+    P&L!AA5
+      AA5 deliberately breaks the monthly peer pattern because AA is the
+      labelled Total column. Its summation formula matches adjacent Total-
+      column formulas.
+    P&L!AA6
+      AA is a designated Total column, so its aggregation formula is a
+      deliberate structural break from the monthly links in C:Z.
+    P&L!AA7
+      AA7 is a deliberate total-column calculation, not a monthly-period
+      sibling of C7:Z7. Its formula consistently aggregates the 24 monthly
+      gross-profit values, as other total-column rows do.
+    P&L!C18
+      The differing formula at C18 is an intentional first-period
+      initialization of the cumulative EBITDA calculation, while the
+      recurring pattern begins in D18 where a prior-period balance exists.
+    Revenue!C11
+      Revenue!C11 is the opening-period seed for the ARPU progression, not
+      an omitted copy of the recurring formula. The adjacent rows and
+      explicit assumption label provide workbook-specific evidence for
+      this first-period exception.
+    Revenue!C17
+      C17 is the deliberate initial balance of the cumulative-revenue
+      series; it has no prior-period cumulative value to add. The
+      subsequent cells implement the recurring accumulation pattern
+      starting in column D.
+    Revenue!C3
+      Revenue!C3 is the necessary initial anchor for the left-to-right
+      month sequence; its formula-driven peers each depend on the
+      preceding period. The hardcoded 1 therefore reflects the first-
+      period boundary rather than a broken peer formula.
+    Revenue!C5
+      Revenue!C5 is the initial-period opening balance sourced from the
+      matching assumption; the peer formula is only applicable from month
+      2 onward. The differing formula is therefore supported by the first-
+      period structure and matching row labels.
+    Valuation!B11
+      Valuation!B11 consistently averages the 24 monthly EBITDA cells and
+      deliberately excludes the aggregate Total column AA; including AA
+      would double-count an aggregate as a month.
+    Valuation!B12
+      The C:Z endpoint is consistently used for Valuation's monthly
+      statistics. Including AA would mix the annual aggregate into a
+      metric explicitly labeled Best month.
+    Valuation!B13
+      B13 deliberately excludes AA because AA is the separately presented
+      total EBITDA, while C:Z is consistently used for month-level
+      statistics.
+    Valuation!B14
+      The C:Z range deliberately restricts the calculation to the 24
+      monthly columns and excludes the separate Total column AA. This
+      matches adjacent valuation statistics using the same monthly range.
+    Valuation!B5
+      The O:Z range is a deliberate final-12-month period selection for
+      the exit run-rate metric, while total EBITDA is separately sourced
+      from the Total column.
+
+HOW TO CHECK THIS
+
+  provider openai, model gpt-5.6-terra
+
+  Costs!C12          INTENTIONAL   2 turns, 4 tool calls
+                     trajectories/solution_scored/C03_adjudicator_Costs_C12_D2.jsonl
+  Costs!C5           INTENTIONAL   2 turns, 4 tool calls
+                     trajectories/solution_scored/C03_adjudicator_Costs_C5_D2.jsonl
+  P&L!AA10           INTENTIONAL   2 turns, 4 tool calls
+                     trajectories/solution_scored/C03_adjudicator_P&L_AA10_D2.jsonl
+  P&L!AA11           INTENTIONAL   4 turns, 9 tool calls
+                     trajectories/solution_scored/C03_adjudicator_P&L_AA11_D2.jsonl
+  P&L!AA12           INTENTIONAL   3 turns, 7 tool calls
+                     trajectories/solution_scored/C03_adjudicator_P&L_AA12_D2.jsonl
+  P&L!AA13           INTENTIONAL   4 turns, 5 tool calls
+                     trajectories/solution_scored/C03_adjudicator_P&L_AA13_D2.jsonl
+  P&L!AA15           ERROR         4 turns, 7 tool calls
+                     trajectories/solution_scored/C03_adjudicator_P&L_AA15_D2.jsonl
+  P&L!AA3            INTENTIONAL   2 turns, 4 tool calls
+                     trajectories/solution_scored/C03_adjudicator_P&L_AA3_D1.jsonl
+  P&L!AA5            INTENTIONAL   4 turns, 11 tool calls
+                     trajectories/solution_scored/C03_adjudicator_P&L_AA5_D2.jsonl
+  P&L!AA6            INTENTIONAL   4 turns, 7 tool calls
+                     trajectories/solution_scored/C03_adjudicator_P&L_AA6_D2.jsonl
+  P&L!AA7            INTENTIONAL   4 turns, 6 tool calls
+                     trajectories/solution_scored/C03_adjudicator_P&L_AA7_D2.jsonl
+  P&L!C18            INTENTIONAL   2 turns, 4 tool calls
+                     trajectories/solution_scored/C03_adjudicator_P&L_C18_D2.jsonl
+  Revenue!C11        INTENTIONAL   2 turns, 4 tool calls
+                     trajectories/solution_scored/C03_adjudicator_Revenue_C11_D2.jsonl
+  Revenue!C17        INTENTIONAL   2 turns, 4 tool calls
+                     trajectories/solution_scored/C03_adjudicator_Revenue_C17_D2.jsonl
+  Revenue!C3         INTENTIONAL   2 turns, 2 tool calls
+                     trajectories/solution_scored/C03_adjudicator_Revenue_C3_D1.jsonl
+  Revenue!C5         INTENTIONAL   3 turns, 8 tool calls
+                     trajectories/solution_scored/C03_adjudicator_Revenue_C5_D2.jsonl
+  Revenue!H5         ERROR         3 turns, 4 tool calls
+                     trajectories/solution_scored/C03_adjudicator_Revenue_H5_D1.jsonl
+  Valuation!B11      INTENTIONAL   3 turns, 8 tool calls
+                     trajectories/solution_scored/C03_adjudicator_Valuation_B11_D3.jsonl
+  Valuation!B12      INTENTIONAL   2 turns, 3 tool calls
+                     trajectories/solution_scored/C03_adjudicator_Valuation_B12_D3.jsonl
+  Valuation!B13      INTENTIONAL   2 turns, 3 tool calls
+                     trajectories/solution_scored/C03_adjudicator_Valuation_B13_D3.jsonl
+  Valuation!B14      INTENTIONAL   3 turns, 4 tool calls
+                     trajectories/solution_scored/C03_adjudicator_Valuation_B14_D3.jsonl
+  Valuation!B5       INTENTIONAL   4 turns, 9 tool calls
+                     trajectories/solution_scored/C03_adjudicator_Valuation_B5_D3.jsonl

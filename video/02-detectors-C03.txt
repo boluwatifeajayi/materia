@@ -1,0 +1,28 @@
+DETECTORS ONLY, corpus/C03.xlsx: 22 cells flagged
+==========================================================================
+
+  Costs!C12            D2  Normalises to ROUND(Assumptions!R17C2,0), where 23 of 24 cells i
+  Costs!C5             D2  Normalises to Assumptions!R12C2, where 23 of 24 cells in Costs r
+  P&L!AA10             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in P&L r
+  P&L!AA11             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in P&L r
+  P&L!AA12             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in P&L r
+  P&L!AA13             D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in P&L r
+  P&L!AA15             D2  Normalises to SUM(RC[-24]:RC[-2]), where 24 of 25 cells in P&L r
+  P&L!AA3              D1  Holds a value, but 24 other cells in row 3 of P&L hold formulas.
+  P&L!AA5              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in P&L r
+  P&L!AA6              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in P&L r
+  P&L!AA7              D2  Normalises to SUM(RC[-24]:RC[-1]), where 24 of 25 cells in P&L r
+  P&L!C18              D2  Normalises to R[-3]C, where 23 of 24 cells in P&L row 18 normali
+  Revenue!C11          D2  Normalises to Assumptions!R7C2, where 23 of 24 cells in Revenue 
+  Revenue!C17          D2  Normalises to R[-2]C, where 23 of 24 cells in Revenue row 17 nor
+  Revenue!C3           D1  Holds a value, but 23 other cells in row 3 of Revenue hold formu
+  Revenue!C5           D2  Normalises to Assumptions!R4C2, where 22 of 23 cells in Revenue 
+  Revenue!H5           D1  Holds a value, but 23 other cells in row 5 of Revenue hold formu
+  Valuation!B11        D3  AVERAGE covers columns C:Z on P&L, but the populated block runs 
+  Valuation!B12        D3  MAX covers columns C:Z on P&L, but the populated block runs C:AA
+  Valuation!B13        D3  MIN covers columns C:Z on P&L, but the populated block runs C:AA
+  Valuation!B14        D3  SUMIF covers columns C:Z on P&L, but the populated block runs C:
+  Valuation!B5         D3  SUM covers columns O:Z on P&L, but the populated block runs C:AA
+
+22 flagged, no impact figure and no ordering by consequence.
+Two of them are real errors. The user checks the first fifteen and stops.
