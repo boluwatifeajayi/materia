@@ -584,3 +584,19 @@ class TestTheVideoScriptPointsAtFilesThatExist:
 
     def test_the_headline_copy_matches_the_generated_one(self):
         assert Path("video/07-headline.md").read_text() == Path("results/headline.md").read_text()
+
+    def test_the_spoken_word_count_in_the_notes_is_the_real_one(self):
+        """The notes claimed 680 words when the script holds 986, which is the
+        difference between inside the cap and 90 seconds over it."""
+        script = Path("docs/VIDEO_SCRIPT.md").read_text()
+        spoken, collecting = 0, False
+        for line in script.splitlines():
+            if line.strip() == "**Say:**":
+                collecting = True
+                continue
+            if collecting:
+                if line.startswith("- "):
+                    spoken += len(line[2:].split())
+                elif line.strip():
+                    collecting = False
+        assert f"{spoken} words" in script, f"notes do not state the real count of {spoken}"
