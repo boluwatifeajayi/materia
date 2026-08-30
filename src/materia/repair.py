@@ -19,7 +19,7 @@ Three things hold regardless of what the user answers:
 from __future__ import annotations
 
 import shutil
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable
 

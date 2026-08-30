@@ -356,7 +356,11 @@ WIDTH = 74
 
 @dataclass(frozen=True)
 class Funnel:
-    """The four numbers from README section 4.
+    """The counts at the top of a report. README section 4.
+
+    Four were planned and there are five: the materiality gate added
+    `suppressed`, which is only shown when it is non zero, because a workbook
+    where nothing was suppressed should not carry a row of zero.
 
     `adjudicated` exists so a bounded run cannot read as a complete one. A
     funnel that says twenty two anomalies were detected, without saying only
@@ -512,12 +516,19 @@ def render(
     workbook: str,
     result: CrossCheck,
     funnel: Funnel,
-    show_suppressed: bool = True,
+    show_intentional: bool = True,
 ) -> str:
     """The whole report.
 
     Suppression the user cannot see is indistinguishable from a bug, so what
-    was set aside is stated rather than quietly omitted.
+    was set aside is stated rather than quietly omitted. Every bucket appears
+    in the counts under WHAT WAS SET ASIDE whatever this flag says: it only
+    controls whether each `INTENTIONAL` verdict is listed with its reasoning,
+    which is the long part of the report.
+
+    It was called `show_suppressed` until the materiality gate landed and gave
+    "suppressed" a specific meaning, immaterial rather than deliberate. The
+    name now says which of the two it gates.
     """
     blocks = [funnel.render(workbook), ""]
 
@@ -567,7 +578,7 @@ def render(
             if finding.proposed_formula:
                 blocks.append(f"      would be {finding.proposed_formula}")
 
-    if show_suppressed and result.intentional:
+    if show_intentional and result.intentional:
         blocks.append("")
         blocks.append("  Judged deliberate")
         for verdict in result.intentional:

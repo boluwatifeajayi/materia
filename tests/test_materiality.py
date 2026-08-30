@@ -7,7 +7,6 @@ relative impact, and the invariant that every candidate ends up in exactly
 one bucket.
 """
 
-from pathlib import Path
 
 import pytest
 

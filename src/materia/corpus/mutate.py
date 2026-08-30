@@ -36,8 +36,6 @@ from materia.corpus.layout import (
     REVENUE_ROWS,
     REVENUE_SHEET,
     TOTAL,
-    VALUATION_ROWS,
-    VALUATION_SHEET,
     month_column,
 )
 from materia.corpus.generate import ModelValues

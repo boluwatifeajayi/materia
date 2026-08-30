@@ -41,10 +41,13 @@ from openpyxl.workbook.workbook import Workbook
 
 from materia.corpus.layout import (
     ASSUMPTION_ROWS,
+    # Re-exported through materia.corpus.__init__ for callers that want the
+    # declared outputs without reaching into layout. Unused in this module by
+    # design, so a linter will call it dead. It is not.
+    DECLARED_OUTPUTS,  # noqa: F401
     ASSUMPTIONS_SHEET,
     COST_ROWS,
     COSTS_SHEET,
-    DECLARED_OUTPUTS,
     EXIT_FIRST_MONTH,
     MONTHS,
     PL_ROWS,
@@ -300,7 +303,7 @@ def compute_values(
         cogs = values.set(COSTS_SHEET, f"{column}{COST_ROWS['cogs']}", cogs)
         marketing = values.set(COSTS_SHEET, f"{column}{COST_ROWS['marketing']}", marketing)
         overhead = values.set(COSTS_SHEET, f"{column}{COST_ROWS['overhead']}", overhead)
-        total_costs = values.set(
+        values.set(
             COSTS_SHEET,
             f"{column}{COST_ROWS['total_costs']}",
             staff_total + cogs + marketing + overhead,

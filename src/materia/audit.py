@@ -1,13 +1,15 @@
 """The whole pipeline, end to end.
 
-    preflight -> parse -> graph -> detect -> adjudicate -> cross check -> report
+    preflight -> parse -> graph -> detect -> adjudicate -> cross check
+              -> materiality gate -> report
 
 Each stage is a module of its own and this is the only place that knows the
 order. See docs/ARCHITECTURE.md.
 
-The materiality gate belongs between the cross check and the report. It lands
-in T21; until then every verified finding is reported and the suppressed count
-is zero.
+The gate sits after the cross check on purpose. A finding has to be verified
+before its size can be weighed, and weighing it is a threshold against a
+measured number rather than a judgement, so it happens in code afterwards
+where it can be re run at a different threshold without another model call.
 """
 
 from __future__ import annotations
@@ -150,7 +152,15 @@ def audit(
     corpus: str | Path = "corpus",
     threshold: float | None = None,
 ) -> Audit:
-    """Run the pipeline over one workbook."""
+    """Run the pipeline over one workbook.
+
+    preflight, parse, graph, detect, adjudicate, cross check, then the
+    materiality gate. `threshold` overrides the value in `config.yaml` for
+    this run only, which is what `--materiality` and a sensitivity sweep use.
+
+    Every candidate that is adjudicated leaves in exactly one bucket, and
+    `check_buckets` raises rather than returns if that is not true.
+    """
     path = Path(path)
     name = path.stem
 

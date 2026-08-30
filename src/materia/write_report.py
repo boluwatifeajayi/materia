@@ -1,4 +1,19 @@
-"""The report writer agent.
+"""The report writer agent. Built, run, and not shipped.
+
+**This is the removed experiment in the README changelog.** It is kept because
+a removed experiment with no artefact is an anecdote. Nothing in the pipeline
+calls it: `audit` renders through the deterministic template in `report.py`.
+
+Given the verified findings and told explicitly not to reinterpret any figure,
+it printed every number correctly and then wrote that enterprise value was
+overstated where the measurement says understated, on all four findings. It
+also put the dependency path at 6 steps where it is 21, and described an
+`INTENTIONAL` verdict as suppressed. The figures survived the cross check
+because they were right. What was said about them was wrong, and nothing
+checks sentences. Its trajectory is `trajectories/solution/C03_reporter.jsonl`.
+
+The design below is unchanged from when it ran, so a reader can see what it
+was given.
 
 The second agent in the system. One call per workbook, no tools, run after
 adjudication and after the gate. It receives verified findings and turns them

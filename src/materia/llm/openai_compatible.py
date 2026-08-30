@@ -21,7 +21,7 @@ from collections import deque
 from materia.llm.types import (
     AgentResponse,
     Message,
-    ModelNotAvailable,
+    ModelNotAvailable,  # noqa: F401 - re-exported to the provider adapters
     ProviderError,
     ToolCall,
     ToolDefinition,

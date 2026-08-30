@@ -20,7 +20,7 @@ from typing import Iterable, Iterator
 
 import networkx as nx
 
-from materia.formula import CellRef, Node, RangeRef, references
+from materia.formula import CellRef, Node, references
 from materia.parse import cell_address, normalise_address, range_addresses
 
 

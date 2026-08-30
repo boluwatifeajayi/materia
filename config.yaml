@@ -1,13 +1,17 @@
-# Materia configuration. Placeholder values, filled in as tasks land.
+# Materia configuration. Every value here is measured or chosen, none are
+# placeholders. Where a figure was later re-measured, the comment says so.
 
 # Fraction of a declared output's value a correction must move for a finding
-# to be shown. docs/ARCHITECTURE.md section 7. T21 implements the gate.
+# to be shown. docs/ARCHITECTURE.md section 7. `--materiality` overrides it
+# for one run without editing this file.
 materiality:
   threshold: 0.01
 
 # Provider selection. MATERIA_PROVIDER overrides "name" at startup. The
 # provider that produced a results/ directory is recorded alongside it, so a
-# dev loop run cannot be mistaken for a scored one. T12.
+# dev loop run cannot be mistaken for a scored one. The default is the dev
+# loop provider, so a scored run needs MATERIA_PROVIDER=openai set explicitly.
+# Both published result sets record openai and gpt-5.6-terra.
 provider:
   name: groq
   models:
@@ -18,13 +22,23 @@ provider:
 # solution's measured per workbook average, so neither side gets more room
 # than the other. docs/EVALUATION.md section 4.
 #
-# Derived, not chosen. Measured on gpt-5.6-terra: 3.0 model calls and 9,463
-# tokens per candidate. The corpus averages 22.2 candidates per workbook, so
-# the solution spends about 67 calls and 211,000 tokens on one workbook, and
-# the baseline is given the same.
+# Derived, not chosen, from a sample of adjudications taken before the scored
+# runs: 3.0 model calls and 9,463 tokens per candidate on gpt-5.6-terra,
+# times the 22.2 candidates the corpus averages.
+#
+# The full 267 candidate run later measured 2.73 calls and 9,881 tokens per
+# candidate, which would derive 61 turns and 219,700 tokens. These values are
+# deliberately left at the pre-run estimate, because they are the caps the
+# baseline actually ran under and the published comparison depends on both
+# systems having had the same room. Changing them here without re-running the
+# baseline would make this file disagree with results/. See
+# docs/EVALUATION.md section 4.
 solution:
   calls_per_candidate: 3.0
   tokens_per_candidate: 9463
+  # Measured over the scored run, recorded rather than applied.
+  measured_calls_per_candidate: 2.73
+  measured_tokens_per_candidate: 9881
 
 baseline:
   max_turns: 67

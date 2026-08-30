@@ -17,7 +17,6 @@ import pytest
 from materia.baseline import (
     FINDINGS_NAME,
     MAX_TOOL_NAME_CORRECTIONS,
-    TOOLS,
     WORKBOOK_NAME,
     Workspace,
     _is_unoffered_tool,

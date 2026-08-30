@@ -17,7 +17,6 @@ from dataclasses import dataclass, field
 
 from materia.detect.peers import MINIMUM_PEERS, PeerCell, PeerGroup, Workbook
 from materia.formula import FunctionCall, RangeRef, parse_formula, walk
-from materia.parse import cell_address, normalise_address
 
 # A group where fewer than this share of cells agree has no pattern to break.
 MINIMUM_MODE_SHARE = 0.6

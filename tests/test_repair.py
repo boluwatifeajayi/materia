@@ -13,7 +13,7 @@ import openpyxl
 import pytest
 
 from materia.audit import from_trajectories
-from materia.repair import Decision, RepairResult, default_target, repair
+from materia.repair import default_target, repair
 from materia.trace import read
 
 CORPUS = Path("corpus")

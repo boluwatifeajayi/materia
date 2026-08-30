@@ -462,7 +462,6 @@ class TestTheRealC03Report:
         return from_trajectories("corpus/C03.xlsx", "trajectories/solution")
 
     def test_it_finds_both_seeded_mutations(self, audit_result):
-        import json
 
         manifest = json.loads(Path("corpus/manifest.json").read_text())
         entry = next(e for e in manifest["workbooks"] if e["id"] == "C03")

@@ -1,7 +1,15 @@
 """Command line entrypoint.
 
-`audit` lands in T17 and `trace render` in T24. What is here now is the corpus
-build, which `make corpus` and `make corpus-check` call.
+  corpus     build the twelve workbook corpus, and check it against checksums
+  audit      run the pipeline over one workbook or the whole corpus
+  baseline   run the comparison agent over the same
+  report     re render a report from trajectories already on disk, no API calls
+  eval       score the result sets and fill the tables in the docs
+  trace      read and index the trajectories
+  llm        confirm the configured model is real before anything depends on it
+
+Every one of these is what a `make` target calls. Nothing here holds logic of
+its own beyond argument handling and printing.
 """
 
 from __future__ import annotations

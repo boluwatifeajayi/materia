@@ -426,7 +426,6 @@ def update_funnel(readme: str | Path, corpus: str | Path = "corpus",
     exercises every row including the suppressed count, which is the row the
     product exists for.
     """
-    from materia.audit import Audit
     from materia.report import Funnel
 
     readme = Path(readme)

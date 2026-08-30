@@ -3,8 +3,6 @@
 **An agent that finds silent errors in financial models, proves what they cost, and throws away the ones that do not matter.**
 
 
-> Name is swappable. It is used consistently across code and docs, so a find and replace on `materia` / `Materia` renames the whole project.
-
 ---
 
 ## 1. Who has this problem

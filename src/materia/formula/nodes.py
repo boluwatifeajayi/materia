@@ -82,7 +82,7 @@ def walk(node: Node) -> Iterator[Node]:
 
 
 def references(node: Node) -> Iterator[CellRef | RangeRef]:
-    """Every reference in the tree, for the dependency graph in T06."""
+    """Every reference in the tree, which is what the dependency graph is built from."""
     for found in walk(node):
         if isinstance(found, (CellRef, RangeRef)):
             yield found

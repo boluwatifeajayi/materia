@@ -1,8 +1,8 @@
 """Build the twelve workbook corpus.
 
 The roster is in docs/EVALUATION.md section 2. Eight seeded workbooks, two
-clean controls and two hard cases. Mutations are injected separately in T09;
-what this module produces is the unmutated base of each workbook plus the
+clean controls and two hard cases. Mutation injection lives in `mutate.py`;
+what this module produces is the unmutated base of each workbook, then the
 manifest and checksums that make the corpus reproducible.
 """
 
