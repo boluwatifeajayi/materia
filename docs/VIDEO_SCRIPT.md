@@ -63,11 +63,10 @@ Open these, in this order, before pressing record. Every path is from the reposi
 
 **Say:**
 
-- This cell should read the previous month's closing customers,
-- the way every other cell in the row does.
-- It is the number 7,200, pasted from month one and never put back.
+- Every other cell in this row reads the previous month's closing customers.
+- This one is 7,200, pasted from month one and never put back.
 - Enterprise value is understated by ninety two million,
-- and there is nothing on screen that tells you.
+- and nothing on screen tells you.
 
 **Say:**
 
@@ -81,7 +80,7 @@ Open these, in this order, before pressing record. Every path is from the reposi
 
 **Say:**
 
-- Spreadsheet linters have existed for twenty years
+- Linters have existed for twenty years
 - and they do find this cell.
 - Here it is, one of twenty two flagged in this workbook.
 
@@ -89,20 +88,20 @@ Open these, in this order, before pressing record. Every path is from the reposi
 
 **Say:**
 
-- Two hundred and sixty seven across the twelve workbooks I tested.
-- Most of these are deliberate.
+- Two hundred and sixty seven across twelve workbooks.
+- Most are deliberate.
 - Hardcoded actuals.
 - First columns with no prior period.
 - Manual overrides.
-- Forty six of them are in two workbooks that contain no errors at all.
-- The user checks the first fifteen, finds them all fine,
+- Forty six are in two workbooks with no errors at all.
+- The user checks the first fifteen, finds them fine,
 - and never opens the tool again.
 
 **Say:**
 
 - So the bottleneck is not detection.
 - It is precision.
-- And precision here is not a structural question.
+- And precision is not a structural question.
 - It is a question about consequence.
 
 ## 1:05 to 1:35 | The baseline
@@ -112,11 +111,9 @@ Open these, in this order, before pressing record. Every path is from the reposi
 **Say:**
 
 - The obvious thing to try is a general purpose coding agent.
-- Same model I use, given the file and a shell with openpyxl,
-- free to write its own analysis code.
-- It is not a strawman.
-- It built its own dependency analysis
-- and it scored eighty three percent precision.
+- Same model, same file, a shell with openpyxl.
+- Not a strawman: it built its own dependency analysis
+- and scored eighty three percent precision.
 
 **On screen:** hold on the lower half of the file, where the finding sits above the cell's own comment.
 
@@ -124,14 +121,11 @@ Open these, in this order, before pressing record. Every path is from the reposi
 
 - This workbook has no errors in it.
 - The agent reports one, at high confidence.
-- The cell is held at a fixed figure on purpose
-- and it carries a comment saying so:
-- one off office move approved by the board, do not restore the inflation formula.
-- It proposes restoring the inflation formula.
-- The string dot comment never appears anywhere in its trajectory.
-- Its impact number is correct.
-- Its judgement is wrong,
-- and a correct number attached to a wrong judgement is the failure this project is about.
+- The cell is held at a fixed figure on purpose,
+- and its comment says: do not restore the inflation formula.
+- It proposes restoring it. It never read the comment.
+- Its number is correct, its judgement is wrong,
+- and that is the failure this project is about.
 
 ## 1:35 to 3:05 | One realistic execution
 
@@ -140,7 +134,7 @@ Open these, in this order, before pressing record. Every path is from the reposi
 **Say:**
 
 - Same file, my system.
-- This is the saved output of a run, not a live one.
+- This is saved output, not a live run.
 
 ```
     738  formulas parsed
@@ -153,9 +147,8 @@ Open these, in this order, before pressing record. Every path is from the reposi
 
 - Detectors run first and they are deliberately noisy.
 - The same twenty two candidates.
-- Then each one goes to an agent that has to do something specific:
-- propose what the formula should have been,
-- and then call a deterministic engine to recompute the model with that patch applied.
+- Each goes to an agent that must propose what the formula should have been,
+- then call a deterministic engine to recompute the model with that patch.
 
 **On screen:** `video/05-trajectory-Revenue-H5.md`, scrolled to line 726. Steps 8, 9 and 12 should be visible together if the font allows, otherwise scroll 726 to 780 slowly.
 
@@ -166,23 +159,20 @@ Open these, in this order, before pressing record. Every path is from the reposi
 **Say:**
 
 - It cannot state an impact it has not measured.
-- The agent proposes the formula,
-- the engine returns the delta,
-- and the number in the report is read back out of that tool result rather than out of the model's answer.
-- If there is no tool result behind a number,
-- the finding is dropped before the user sees it.
+- The report reads that number out of the tool result,
+- not out of the model's answer.
+- No tool result, no finding.
 
 **On screen:** `video/06-trajectory-C10-intentional.md`, scrolled to line 35, the verdict block.
 
 **Say:**
 
 - And here is the one that matters more.
-- This is the same cell the baseline got wrong.
-- The detector fires,
-- and the adjudicator quotes the comment back and returns intentional.
-- Nothing is reported.
-- Deciding to stay quiet is a success state in this system,
-- and it is what happened to two hundred and fifty three of the two hundred and sixty seven candidates.
+- Same cell the baseline got wrong.
+- The detector fires, the adjudicator quotes the comment back,
+- and returns intentional. Nothing is reported.
+- Staying quiet is a success state here,
+- and it happened two hundred and fifty three times.
 
 **On screen:** back to `video/04-audit-C03.txt`, scrolled to the first evidence card, the one for `Revenue!H5`.
 
@@ -190,9 +180,8 @@ Open these, in this order, before pressing record. Every path is from the reposi
 
 - Two findings.
 - Consequence first, cell reference second,
-- the dependency path to enterprise value,
-- and the measured impact.
-- Twenty declined as deliberate on this workbook, counted and shown,
+- the path to enterprise value, the measured impact.
+- Twenty declined as deliberate, counted and shown,
 - because suppression the user cannot see is indistinguishable from a bug.
 
 ## 3:05 to 3:50 | The comparison
@@ -209,26 +198,23 @@ Open these, in this order, before pressing record. Every path is from the reposi
 **Say:**
 
 - Twelve workbooks.
-- Ten seeded from a published spreadsheet error taxonomy,
-- two clean controls,
-- and one where the error is real but moves the output by three hundredths of a percent,
-- well under the one percent threshold.
-- Correct behaviour there is to detect it and suppress it,
-- and the report shows it in the suppressed count rather than dropping it.
+- Ten seeded from a published error taxonomy, two clean controls,
+- and one where the error is real but moves the output three hundredths of a percent.
+- Correct behaviour is to detect and suppress it,
+- and the report shows it in the suppressed count.
 
 **Say:**
 
 - Human time is not measured.
-- I did not run the timed trials,
-- so it says not measured rather than a number I would be guessing at.
+- I did not run the trials,
+- so it says so rather than a number I would be guessing at.
 
 **Say:**
 
-- Both systems also miss one mutation entirely:
+- Both systems miss one mutation entirely:
 - an assumption that should be one point two percent and says twelve percent.
-- Structurally perfect, no peer signal exists.
-- Nothing structural can catch that
-- and I report it as a limitation.
+- Structurally perfect, no peer signal.
+- Nothing structural can catch it, and I report that as a limitation.
 
 ## 3:50 to 4:20 | Changelog, biggest change, removed experiment
 
@@ -237,26 +223,21 @@ Open these, in this order, before pressing record. Every path is from the reposi
 **Say:**
 
 - Detectors alone: ninety three percent recall, five percent precision.
-- Adding the agent loop with the recompute tool took precision to ninety three.
-- Adding the materiality gate took it to a hundred,
-- with recall unchanged at ninety three.
+- The agent loop with the recompute tool took precision to ninety three.
+- The materiality gate took it to a hundred, recall unchanged.
 
 **Say:**
 
 - The biggest single contributor was the agent loop,
-- and I have to be honest that it arrived as one change rather than three,
-- so I can tell you it is worth eighty eight points of precision
-- but not how those split between hypothesis testing, the recompute gate,
-- and letting the model say a cell is fine.
-- I did not run the ablation.
+- worth eighty eight points of precision.
+- It arrived as one change rather than three,
+- so I cannot say how that splits. I did not run the ablation.
 
 **Say:**
 
 - The experiment I removed was a report writer agent.
-- I gave it the verified findings and told it not to reinterpret any figure.
-- It printed every number correctly
-- and then wrote that enterprise value was overstated where the measurement says understated,
-- on all four findings.
+- Given verified findings and told not to reinterpret any figure,
+- it printed every number correctly, then flipped the direction on all four.
 - Guarding the figures does not guard the sentences around them,
 - so the renderer that ships is a template.
 
@@ -267,24 +248,20 @@ Open these, in this order, before pressing record. Every path is from the reposi
 **Say:**
 
 - The failure I kept hitting was not hallucination.
-- It was confident output that nobody checked against evidence that was already sitting there.
-- The adjudicator invented figures it had been handed three steps earlier.
-- The baseline judged intent without reading the comment on the cell.
-- And my own code silently mixed twelve workbooks together
-- because it read past the workbook name in every record it opened.
+- It was confident output that nobody checked against evidence already sitting there.
+- The adjudicator did it. The baseline did it.
+- My own code did it too, with no model involved at all.
 
 **Say:**
 
 - Telling a model to be careful does not fix that.
 - Taking away its ability to assert an unverified number does.
-- Route detection to code,
-- route judgement to the model,
-- then route verification of that judgement back to code.
-- When you bolt an agent onto a mature deterministic pipeline,
-- its job is almost never to replace the detector.
-- It is to be the judgement layer the detector never had.
-- And build the verification tool first,
-- because it defines what claims the agent is able to make at all.
+- Route detection to code, judgement to the model,
+- verification of that judgement back to code.
+- When you add an agent to a mature deterministic pipeline,
+- its job is not to replace the detector.
+- It is the judgement layer the detector never had.
+- Build the verification tool first: it defines what the agent can claim.
 
 ---
 
@@ -292,8 +269,10 @@ Open these, in this order, before pressing record. Every path is from the reposi
 
 - Record at 1080p minimum, readable font sizes in the terminal. Judges may watch on a laptop.
 - Cut all setup, installs, and file navigation.
-- **Spoken length: 986 words, counted not estimated.** At 150 words a minute that is 6:34, and at a fast 170 it is 5:48. Both are over the 5:00 hard cap. An earlier version of this note said 680 words and that figure was never counted. **The script needs about 150 words cut before recording.** The section timings in the headings are the original plan and no longer match the text under them; they are kept as the intended shape.
-- Where the words are, measured: 0:00 90, 0:35 103, 1:05 134, 1:35 222, 3:05 123, 3:50 162, 4:20 152.
-- If cutting, take it from 4:20 and 3:50 first. The hot take repeats three examples that section 1:05 and 2:10 have already shown on screen, and the changelog section explains an ablation caveat that the README already states. Do not cut 1:35 to 3:05: it is the only part that shows the system working.
+- **Spoken length: 759 words, counted not estimated.** That is 5:04 at a slow 150 words a minute and 4:45 at a normal narration pace of 160. The cap is 5:00, so read it at 155 or above and it lands with room.
+- Where the words are, measured: 0:00 80, 0:35 92, 1:05 94, 1:35 159, 3:05 105, 3:50 115, 4:20 114.
+- **Rehearse once against a timer before recording.** If it comes in over 4:50, cut the third bullet of the hot take, the one listing where the failure happened. It is the only line in the script that repeats something the viewer has already seen on screen.
+- Do not cut anything from 1:35 to 3:05. It is the only part that shows the system working.
+- An earlier version of this note claimed 680 words when the script held 986. Both figures here were counted, and a test fails if the stated count and the real one diverge.
 - Read the bullets as written. Each one is a breath. They are the exact spoken words, split at the pauses, not a summary.
 - The two trajectory beats at 2:10 and 2:35 are the evidence a judge cannot get from the README. If anything has to be rushed, do not rush those.
